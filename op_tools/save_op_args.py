@@ -17,7 +17,7 @@ def serialize_args_to_dict(*args, **kwargs):
     def serialize_value(value):
         if isinstance(value, torch.Tensor):
             return tensor_to_dict(value)
-        if isinstance(value, torch.device):
+        if isinstance(value, (torch.device, torch.dtype)):
             return str(value)
         elif isinstance(value, (list, tuple)):
             return type(value)([serialize_value(v) for v in value])
@@ -42,14 +42,17 @@ def save_op_args(name, identifier, *args, **kwargs):
     filename = f"op_capture_result/{datetime.now().strftime('%Y-%m-%d--%H-%M')}/{os.getpid()}/{name}/{identifier}.pth"
     path = filename[: filename.rfind("/")]
     os.makedirs(path, exist_ok=True)
-    torch.save(obj, filename)
-    print(f"{filename} saved")
+    try:
+        torch.save(obj, filename)
+        print(f"{filename} saved")
 
-    json_content = serialize_args_to_dict(*args, **kwargs)
-    json_content["op"] = name
+        json_content = serialize_args_to_dict(*args, **kwargs)
+        json_content["op"] = name
 
-    json_filename = filename + ".json"
-    with open(json_filename, "w") as file:
-        json.dump(json_content, file, indent=4)
+        json_filename = filename + ".json"
+        with open(json_filename, "w") as file:
+            json.dump(json_content, file, indent=4)
 
-    print(f"{json_filename} saved")
+        print(f"{json_filename} saved")
+    except Exception as e:
+        print(f"{args} {kwargs} can not save for {name} because {e}")
