@@ -1,9 +1,9 @@
 import torch
 from torch.overrides import TorchFunctionMode, resolve_name
 from torch.utils._python_dispatch import TorchDispatchMode
-from op_capture_hook import OpCaptureHook
-from op_fallback_hook import OpFallbackHook
-from op_dispatch_log_hook import OpDispatchWatcherHook
+from .op_capture_hook import OpCaptureHook
+from .op_fallback_hook import OpFallbackHook
+from .op_dispatch_watch_hook import OpDispatchWatcherHook
 import inspect
 
 

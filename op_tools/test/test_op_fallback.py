@@ -3,7 +3,7 @@ import torch
 import torch_npu
 from torch_npu.contrib import transfer_to_npu
 
-import op_capture
+import op_tools
 
 
 def f():
@@ -14,11 +14,14 @@ def f():
 
 f()
 
-with op_capture.OpFallback():
+with op_tools.OpFallback():
     f()
 
 
-fallback = op_capture.OpFallback()
+fallback = op_tools.OpFallback()
 fallback.start()
 f()
 fallback.stop()
+
+f()
+print("over")

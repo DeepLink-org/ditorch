@@ -3,7 +3,7 @@ import torch
 import torch_npu
 from torch_npu.contrib import transfer_to_npu
 
-import op_capture
+import op_tools
 
 
 def f():
@@ -12,10 +12,10 @@ def f():
     b.sum().backward()
 
 
-with op_capture.OpCapture():
+with op_tools.OpCapture():
     f()
 
-tool = op_capture.OpCapture()
+tool = op_tools.OpCapture()
 
 tool.start()
 for i in range(3):

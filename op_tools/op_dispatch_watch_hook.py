@@ -1,6 +1,6 @@
-from base_hook import BaseHook, DisableHookGuard
+from .base_hook import BaseHook, DisableHookGuard
 
-from save_op_args import serialize_args_to_dict
+from .save_op_args import serialize_args_to_dict
 
 
 class OpDispatchWatcherHook(BaseHook):

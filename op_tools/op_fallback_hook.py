@@ -1,5 +1,5 @@
 import torch
-from base_hook import BaseHook, DisableHookGuard
+from .base_hook import BaseHook, DisableHookGuard
 
 
 def is_cpu_op(*args, **kwargs):

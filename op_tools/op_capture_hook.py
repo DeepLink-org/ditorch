@@ -1,6 +1,6 @@
-from base_hook import BaseHook, DisableHookGuard
+from .base_hook import BaseHook, DisableHookGuard
 
-from save_op_args import save_op_args
+from .save_op_args import save_op_args
 
 
 class OpCaptureHook(BaseHook):
