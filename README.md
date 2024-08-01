@@ -1,4 +1,5 @@
 # 设备无关torch, 旨在屏蔽各硬件厂商torch差异，为用户提供一致使用体验
+![](ditorch.png)
 
 ## 核心点
 ### 1. 两行代码即可像官方pytorch一样在国产芯片上使用pytorch
