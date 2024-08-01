@@ -7,6 +7,17 @@ from .op_dispatch_watch_hook import OpDispatchWatcherHook
 import inspect
 
 
+def is_should_apply_hook(name, func):
+    if name is None:
+        return False
+    if inspect.isroutine(func) == False:
+        return False
+    if name.startswith("torch.Tensor.__") and name.endswith("__"):
+        return False
+
+    return True
+
+
 class OpCapture(TorchFunctionMode):
     """
     Usage1:
@@ -19,26 +30,25 @@ class OpCapture(TorchFunctionMode):
     """
 
     def is_should_capture(self, name, func):
-        if name is None:
+        if not is_should_apply_hook(name, func):
             return False
-        if inspect.isroutine(func) == False:
-            return False
-
         return True
 
     def __torch_function__(self, func, types, args, kwargs=None):
         name = resolve_name(func)
         if self.is_should_capture(name, func):
+            print(f"apply OpCaptureHook on {name}")
             new_func = OpCaptureHook(name)(func)
             return new_func(*args, **(kwargs or {}))
         else:
+            print(f"skip OpCaptureHook on {name}")
             return func(*args, **(kwargs or {}))
 
     def start(self):
-        self.__enter__()
+        super().__enter__()
 
     def stop(self):
-        self.__exit__(None, None, None)
+        super().__exit__(None, None, None)
 
 
 class OpFallback(TorchFunctionMode):
@@ -53,11 +63,8 @@ class OpFallback(TorchFunctionMode):
     """
 
     def is_should_fallback(self, name, func):
-        if name is None:
+        if not is_should_apply_hook(name, func):
             return False
-        if inspect.isroutine(func) == False:
-            return False
-
         return True
 
     def __torch_function__(self, func, types, args, kwargs=None):
@@ -69,10 +76,10 @@ class OpFallback(TorchFunctionMode):
             return func(*args, **(kwargs or {}))
 
     def start(self):
-        self.__enter__()
+        super().__enter__()
 
     def stop(self):
-        self.__exit__(None, None, None)
+        super().__exit__(None, None, None)
 
 
 class OpDispatchWatcher(TorchDispatchMode):
@@ -95,7 +102,7 @@ class OpDispatchWatcher(TorchDispatchMode):
             return func(*args, **(kwargs or {}))
 
     def start(self):
-        self.__enter__()
+        super().__enter__()
 
     def stop(self):
-        self.__exit__(None, None, None)
+        super().__exit__(None, None, None)
