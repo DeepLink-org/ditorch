@@ -3,6 +3,7 @@ from torch.overrides import TorchFunctionMode, resolve_name
 from torch.utils._python_dispatch import TorchDispatchMode
 from .op_capture_hook import OpCaptureHook
 from .op_fallback_hook import OpFallbackHook
+from .op_autocompare_hook import OpAutoCompareHook
 from .op_dispatch_watch_hook import OpDispatchWatcherHook
 from .utils import is_cpu_op
 import inspect
@@ -38,9 +39,10 @@ class OpCapture(TorchFunctionMode):
     with OpCapture():
         f()
     Usage2:
-    tool = OpCapture()
-    tool.__enter__()
+    capturer = OpCapture()
+    capturer.start()
     f()
+    capturer.end()
     """
 
     def is_should_capture(self, name, func, args, kwargs=None):
@@ -72,9 +74,10 @@ class OpFallback(TorchFunctionMode):
     with OpFallback():
         f()
     Usage2:
-    tool = OpFallback()
-    tool.__enter__()
+    fallback = OpFallback()
+    fallback.start()
     f()
+    fallback.end()
     """
 
     def is_should_fallback(self, name, func, args, kwargs=None):
@@ -84,8 +87,40 @@ class OpFallback(TorchFunctionMode):
 
     def __torch_function__(self, func, types, args, kwargs=None):
         name = resolve_name(func)
-        if self.is_should_fallback(name, func):
+        if self.is_should_fallback(name, func, args, kwargs):
             new_func = OpFallbackHook(name)(func)
+            return new_func(*args, **(kwargs or {}))
+        else:
+            return func(*args, **(kwargs or {}))
+
+    def start(self):
+        super().__enter__()
+
+    def stop(self):
+        super().__exit__(None, None, None)
+
+
+class OpAutocompare(TorchFunctionMode):
+    """
+    Usage1:
+    with OpAutocompare():
+        f()
+    Usage2:
+    compare = OpAutocompare()
+    compare.start()
+    f()
+    compare.stop()
+    """
+
+    def is_should_compare(self, name, func, args, kwargs=None):
+        if not is_should_apply_hook(name, func, args, kwargs):
+            return False
+        return True
+
+    def __torch_function__(self, func, types, args, kwargs=None):
+        name = resolve_name(func)
+        if self.is_should_compare(name, func, args, kwargs):
+            new_func = OpAutoCompareHook(name)(func)
             return new_func(*args, **(kwargs or {}))
         else:
             return func(*args, **(kwargs or {}))
@@ -104,7 +139,7 @@ class OpDispatchWatcher(TorchDispatchMode):
         f()
     Usage2:
     tool = OpDispatchWatcher()
-    tool.__enter__()
+    tool.start()
     f()
     """
 

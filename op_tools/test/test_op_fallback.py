@@ -12,10 +12,12 @@ def f():
 
 f()
 
+# usage 1
 with op_tools.OpFallback():
     f()
 
 
+##usage 2
 fallback = op_tools.OpFallback()
 fallback.start()
 f()

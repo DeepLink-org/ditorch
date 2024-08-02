@@ -6,8 +6,13 @@ import op_tools
 
 def f():
     a = torch.rand(10, requires_grad=True).cuda()
-    b = a * 2
-    b.sum()
+    b = a + a
+    c = b - b
+    d = c * 2
+    e = torch.sin(d)
+    f = torch.cos(e)
+    g = e.abs()
+    f.sum()
 
 
 f()
@@ -33,4 +38,11 @@ print("\n" * 2)
 print("dispatch process of the operator when it is fallbacked:")
 with op_tools.OpDispatchWatcher():
     with op_tools.OpFallback():
+        f()
+
+
+print("\n" * 2)
+print("dispatch process of the operator when autocompare is enabled:")
+with op_tools.OpDispatchWatcher():
+    with op_tools.OpAutocompare():
         f()
