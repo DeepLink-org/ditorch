@@ -16,8 +16,8 @@ with op_tools.OpCapture():
     f()
 
 # usage2
-tool = op_tools.OpCapture()
-tool.start()
+capture = op_tools.OpCapture()
+capture.start()
 for i in range(3):
     f()
-tool.stop()
+capture.stop()

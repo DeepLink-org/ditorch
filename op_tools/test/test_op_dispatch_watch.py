@@ -15,17 +15,22 @@ f()
 with op_tools.OpFallback():
     f()
 
-print("normal run")
+# usage1
+print("normal run, op dispatch process:")
 with op_tools.OpDispatchWatcher():
     f()
-print("\n" * 3)
-print("fallback cpu")
-with op_tools.OpDispatchWatcher():
-    with op_tools.OpFallback():
-        f()
 
+print("\n")
 
+# usage2
 watcher = op_tools.OpDispatchWatcher()
 watcher.start()
 f()
 watcher.stop()
+
+
+print("\n" * 2)
+print("dispatch process of the operator when it is fallbacked:")
+with op_tools.OpDispatchWatcher():
+    with op_tools.OpFallback():
+        f()

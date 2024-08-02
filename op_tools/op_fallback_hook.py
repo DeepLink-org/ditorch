@@ -8,14 +8,11 @@ class OpFallbackHook(BaseHook):
         super().__init__(name)
 
     def before_call_op(self, *args, **kwargs):
-
         with DisableHookGuard():
             self.is_cpu_op, self.device = is_cpu_op(*args, **kwargs)
             if self.is_cpu_op:
                 return
 
-            self.args_device = self.args
-            self.kwargs_device = self.kwargs or {}
             self.args = to_device("cpu", self.args)
             self.kwargs = to_device("cpu", self.kwargs or {})
 
@@ -23,4 +20,4 @@ class OpFallbackHook(BaseHook):
         if self.is_cpu_op:
             return
         with DisableHookGuard():
-            self.result_device = to_device(self.device, self.result)
+            self.result = to_device(self.device, self.result)
