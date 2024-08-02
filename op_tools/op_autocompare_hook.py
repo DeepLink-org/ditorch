@@ -5,14 +5,32 @@ from .op_fallback_hook import OpFallbackHook
 
 
 def compre_obj(a, b):
-    if type(a) is not type(b):
-        return False, "Inconsistent types"
-    if isinstance(a, torch.Tensor):
+    # We assume they are of the same type: torch.nn.parameter.Parameter and torch.Tensor
+    if isinstance(a, torch.Tensor) and isinstance(b, torch.Tensor):
         atol, rtol = 1e-3, 1e-3
-        close = torch.allclose(a, b, atol=atol, rtol=rtol)
-        diff = torch.abs(a - b)
-        return close, str(diff.max())
-    # elif isinstance()
+        a_cpu, b_cpu = a.cpu(), b.cpu()
+        if a_cpu.dtype == torch.bool:
+            a_cpu = a_cpu.int()
+        if b_cpu.dtype == torch.bool:
+            b_cpu = b_cpu.int()
+        diff = torch.abs(a_cpu - b_cpu)
+        max_diff = diff.max().item()
+        if a_cpu.dtype == b_cpu.dtype:
+            return max_diff
+        else:
+            return f"Inconsistent dtypes: {a.dtype} {b.dtype}, max_diff:{max_diff}"
+    elif type(a) is not type(b):
+        return f"Inconsistent types: {type(a)} {type(b)}"
+    elif isinstance(a, (list, tuple)):
+        return type(a)([compre_obj(a[i], b[i]) for i in range(len(a))])
+    elif isinstance(a, dict):
+        return {k: compre_obj(a[k], b[k]) for k in a.keys()}
+    elif isinstance(a, (int, float, complex)):
+        return abs(a - b)
+    elif a is None:
+        return 0.0
+    else:
+        return f"unhandle type:{a} {b}"
 
 
 class OpAutoCompareHook(BaseHook):
@@ -20,20 +38,37 @@ class OpAutoCompareHook(BaseHook):
         super().__init__(name)
 
     def compare_result(self, device_result, cpu_result):
-        self.device_result_ = to_device(device_result)
+        self.compare_result = compre_obj(device_result, cpu_result)
+        if isinstance(self.compare_result, (int, float, complex)):  # f"{max_diff:.9f}"
+            print(
+                f"OpAutoCompareHook: {self.name:<30} \t\tmax_diff: {f'{self.compare_result:20.9f}'}"
+            )
+        elif isinstance(self.compare_result, (list, tuple)):
+            for i in range(len(self.compare_result)):
+                print(
+                    f"OpAutoCompareHook: {self.name:<30} {i}th \tmax_diff: {f'{self.compare_result[i]:.9f}'}"
+                )
+        elif isinstance(self.compare_result, (dict,)):
+            for k, v in self.compare_result.items():
+                print(
+                    f"OpAutoCompareHook: {self.name:<30} {k} \tmax_diff: {f'{v:.9f}'}"
+                )
+        else:
+            print(
+                f"OpAutoCompareHook: {self.name:<30} compare_result: {self.compare_result}"
+            )
 
     def before_call_op(self, *args, **kwargs):
-
         with DisableHookGuard():
             self.is_cpu_op, self.device = is_cpu_op(*args, **kwargs)
             if self.is_cpu_op:
                 return
-        self.args_cpu = to_device("cpu", self.args)
-        self.kwargs_cpu = to_device("cpu", self.kwargs or {})
+            self.args_cpu = to_device("cpu", self.args)
+            self.kwargs_cpu = to_device("cpu", self.kwargs or {})
 
     def after_call_op(self, result):
         if self.is_cpu_op:
             return
-        self.result_device = self.func(*self.args_cpu, **self.kwargs_cpu)
         with DisableHookGuard():
-            self.compare_result(self.result_device, self.result)
+            self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
+            self.compare_result(self.result, self.result_cpu)

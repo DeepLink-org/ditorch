@@ -44,5 +44,5 @@ with op_tools.OpDispatchWatcher():
 print("\n" * 2)
 print("dispatch process of the operator when autocompare is enabled:")
 with op_tools.OpDispatchWatcher():
-    with op_tools.OpAutocompare():
+    with op_tools.OpAutoCompare():
         f()

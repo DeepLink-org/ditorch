@@ -14,13 +14,13 @@ f()
 
 # usage1
 print("normal run, op dispatch process:")
-with op_tools.OpAutocompare():
+with op_tools.OpAutoCompare():
     f()
 
 print("\n")
 
 # usage2
-comparer = op_tools.OpAutocompare()
+comparer = op_tools.OpAutoCompare()
 comparer.start()
 f()
 comparer.stop()

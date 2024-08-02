@@ -26,6 +26,7 @@ def is_should_apply_hook(name, func, args, kwargs=None):
         "torch.Tensor.numel",
         "torch.Tensor.size",
         "torch.Tensor.__repr__",
+        "torch.Tensor.type",
     ]
     if name in EXCLUDE_OPS:
         return False
@@ -100,7 +101,7 @@ class OpFallback(TorchFunctionMode):
         super().__exit__(None, None, None)
 
 
-class OpAutocompare(TorchFunctionMode):
+class OpAutoCompare(TorchFunctionMode):
     """
     Usage1:
     with OpAutocompare():

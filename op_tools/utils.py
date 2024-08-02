@@ -24,6 +24,6 @@ def to_device(device, obj):
     elif isinstance(obj, (tuple, list)):
         return type(obj)([to_device(device, v) for v in obj])
     elif isinstance(obj, dict):
-        return {k: to_device(device, v) for k, v in obj}
+        return {k: to_device(device, v) for k, v in obj.items()}
     else:
         return obj
