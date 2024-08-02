@@ -12,6 +12,8 @@ def serialize_args_to_dict(*args, **kwargs):
             "numel": tensor.numel(),
             "dtype": str(tensor.dtype),
             "device": str(tensor.device),
+            "requires_grad": tensor.requires_grad,
+            "layout": str(tensor.layout),
         }
 
     def serialize_value(value):
@@ -39,7 +41,7 @@ def save_op_args(name, identifier, *args, **kwargs):
     obj["args"] = args
     obj["kwargs"] = kwargs
     obj["identifier"] = identifier
-    filename = f"op_capture_result/{datetime.now().strftime('%Y-%m-%d--%H-%M')}/{os.getpid()}/{name}/{identifier}.pth"
+    filename = f"op_capture_result/{torch.cuda.current_device()}/{datetime.now().strftime('%Y-%m-%d--%H-%M')}/{name}/{identifier}.pth"
     path = filename[: filename.rfind("/")]
     os.makedirs(path, exist_ok=True)
     try:
