@@ -7,8 +7,11 @@ import op_tools
 def f():
     a = torch.rand(10, requires_grad=True).cuda()
     b = a * 2
-    b.sum().backward()
-    print(a)
+    c = b + a
+    d = c - a
+    e = d / c
+    e.sum().backward()
+    print(c)
 
 
 # usage1
