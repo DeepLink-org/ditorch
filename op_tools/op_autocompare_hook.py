@@ -2,6 +2,7 @@ import torch
 from .base_hook import BaseHook, DisableHookGuard
 from .utils import to_device, is_cpu_op
 from .op_fallback_hook import OpFallbackHook
+from .save_op_args import save_op_args
 
 
 def compre_obj(a, b):
@@ -39,24 +40,37 @@ class OpAutoCompareHook(BaseHook):
 
     def compare_result(self, device_result, cpu_result):
         self.compare_result = compre_obj(device_result, cpu_result)
+        allclose = True
         if isinstance(self.compare_result, (int, float, complex)):  # f"{max_diff:.9f}"
             print(
-                f"OpAutoCompareHook: {self.name:<30} \t\tmax_diff: {f'{self.compare_result:20.9f}'}"
+                f"OpAutoCompareHook: {self.name:<50} max_diff: {f'{self.compare_result:20.9f}'}"
             )
+            if self.compare_result > 1e-3:
+                allclose = False
         elif isinstance(self.compare_result, (list, tuple)):
             for i in range(len(self.compare_result)):
                 print(
-                    f"OpAutoCompareHook: {self.name:<30} {i}th \tmax_diff: {f'{self.compare_result[i]:.9f}'}"
+                    f"OpAutoCompareHook: {self.name:<50} {i}th \tmax_diff: {f'{self.compare_result[i]:20.9f}'}"
                 )
+                if self.compare_result[i] > 1e-3:
+                    allclose = False
         elif isinstance(self.compare_result, (dict,)):
             for k, v in self.compare_result.items():
                 print(
-                    f"OpAutoCompareHook: {self.name:<30} {k} \tmax_diff: {f'{v:.9f}'}"
+                    f"OpAutoCompareHook: {self.name:<50} {k} \tmax_diff: {f'{v:20.9f}'}"
                 )
+                if v > 1e-3:
+                    allclose = False
         else:
             print(
-                f"OpAutoCompareHook: {self.name:<30} compare_result: {self.compare_result}"
+                f"OpAutoCompareHook: {self.name:<50} compare_result: {self.compare_result}"
             )
+
+        if not allclose:
+            save_op_args(self.name, "device_input", self.args, self.kwargs)
+            save_op_args(self.name, "device_output", self.result)
+            save_op_args(self.name, "cpu_input", self.args_cpu, self.kwargs_cpu)
+            save_op_args(self.name, "cpu_output", self.result_cpu)
 
     def before_call_op(self, *args, **kwargs):
         with DisableHookGuard():

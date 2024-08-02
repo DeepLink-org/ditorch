@@ -21,42 +21,57 @@ import ditorch
 2. 模型训练时实时与cpu对比分析精度
 ```
 # 基于InternEvo + ditorch + torch_npu 在华为910B上实时精度分析输出片段
-OpAutoCompareHook: torch.functional.norm                        max_diff:          0.001953125
-OpAutoCompareHook: torch.functional.norm                        max_diff:         26.375000000
-OpAutoCompareHook: torch.functional.norm                        max_diff:        623.625000000
-OpAutoCompareHook: torch.functional.norm                        max_diff:          0.007812500
-OpAutoCompareHook: torch.stack                                  max_diff:          0.000000000
-OpAutoCompareHook: torch.functional.norm                        max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.unsqueeze                       max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.__pow__                         max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.to                              max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.to                              max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.to                              max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.float                           max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.float                           max_diff:          0.000000000
-OpAutoCompareHook: torch.functional.norm                        max_diff:          0.000000000
-OpAutoCompareHook: torch.stack                                  max_diff:          0.000000000
-OpAutoCompareHook: torch.functional.norm                        max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.unsqueeze                       max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.__pow__                         max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.to                              max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.float                           max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.float                           max_diff:          0.000000000
-OpAutoCompareHook: torch.functional.norm                        max_diff:          1.250000000
-OpAutoCompareHook: torch.stack                                  max_diff:          0.000000000
-OpAutoCompareHook: torch.functional.norm                        max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.unsqueeze                       max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.__pow__                         max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.to                              max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.add                             max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.item                            max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.to                              max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.to                              max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.float                           max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.float                           max_diff:          0.000000000
-OpAutoCompareHook: torch.functional.norm                        max_diff:          0.000000000
-OpAutoCompareHook: torch.stack                                  max_diff:          0.000000000
-OpAutoCompareHook: torch.functional.norm                        max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.contiguous                            max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.is_complex                            max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.add                                   max_diff:          0.000000000
+OpAutoCompareHook: torch.nn.functional.dropout                        max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.to                                    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.to                                    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.pow                                   max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.mean                                  max_diff:          0.000000179
+OpAutoCompareHook: torch.Tensor.add                                   max_diff:          0.000000000
+OpAutoCompareHook: torch.rsqrt                                        max_diff:          0.000000119
+OpAutoCompareHook: torch.Tensor.mul                                   max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.to                                    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.mul                                   max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.contiguous                            max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.contiguous                            max_diff:          0.000000000
+OpAutoCompareHook: torch.nn.functional.linear                         max_diff:          0.015625000
+op_capture_result/2024-08-02--16-31/1915529/torch.nn.functional.linear/device_input.pth saved
+op_capture_result/2024-08-02--16-31/1915529/torch.nn.functional.linear/device_input.pth.json saved
+op_capture_result/2024-08-02--16-31/1915529/torch.nn.functional.linear/device_output.pth saved
+op_capture_result/2024-08-02--16-31/1915529/torch.nn.functional.linear/device_output.pth.json saved
+op_capture_result/2024-08-02--16-31/1915529/torch.nn.functional.linear/cpu_input.pth saved
+op_capture_result/2024-08-02--16-31/1915529/torch.nn.functional.linear/cpu_input.pth.json saved
+op_capture_result/2024-08-02--16-31/1915529/torch.nn.functional.linear/cpu_output.pth saved
+op_capture_result/2024-08-02--16-31/1915529/torch.nn.functional.linear/cpu_output.pth.json saved
+OpAutoCompareHook: torch.stack                                        max_diff:          0.000000000
+OpAutoCompareHook: torch.functional.norm                              max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.unsqueeze                             max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.__pow__                               max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.to                                    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.to                                    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.to                                    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.float                                 max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.float                                 max_diff:          0.000000000
+OpAutoCompareHook: torch.functional.norm                              max_diff:          0.000000000
+OpAutoCompareHook: torch.stack                                        max_diff:          0.000000000
+OpAutoCompareHook: torch.functional.norm                              max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.unsqueeze                             max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.__pow__                               max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.to                                    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.float                                 max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.float                                 max_diff:          0.000000000
+OpAutoCompareHook: torch.functional.norm                              max_diff:        760.125000000
+op_capture_result/2024-08-02--16-29/1915529/torch.functional.norm/device_input.pth saved
+op_capture_result/2024-08-02--16-29/1915529/torch.functional.norm/device_input.pth.json saved
+op_capture_result/2024-08-02--16-29/1915529/torch.functional.norm/device_output.pth saved
+op_capture_result/2024-08-02--16-29/1915529/torch.functional.norm/device_output.pth.json saved
+op_capture_result/2024-08-02--16-29/1915529/torch.functional.norm/cpu_input.pth saved
+op_capture_result/2024-08-02--16-29/1915529/torch.functional.norm/cpu_input.pth.json saved
+op_capture_result/2024-08-02--16-29/1915529/torch.functional.norm/cpu_output.pth saved
+op_capture_result/2024-08-02--16-29/1915529/torch.functional.norm/cpu_output.pth.json saved
+OpAutoCompareHook: torch.Tensor.to                                    compare_result: Inconsistent dtypes: torch.float32 torch.float64, max_diff:0.0
 ```
 
 #### 性能分析工具
