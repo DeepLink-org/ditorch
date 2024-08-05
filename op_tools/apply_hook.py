@@ -22,10 +22,13 @@ def is_should_apply_hook(name, func, args, kwargs=None):
         return False
 
     EXCLUDE_OPS = [
+        "torch.Tensor.data_ptr",
         "torch.Tensor.backward",
+        "torch.Tensor.has_names",
         "torch.Tensor.numel",
         "torch.Tensor.size",
         "torch.Tensor.__repr__",
+        "torch.Tensor.__format__",
         "torch.Tensor.type",
     ]
     if name in EXCLUDE_OPS:

@@ -14,6 +14,7 @@ def serialize_args_to_dict(*args, **kwargs):
             "device": str(tensor.device),
             "requires_grad": tensor.requires_grad,
             "layout": str(tensor.layout),
+            "data": tensor.data_ptr(),
         }
 
     def serialize_value(value):
