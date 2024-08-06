@@ -11,8 +11,8 @@ class BackwardHookHandle:
 
     def grad_fun_hook(self):
         def grad_fun(grad_inputs, grad_outputs):
-            save_op_args(self.name, f"{self.id}/grad_inputs", *tuple(grad_inputs))
-            save_op_args(self.name, f"{self.id}/grad_outputs", *tuple(grad_outputs))
+            save_op_args(self.name, f"{self.id}/grad_inputs", tuple(grad_inputs))
+            save_op_args(self.name, f"{self.id}/grad_outputs", tuple(grad_outputs))
 
         return grad_fun
 

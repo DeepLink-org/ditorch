@@ -67,9 +67,9 @@ class OpAutoCompareHook(BaseHook):
             )
 
         if not allclose:
-            save_op_args(self.name, "device_input", self.args, self.kwargs)
+            save_op_args(self.name, "device_input", *self.args, **self.kwargs)
             save_op_args(self.name, "device_output", self.result)
-            save_op_args(self.name, "cpu_input", self.args_cpu, self.kwargs_cpu)
+            save_op_args(self.name, "cpu_input", *self.args_cpu, **self.kwargs_cpu)
             save_op_args(self.name, "cpu_output", self.result_cpu)
 
     def before_call_op(self, *args, **kwargs):
