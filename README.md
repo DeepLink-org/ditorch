@@ -144,3 +144,32 @@ OpAutoCompareHook: torch.Tensor.to                                    compare_re
 
 #### 性能分析工具
 用模型训练过程中真实的输入输出分析算子和通信的耗时，分析出性能瓶颈
+```
+# 测量算子耗时（输入为使用算子抓取工具在模型训练时抓取到的真实数据）
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03838539 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03552437 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03147125 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03147125 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03528595 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.11086464 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03838539 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03790855 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03862381 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03194809 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03409386 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03123283 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.02837181 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03528595 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03170967 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03361702 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03409386 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03433228 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03409386 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03123283 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03528595 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03314018 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03170967 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03743172 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03361702 ms
+SyncExecuteTimer: torch.Tensor.add forward elasped 0.03743172 ms
+```

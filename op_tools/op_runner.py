@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import torch
 import ditorch
+import time
 from .utils import to_device, is_cpu_op, get_function_from_string
 
 
@@ -21,6 +22,37 @@ class OpRunnerHook(ABC):
         pass
 
 
+class EventTimer(OpRunnerHook):
+    def __init__(self) -> None:
+        super().__init__()
+        self.event_pair_list = list()
+
+    def before_forward(self):
+        start_event = torch.cuda.Event(
+            enable_timing=True, blocking=False, interprocess=False
+        )
+        end_event = torch.cuda.Event(
+            enable_timing=True, blocking=False, interprocess=False
+        )
+
+
+class SyncExecuteTimer(OpRunnerHook):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def before_forward(self):
+        torch.cuda.current_stream().synchronize()
+        self.start_time = time.time()
+
+    def after_forward(self):
+        torch.cuda.current_stream().synchronize()
+        self.end_time = time.time()
+        self.elasped_time = self.end_time - self.start_time
+        print(
+            f"SyncExecuteTimer: {self.runner.name} forward elasped {self.elasped_time * 1000:>.8f} ms"
+        )
+
+
 class OpRunner:
     def __init__(self, dir=".", hook=OpRunnerHook()) -> None:
         self.dir = dir
@@ -34,6 +66,7 @@ class OpRunner:
         self.args = to_device("cuda", self.args_cpu)
         self.kwargs = to_device("cuda", self.kwargs_cpu or {})
         self.name = self.input["name"]
+        # self.id = self.input["id"]
         self.fun = get_function_from_string(self.name)
 
     def load_forward_output(self):

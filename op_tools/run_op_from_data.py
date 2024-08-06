@@ -1,7 +1,7 @@
 import torch
 import ditorch
 import argparse
-from op_tools.op_runner import OpRunner
+from op_tools.op_runner import OpRunner, SyncExecuteTimer
 
 
 def main():
@@ -11,8 +11,11 @@ def main():
 
     parser.add_argument("dir", type=str, help="data dir")
     args = parser.parse_args()
-    runner = OpRunner(args.dir)
-    runner.run_forward()
+    timer = SyncExecuteTimer()
+    runner = OpRunner(args.dir, timer)
+    for i in range(100):
+        runner.run_forward()
+        # runner.run_backward()
 
 
 if __name__ == "__main__":
