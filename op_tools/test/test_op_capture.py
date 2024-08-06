@@ -10,7 +10,8 @@ def f():
     c = b + a
     d = c - a
     e = d / c
-    e.sum().backward()
+    sorted, indices = a.sort()  # return torch.return_type.sort
+    sorted.sum().backward()
     print(c)
 
 

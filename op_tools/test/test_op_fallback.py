@@ -7,7 +7,12 @@ import op_tools
 def f():
     a = torch.rand(10, requires_grad=True).cuda()
     b = a * 2
-    b.sum()
+    c = b + a
+    d = c - a
+    e = d / c
+    sorted, indices = a.sort()  # return torch.return_type.sort
+    sorted.sum().backward()
+    print(c)
 
 
 f()
