@@ -2,6 +2,7 @@ import torch
 import ditorch
 
 import op_tools
+import os
 
 
 def f():
@@ -24,4 +25,19 @@ capture = op_tools.OpCapture()
 capture.start()
 for i in range(3):
     f()
+capture.stop()
+
+
+# usage3
+os.environ["OP_CAPTURE_DISABLE_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
+capture.start()
+f()
+capture.stop()
+
+
+# usage4
+os.environ["OP_CAPTURE_DISABLE_LIST"] = ""
+os.environ["OP_CAPTURE_LIST"] = "torch.Tensor.sort"  # only capture these op
+capture.start()
+f()
 capture.stop()

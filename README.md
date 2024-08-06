@@ -14,7 +14,75 @@ import ditorch
 
 #### 算子参数抓取工具
 抓取模型真实训练过程中真实的输入输出
+```
+# 抓取前向和反向的所有输入输出
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.to/8/input.pth saved
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.to/8/output.pth saved
+apply OpCaptureHook on torch.Tensor.mul
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.mul/9/input.pth saved
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.mul/9/output.pth saved
+apply OpCaptureHook on torch.Tensor.add
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.add/10/input.pth saved
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.add/10/output.pth saved
+apply OpCaptureHook on torch.Tensor.sub
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.sub/11/input.pth saved
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.sub/11/output.pth saved
+apply OpCaptureHook on torch.Tensor.div
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.div/12/input.pth saved
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.div/12/output.pth saved
+apply OpCaptureHook on torch.Tensor.sort
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.sort/13/input.pth saved
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.sort/13/output.pth saved
+apply OpCaptureHook on torch.Tensor.sum
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.sum/14/input.pth saved
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.sum/14/output.pth saved
+skip OpCaptureHook on torch.Tensor.backward
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.sum/14/grad_inputs.pth saved
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.sum/14/grad_outputs.pth saved
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.sort/13/grad_inputs.pth saved
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.sort/13/grad_outputs.pth saved
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.to/8/grad_inputs.pth saved
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.to/8/grad_outputs.pth saved
+...
+```
 
+```
+# 只抓取sort算子的参数，忽略其他算子 OP_CAPTURE_LIST=torch.Tensor.sort
+skip OpCaptureHook on torch.device
+skip OpCaptureHook on torch.Tensor.to
+skip OpCaptureHook on torch.Tensor.mul
+skip OpCaptureHook on torch.Tensor.add
+skip OpCaptureHook on torch.Tensor.sub
+skip OpCaptureHook on torch.Tensor.div
+apply OpCaptureHook on torch.Tensor.sort
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.sort/34/input.pth saved
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.sort/34/output.pth saved
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.sort/34/grad_inputs.pth saved
+op_capture_result/0/2024-08-06--11-41/torch.Tensor.sort/34/grad_outputs.pth saved
+...
+```
+
+```
+# 排除指定算子，抓取所有其他算子 OP_CAPTURE_DISABLE_LIST="torch.Tensor.sort,torch.Tensor.add"
+apply OpCaptureHook on torch.Tensor.to
+op_capture_result/0/2024-08-06--11-46/torch.Tensor.to/29/input.pth saved
+op_capture_result/0/2024-08-06--11-46/torch.Tensor.to/29/output.pth saved
+apply OpCaptureHook on torch.Tensor.mul
+op_capture_result/0/2024-08-06--11-46/torch.Tensor.mul/30/input.pth saved
+op_capture_result/0/2024-08-06--11-46/torch.Tensor.mul/30/output.pth saved
+skip OpCaptureHook on torch.Tensor.add
+skip OpCaptureHook on torch.Tensor.sub
+apply OpCaptureHook on torch.Tensor.div
+op_capture_result/0/2024-08-06--11-46/torch.Tensor.div/31/input.pth saved
+op_capture_result/0/2024-08-06--11-46/torch.Tensor.div/31/output.pth saved
+apply OpCaptureHook on torch.Tensor.sort
+op_capture_result/0/2024-08-06--11-46/torch.Tensor.sort/32/input.pth saved
+op_capture_result/0/2024-08-06--11-46/torch.Tensor.sort/32/output.pth saved
+apply OpCaptureHook on torch.Tensor.sum
+op_capture_result/0/2024-08-06--11-46/torch.Tensor.sum/33/input.pth saved
+op_capture_result/0/2024-08-06--11-46/torch.Tensor.sum/33/output.pth saved
+...
+```
 #### 精度分析工具
 离线分析 + 实时精度对比
 1. 用模型训练过程中真实输入输出，离线对比

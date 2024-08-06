@@ -56,6 +56,5 @@ def save_op_args(name, identifier, *args, **kwargs):
         with open(json_filename, "w") as file:
             json.dump(json_content, file, indent=4)
 
-        print(f"{json_filename} saved")
     except Exception as e:
         print(f"{args} {kwargs} can not save for {name} because {e}")

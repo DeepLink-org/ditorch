@@ -1,3 +1,4 @@
+import os
 import torch
 from torch.overrides import TorchFunctionMode, resolve_name
 from torch.utils._python_dispatch import TorchDispatchMode
@@ -5,7 +6,7 @@ from .op_capture_hook import OpCaptureHook
 from .op_fallback_hook import OpFallbackHook
 from .op_autocompare_hook import OpAutoCompareHook
 from .op_dispatch_watch_hook import OpDispatchWatcherHook
-from .utils import is_cpu_op
+from .utils import is_cpu_op, is_opname_match
 import inspect
 
 
@@ -39,6 +40,8 @@ def is_should_apply_hook(name, func, args, kwargs=None):
 
 class OpCapture(TorchFunctionMode):
     """
+    Set the OP_CAPTURE_DISABLE_LIST environment variable to ignore specific operators or operators in a specific mode
+    Set the OP_CAPTURE_LIST environment variable to only take effect on these operators
     Usage1:
     with OpCapture():
         f()
@@ -53,7 +56,10 @@ class OpCapture(TorchFunctionMode):
         if not is_should_apply_hook(name, func, args, kwargs=None):
             return False
 
-        return True
+        if is_opname_match(name, os.getenv("OP_CAPTURE_DISABLE_LIST", "")):
+            return False
+
+        return is_opname_match(name, os.getenv("OP_CAPTURE_LIST", ".*"))
 
     def __torch_function__(self, func, types, args, kwargs=None):
         name = resolve_name(func)
@@ -74,6 +80,8 @@ class OpCapture(TorchFunctionMode):
 
 class OpFallback(TorchFunctionMode):
     """
+    Set the OP_FALLBACK_DISABLE_LIST environment variable to ignore specific operators or operators in a specific mode
+    Set the OP_FALLBACK_LIST environment variable to only take effect on these operators
     Usage1:
     with OpFallback():
         f()
@@ -87,7 +95,10 @@ class OpFallback(TorchFunctionMode):
     def is_should_fallback(self, name, func, args, kwargs=None):
         if not is_should_apply_hook(name, func, args, kwargs):
             return False
-        return True
+        if is_opname_match(name, os.getenv("OP_FALLBACK_DISABLE_LIST", "")):
+            return False
+
+        return is_opname_match(name, os.getenv("OP_FALLBACK_LIST", ".*"))
 
     def __torch_function__(self, func, types, args, kwargs=None):
         name = resolve_name(func)
@@ -106,6 +117,8 @@ class OpFallback(TorchFunctionMode):
 
 class OpAutoCompare(TorchFunctionMode):
     """
+    Set the OP_AUTOCOMPARE_DISABLE_LIST environment variable to ignore specific operators or operators in a specific mode
+    Set the OP_AUTOCOMPARE_LIST environment variable to only take effect on these operators
     Usage1:
     with OpAutocompare():
         f()
@@ -119,7 +132,10 @@ class OpAutoCompare(TorchFunctionMode):
     def is_should_compare(self, name, func, args, kwargs=None):
         if not is_should_apply_hook(name, func, args, kwargs):
             return False
-        return True
+        if is_opname_match(name, os.getenv("OP_AUTOCOMPARE_DISABLE_LIST", "")):
+            return False
+
+        return is_opname_match(name, os.getenv("OP_AUTOCOMPARE_LIST", ".*"))
 
     def __torch_function__(self, func, types, args, kwargs=None):
         name = resolve_name(func)
