@@ -1,5 +1,6 @@
 import torch
 import re
+import importlib
 
 
 def is_cpu_op(*args, **kwargs):
@@ -49,3 +50,13 @@ def is_opname_match(name, op_pattern=None):
         if name in re.findall(pattern, name):
             return True
     return False
+
+
+def get_function_from_string(func_str):
+    parts = func_str.split(".")
+    attrs = [importlib.import_module(parts[0])]
+    for i in range(0, len(parts) - 1):
+        attr = getattr(attrs[i], parts[i + 1])
+        attrs.append(attr)
+
+    return attrs[len(parts) - 1]
