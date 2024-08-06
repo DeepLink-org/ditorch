@@ -46,9 +46,10 @@ class OpCaptureHook(BaseHook):
             ).__module__.startswith("torch.return_types"):
                 # torch.return_types is a structseq, aka a "namedtuple"-like thing defined by the Python C-API.
                 for i in range(len(self.result)):
-                    if self.result[i].grad_fn is not None:
+                    if (
+                        isinstance(self.result[i], torch.Tensor)
+                        and self.result[i].grad_fn is not None
+                    ):
                         self.result[i].grad_fn.register_hook(
                             self.backward_hook_handle.grad_fun_hook()
                         )
-            else:
-                print(f"unhandle type:{self.result}")

@@ -31,7 +31,7 @@ def compre_obj(a, b):
     elif a is None:
         return 0.0
     else:
-        return f"unhandle type:{a} {b}"
+        return f"{__file__} unhandle type:{a} {b}"
 
 
 class OpAutoCompareHook(BaseHook):

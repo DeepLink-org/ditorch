@@ -64,7 +64,7 @@ class OpCapture(TorchFunctionMode):
     def __torch_function__(self, func, types, args, kwargs=None):
         name = resolve_name(func)
         if self.is_should_capture(name, func, args, kwargs):
-            print(f"apply OpCaptureHook on {name} {types if len(types) > 0 else ''}")
+            print(f"apply OpCaptureHook on {name}")
             new_func = OpCaptureHook(name)(func)
             return new_func(*args, **(kwargs or {}))
         else:

@@ -27,7 +27,7 @@ def serialize_args_to_dict(*args, **kwargs):
         elif isinstance(value, dict):
             return {k: serialize_value(v) for k, v in value.items()}
         else:
-            return value
+            return str(value)
 
     data = {
         "args": type(args)([serialize_value(arg) for arg in args]),
@@ -42,7 +42,8 @@ def save_op_args(name, identifier, *args, **kwargs):
     obj["args"] = args
     obj["kwargs"] = kwargs
     obj["identifier"] = identifier
-    filename = f"op_capture_result/{torch.cuda.current_device()}/{datetime.now().strftime('%Y-%m-%d--%H-%M')}/{name}/{identifier}.pth"
+    # {datetime.now().strftime('%Y-%m-%d')}
+    filename = f"op_capture_result/{name}/{os.getpid()}/{identifier}.pth"
     path = filename[: filename.rfind("/")]
     os.makedirs(path, exist_ok=True)
     try:

@@ -6,13 +6,14 @@ import os
 
 
 def f():
-    a = torch.rand(10, requires_grad=True).cuda()
+    a = torch.rand(10, 20, requires_grad=True).cuda()
     b = a * 2
     c = b + a
     d = c - a
     e = d / c
     sorted, indices = a.sort()  # return torch.return_type.sort
-    sorted.sum().backward()
+    y = sorted[2:8:2, ::3]
+    y.sum().backward()
     print(c)
 
 

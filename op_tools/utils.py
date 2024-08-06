@@ -26,7 +26,7 @@ def to_device(device, obj):
         return type(obj)([to_device(device, v) for v in obj])
     elif isinstance(obj, dict):
         return {k: to_device(device, v) for k, v in obj.items()}
-    elif isinstance(obj, (float, int, complex, str)):
+    elif isinstance(obj, (float, int, complex, str, bool, type(None))):
         return obj
     elif type(obj).__module__.startswith("torch.return_types"):
         return [to_device(device, v) for v in obj]
