@@ -35,6 +35,11 @@ def compre_obj(a, b):
 
 
 class OpAutoCompareHook(BaseHook):
+    AUTO_COMPARE_DTYPE_CAST_DICT = {
+        torch.half: torch.float32,
+        torch.bfloat16: torch.float32,
+    }
+
     def __init__(self, name) -> None:
         super().__init__(name)
 
@@ -77,12 +82,25 @@ class OpAutoCompareHook(BaseHook):
             self.is_cpu_op, self.device = is_cpu_op(*args, **kwargs)
             if self.is_cpu_op:
                 return
-            self.args_cpu = to_device("cpu", self.args)
-            self.kwargs_cpu = to_device("cpu", self.kwargs or {})
+            self.args_cpu = to_device(
+                "cpu",
+                self.args,
+                dtype_cast_dict=OpAutoCompareHook.AUTO_COMPARE_DTYPE_CAST_DICT,
+            )
+            self.kwargs_cpu = to_device(
+                "cpu",
+                self.kwargs or {},
+                dtype_cast_dict=OpAutoCompareHook.AUTO_COMPARE_DTYPE_CAST_DICT,
+            )
 
     def after_call_op(self, result):
         if self.is_cpu_op:
             return
         with DisableHookGuard():
             self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
-            self.compare_result(self.result, self.result_cpu)
+            self.result_device = to_device(
+                "cpu",
+                self.result,
+                dtype_cast_dict=OpAutoCompareHook.AUTO_COMPARE_DTYPE_CAST_DICT,
+            )
+            self.compare_result(self.result_device, self.result_cpu)
