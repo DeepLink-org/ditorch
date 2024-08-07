@@ -109,15 +109,25 @@ class OpAutoCompareHook(BaseHook):
             allclose_list = []
             error_info_i = ""
             for i in range(len(a)):
-                max_diff_i = tensor_max_diff(a[i], b[i])
-                allclose_i = tensor_allclose(a[i], b[i])
-                max_diff_list.append(max_diff_i)
-                allclose_list.append(allclose_i)
-                if a[0].dtype != b[0].dtype:
-                    error_info_i = f"Inconsistent dtypes: {a[i].dtype} {b[i].dtype}"
-                print(
-                    f"OpAutoCompareHook: {self.name:<46} {i}th allclose: {allclose_i}    max_diff: {f'{max_diff_i:20.9f}'} {error_info_i}"
-                )
+                if isinstance(a[i], torch.Tensor) and isinstance(a[i], torch.Tensor):
+                    max_diff_i = tensor_max_diff(a[i], b[i])
+                    allclose_i = tensor_allclose(a[i], b[i])
+                    max_diff_list.append(max_diff_i)
+                    allclose_list.append(allclose_i)
+                    if a[0].dtype != b[0].dtype:
+                        error_info_i = f"Inconsistent dtypes: {a[i].dtype} {b[i].dtype}"
+                    print(
+                        f"OpAutoCompareHook: {self.name:<46} {i}th allclose: {allclose_i}    max_diff: {f'{max_diff_i:20.9f}'} {error_info_i}"
+                    )
+                else:
+                    allclose_i = a[i] == b[i]
+                    max_diff_i = a[i] - b[i]
+                    max_diff_list.append(max_diff_i)
+                    allclose_list.append(allclose_i)
+                    print(
+                        f"OpAutoCompareHook: {self.name:<46} {i}th allclose: {allclose_i}    max_diff: {f'{max_diff_i:20.9f}'} {error_info_i}"
+                    )
+
             allclose = all(allclose_list)
             max_diff = max(max_diff_list)
         else:

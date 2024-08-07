@@ -15,6 +15,9 @@ def f():
     sorted, indices = a.sort()  # return torch.return_type.sort
     sorted.sum().backward()
 
+    x = torch.randn(1).cuda()
+    print(bool(x), x.bool(), x.item())
+
 
 f()
 
