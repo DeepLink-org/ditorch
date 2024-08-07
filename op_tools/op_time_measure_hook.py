@@ -24,7 +24,7 @@ class BackwardHookHandle:
             self.end_time = time.time()
             self.backward_elasped = self.end_time - self.start_time
             print(
-                f"OpTimeMeasureHook: {self.name:<30} backeard elasped {(self.backward_elasped * 1000):<.8f} ms     grad_inputs: {serialize_args_to_dict(grad_inputs)} output: {serialize_args_to_dict(grad_outputs)}"
+                f"OpTimeMeasureHook: {self.name:<30} backward elasped: {(self.backward_elasped * 1000):>10.8f} ms     grad_inputs: {serialize_args_to_dict(grad_inputs)} output: {serialize_args_to_dict(grad_outputs)}"
             )
 
         return grad_fun
@@ -71,5 +71,5 @@ class OpTimeMeasureHook(BaseHook):
 
         with DisableHookGuard():
             print(
-                f"OpTimeMeasureHook: {self.name:<30} elasped {(self.foward_elasped * 1000):<.8f} ms     input: {serialize_args_to_dict(*self.args, **self.kwargs)} output: {serialize_args_to_dict(self.result)}"
+                f"OpTimeMeasureHook: {self.name:<30} forward elasped:  {(self.foward_elasped * 1000):>10.8f} ms     input: {serialize_args_to_dict(*self.args, **self.kwargs)} output: {serialize_args_to_dict(self.result)}"
             )
