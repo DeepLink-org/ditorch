@@ -116,6 +116,31 @@ class OpFallback(TorchFunctionMode):
         super().__exit__(None, None, None)
 
 
+RANDOM_NUMBER_GEN_OPS = [
+    "torch.bernoulli",
+    "torch.poisson",
+    "torch.randint_like",
+    "torch.randint",
+    "torch.randn",
+    "torch.randn_like",
+    "torch.multinomial",
+    "torch.nn.init.kaiming_uniform",
+    "torch.nn.init.kaiming_uniform_",
+    "torch.nn.init.trunc_normal_",
+    "torch.nn.init.uniform",
+    "torch.nn.init.normal",
+    "torch.nn.init.uniform_",
+    "torch.nn.init.normal_",
+    "torch.nn.init.warnings",
+    "torch.nn.init.xavier_normal",
+    "torch.nn.init.xavier_normal_",
+    "torch.nn.init.xavier_uniform",
+    "torch.nn.init.kaiming_normal",
+    "torch.nn.init.xavier_uniform_",
+    "torch.nn.init.kaiming_normal_",
+]
+
+
 class OpAutoCompare(TorchFunctionMode):
     """
     Set the OP_AUTOCOMPARE_DISABLE_LIST environment variable to ignore specific operators or operators in a specific mode
@@ -136,6 +161,9 @@ class OpAutoCompare(TorchFunctionMode):
         if is_opname_match(name, os.getenv("OP_AUTOCOMPARE_DISABLE_LIST", "")):
             return False
 
+        if name in RANDOM_NUMBER_GEN_OPS:
+            return False
+
         return is_opname_match(name, os.getenv("OP_AUTOCOMPARE_LIST", ".*"))
 
     def __torch_function__(self, func, types, args, kwargs=None):
@@ -144,6 +172,7 @@ class OpAutoCompare(TorchFunctionMode):
             new_func = OpAutoCompareHook(name)(func)
             return new_func(*args, **(kwargs or {}))
         else:
+            print(f"skip OpAutoCompareHook on {name}")
             return func(*args, **(kwargs or {}))
 
     def start(self):
