@@ -146,30 +146,36 @@ OpAutoCompareHook: torch.Tensor.to                                    compare_re
 用模型训练过程中真实的输入输出分析算子和通信的耗时，分析出性能瓶颈
 ```
 # 测量算子耗时（输入为使用算子抓取工具在模型训练时抓取到的真实数据）
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03838539 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03552437 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03147125 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03147125 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03528595 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.11086464 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03838539 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03790855 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03862381 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03194809 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03409386 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03123283 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.02837181 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03528595 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03170967 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03361702 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03409386 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03433228 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03409386 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03123283 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03528595 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03314018 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03170967 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03743172 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03361702 ms
-SyncExecuteTimer: torch.Tensor.add forward elasped 0.03743172 ms
+ python run_op_from_data.py /deeplink_afs/zhaoguochun/ditorch/op_tools/op_capture_result/torch.Tensor.div/2278281/5  --run_times 10
+ditorch.framework: torch_npu:2.1.0.post3
+/deeplink_afs/zhaoguochun/ditorch/op_tools/op_capture_result/torch.Tensor.div/2278281/5
+SyncExecuteTimer: torch.Tensor.div forward elasped 72.62969017 ms
+SyncExecuteTimer: torch.Tensor.div backward elasped 171.01812363 ms
+SyncExecuteTimer: torch.Tensor.div forward elasped 0.08916855 ms
+SyncExecuteTimer: torch.Tensor.div backward elasped 2.09069252 ms
+SyncExecuteTimer: torch.Tensor.div forward elasped 0.06723404 ms
+SyncExecuteTimer: torch.Tensor.div backward elasped 3.06391716 ms
+SyncExecuteTimer: torch.Tensor.div forward elasped 0.05483627 ms
+SyncExecuteTimer: torch.Tensor.div backward elasped 1.41191483 ms
+SyncExecuteTimer: torch.Tensor.div forward elasped 0.05912781 ms
+SyncExecuteTimer: torch.Tensor.div backward elasped 1.36375427 ms
+SyncExecuteTimer: torch.Tensor.div forward elasped 0.05030632 ms
+SyncExecuteTimer: torch.Tensor.div backward elasped 1.45721436 ms
+SyncExecuteTimer: torch.Tensor.div forward elasped 0.04959106 ms
+SyncExecuteTimer: torch.Tensor.div backward elasped 1.62410736 ms
+SyncExecuteTimer: torch.Tensor.div forward elasped 0.05149841 ms
+SyncExecuteTimer: torch.Tensor.div backward elasped 1.35779381 ms
+SyncExecuteTimer: torch.Tensor.div forward elasped 0.04506111 ms
+SyncExecuteTimer: torch.Tensor.div backward elasped 1.29985809 ms
+SyncExecuteTimer: torch.Tensor.div forward elasped 0.04172325 ms
+SyncExecuteTimer: torch.Tensor.div backward elasped 1.24096870 ms
+```
+
+```
+ditorch/op_tools# python run_op_from_data.py /deeplink_afs/zhaoguochun/ditorch/op_tools/op_capture_result/torch.Tensor.div/2278281/5  --run_times 3 --only_run_forward True
+ditorch.framework: torch_npu:2.1.0.post3
+/deeplink_afs/zhaoguochun/ditorch/op_tools/op_capture_result/torch.Tensor.div/2278281/5
+SyncExecuteTimer: torch.Tensor.div forward elasped 91.06540680 ms
+SyncExecuteTimer: torch.Tensor.div forward elasped 0.24318695 ms
+SyncExecuteTimer: torch.Tensor.div forward elasped 0.07224083 ms
 ```

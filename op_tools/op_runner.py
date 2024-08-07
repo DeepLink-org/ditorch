@@ -1,4 +1,5 @@
-from abc import ABC, abstractmethod
+from abc import ABC
+import os
 import torch
 import ditorch
 import time
@@ -42,14 +43,26 @@ class SyncExecuteTimer(OpRunnerHook):
 
     def before_forward(self):
         torch.cuda.current_stream().synchronize()
-        self.start_time = time.time()
+        self.forward_start_time = time.time()
 
     def after_forward(self):
         torch.cuda.current_stream().synchronize()
-        self.end_time = time.time()
-        self.elasped_time = self.end_time - self.start_time
+        self.forward_end_time = time.time()
+        self.elasped_time = self.forward_end_time - self.forward_start_time
         print(
-            f"SyncExecuteTimer: {self.runner.name} forward elasped {self.elasped_time * 1000:>.8f} ms"
+            f"SyncExecuteTimer: {self.runner.name} forward elasped {self.elasped_time * 1000:>.8f} ms "
+        )
+
+    def before_backward(self):
+        torch.cuda.current_stream().synchronize()
+        self.backward_start_time = time.time()
+
+    def after_backward(self):
+        torch.cuda.current_stream().synchronize()
+        self.backward_end_time = time.time()
+        self.elasped_time = self.backward_end_time - self.forward_start_time
+        print(
+            f"SyncExecuteTimer: {self.runner.name} backward elasped {self.elasped_time * 1000:>.8f} ms"
         )
 
 
@@ -58,6 +71,7 @@ class OpRunner:
         self.dir = dir
         self.hook = hook
         self.hook.runner = self
+        print(f"{dir}")
 
     def load_forward_input(self):
         self.input = torch.load(self.dir + "/input.pth", map_location="cpu")
@@ -74,11 +88,20 @@ class OpRunner:
         self.output = to_device("cuda", self.output)
 
     def load_backward_data(self):
-        self.grad_inputs = torch.load(self.dir + "/grad_inputs.pth", map_location="cpu")
-        self.grad_outputs_cpu = torch.load(
-            self.dir + "/grad_outputs.pth", map_location="cpu"
-        )
-        self.grad_outputs = to_device("cuda", self.grad_outputs_cpu)
+        grad_inputs_path = self.dir + "/grad_inputs.pth"
+        if os.path.exists(grad_inputs_path):
+            self.grad_inputs_cpu = torch.load(grad_inputs_path, map_location="cpu")
+            self.grad_inputs = to_device("cuda", self.grad_inputs_cpu)
+        else:
+            self.grad_inputs = None
+            self.grad_inputs_cpu = None
+        grad_outputs_path = self.dir + "/grad_outputs.pth"
+        if os.path.exists(grad_outputs_path):
+            self.grad_outputs_cpu = torch.load(grad_outputs_path, map_location="cpu")
+            self.grad_outputs = to_device("cuda", self.grad_outputs_cpu)
+        else:
+            self.grad_outputs = None
+            self.grad_outputs_cpu = None
 
     def run_forward(self):
         self.load_forward_input()
@@ -88,6 +111,8 @@ class OpRunner:
 
     def run_backward(self):
         self.load_backward_data()
+        if self.grad_outputs is None:
+            return
         self.hook.before_backward()
-        self.result.backward(self.grad_outputs)
+        self.result.backward(*self.grad_outputs["args"], **self.grad_outputs["kwargs"])
         self.hook.after_backward()
