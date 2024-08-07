@@ -89,57 +89,176 @@ op_capture_result/0/2024-08-06--11-46/torch.Tensor.sum/33/output.pth saved
 2. 模型训练时实时与cpu对比分析精度
 ```
 # 基于InternEvo + ditorch + torch_npu 在华为910B上实时精度分析输出片段
-OpAutoCompareHook: torch.Tensor.contiguous                            max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.is_complex                            max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.add                                   max_diff:          0.000000000
-OpAutoCompareHook: torch.nn.functional.dropout                        max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.to                                    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.to                                    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.pow                                   max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.mean                                  max_diff:          0.000000179
-OpAutoCompareHook: torch.Tensor.add                                   max_diff:          0.000000000
-OpAutoCompareHook: torch.rsqrt                                        max_diff:          0.000000119
-OpAutoCompareHook: torch.Tensor.mul                                   max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.to                                    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.mul                                   max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.contiguous                            max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.contiguous                            max_diff:          0.000000000
-OpAutoCompareHook: torch.nn.functional.linear                         max_diff:          0.015625000
-op_capture_result/2024-08-02--16-31/1915529/torch.nn.functional.linear/device_input.pth saved
-op_capture_result/2024-08-02--16-31/1915529/torch.nn.functional.linear/device_input.pth.json saved
-op_capture_result/2024-08-02--16-31/1915529/torch.nn.functional.linear/device_output.pth saved
-op_capture_result/2024-08-02--16-31/1915529/torch.nn.functional.linear/device_output.pth.json saved
-op_capture_result/2024-08-02--16-31/1915529/torch.nn.functional.linear/cpu_input.pth saved
-op_capture_result/2024-08-02--16-31/1915529/torch.nn.functional.linear/cpu_input.pth.json saved
-op_capture_result/2024-08-02--16-31/1915529/torch.nn.functional.linear/cpu_output.pth saved
-op_capture_result/2024-08-02--16-31/1915529/torch.nn.functional.linear/cpu_output.pth.json saved
-OpAutoCompareHook: torch.stack                                        max_diff:          0.000000000
-OpAutoCompareHook: torch.functional.norm                              max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.unsqueeze                             max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.__pow__                               max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.to                                    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.to                                    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.to                                    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.float                                 max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.float                                 max_diff:          0.000000000
-OpAutoCompareHook: torch.functional.norm                              max_diff:          0.000000000
-OpAutoCompareHook: torch.stack                                        max_diff:          0.000000000
-OpAutoCompareHook: torch.functional.norm                              max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.unsqueeze                             max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.__pow__                               max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.to                                    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.float                                 max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.float                                 max_diff:          0.000000000
-OpAutoCompareHook: torch.functional.norm                              max_diff:        760.125000000
-op_capture_result/2024-08-02--16-29/1915529/torch.functional.norm/device_input.pth saved
-op_capture_result/2024-08-02--16-29/1915529/torch.functional.norm/device_input.pth.json saved
-op_capture_result/2024-08-02--16-29/1915529/torch.functional.norm/device_output.pth saved
-op_capture_result/2024-08-02--16-29/1915529/torch.functional.norm/device_output.pth.json saved
-op_capture_result/2024-08-02--16-29/1915529/torch.functional.norm/cpu_input.pth saved
-op_capture_result/2024-08-02--16-29/1915529/torch.functional.norm/cpu_input.pth.json saved
-op_capture_result/2024-08-02--16-29/1915529/torch.functional.norm/cpu_output.pth saved
-op_capture_result/2024-08-02--16-29/1915529/torch.functional.norm/cpu_output.pth.json saved
-OpAutoCompareHook: torch.Tensor.to                                    compare_result: Inconsistent dtypes: torch.float32 torch.float64, max_diff:0.0
+OpAutoCompareHook: torch.nn.functional.linear                         allclose: False    max_diff:          0.003906250
+OpAutoCompareHook: torch.nn.functional.linear                         input: {'args': ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20075956404224}, {'shape': torch.Size([2048, 2048]), 'stride': (2048, 1), 'numel': 4194304, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20078077673472}, 'None')}
+OpAutoCompareHook: torch.nn.functional.linear                         output: ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20076023513600},)
+op_capture_result/torch.nn.functional.linear/93/device/input.pth saved
+op_capture_result/torch.nn.functional.linear/93/device/output.pth saved
+op_capture_result/torch.nn.functional.linear/93/cpu/input.pth saved
+op_capture_result/torch.nn.functional.linear/93/cpu/output.pth saved
+OpAutoCompareHook: torch.Tensor.contiguous                            allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.is_complex                            allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.nn.functional.dropout                        allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.add                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.to                                    allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.to                                    allclose: True    max_diff:          0.000000000
+...
+OpAutoCompareHook: torch.Tensor.contiguous                            allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.is_complex                            allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.add                                   allclose: True    max_diff:          0.000000000
+skip OpAutoCompareHook on None
+OpAutoCompareHook: torch.Tensor.float                                 allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.to                                    allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.pow                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.mean                                  allclose: True    max_diff:          0.000000238
+OpAutoCompareHook: torch.Tensor.add                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.rsqrt                                        allclose: True    max_diff:          0.000000179
+OpAutoCompareHook: torch.Tensor.mul                                   allclose: True    max_diff:          0.000000000
+skip OpAutoCompareHook on torch.Tensor.dtype.__get__
+skip OpAutoCompareHook on torch.Tensor.dtype.__get__
+OpAutoCompareHook: torch.Tensor.to                                    allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.mul                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.nn.functional.normalize                      allclose: True    max_diff:          0.000488281
+skip OpAutoCompareHook on torch.Tensor.dtype.__get__
+skip OpAutoCompareHook on torch.Tensor.requires_grad.__get__
+OpAutoCompareHook: torch.Tensor.contiguous                            allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.contiguous                            allclose: True    max_diff:          0.000000000
+...
+OpAutoCompareHook: torch.Tensor.float                                 allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.contiguous                            allclose: True    max_diff:          0.000000000
+skip OpAutoCompareHook on torch.Tensor.size
+OpAutoCompareHook: torch.Tensor.view                                  allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.contiguous                            allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.view                                  allclose: True    max_diff:          0.000000000
+skip OpAutoCompareHook on torch.Tensor.dtype.__get__
+OpAutoCompareHook: torch.nn.functional.cross_entropy                  allclose: True    max_diff:          0.000003815
+OpAutoCompareHook: torch.Tensor.ne                                    allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.sum                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.sum                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.div                                   allclose: True    max_diff:          0.000000000
+skip OpAutoCompareHook on None
+OpAutoCompareHook: torch.Tensor.detach                                allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.sum                                   allclose: True    max_diff:          0.015625000
+OpAutoCompareHook: torch.Tensor.add_                                  allclose: True    max_diff:          0.000000000
+skip OpAutoCompareHook on torch.Tensor.numel
+OpAutoCompareHook: torch.Tensor.add_                                  allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.detach                                allclose: True    max_diff:          0.000000000
+skip OpAutoCompareHook on None
+skip OpAutoCompareHook on torch.device
+skip OpAutoCompareHook on None
+OpAutoCompareHook: torch.Tensor.div_                                  allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.div_                                  allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.add_                                  allclose: True    max_diff:          0.000000000
+skip OpAutoCompareHook on None
+skip OpAutoCompareHook on torch.Tensor.size
+OpAutoCompareHook: torch.Tensor.view                                  allclose: True    max_diff:          0.000000000
+skip OpAutoCompareHook on torch.Tensor.size
+OpAutoCompareHook: torch.Tensor.view                                  allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.view                                  allclose: True    max_diff:          0.000000000
+skip OpAutoCompareHook on torch.Tensor.shape.__get__
+OpAutoCompareHook: torch.max                                      0th allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.max                                      1th allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.max                                      0th allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.max                                      1th allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.eq                                    allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.argmax                                allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.add                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.eq                                    allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.logical_and                                  allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.long                                  allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.ne                                    allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.long                                  allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.dim                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.dim                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.dim                                   allclose: True    max_diff:          0.000000000
+skip OpAutoCompareHook on torch.Tensor.size
+OpAutoCompareHook: torch.Tensor.expand                                allclose: True    max_diff:          0.000000000
+skip OpAutoCompareHook on torch.Tensor.size
+skip OpAutoCompareHook on torch.Tensor.numel
+OpAutoCompareHook: torch.Tensor.max                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.int                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.add                                   allclose: True    max_diff:          0.000000000
+skip OpAutoCompareHook on torch.Tensor.dtype.__get__
+skip OpAutoCompareHook on torch.Tensor.device.__get__
+OpAutoCompareHook: torch.Tensor.__index__                             allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.__index__                             allclose: True    max_diff:          0.000000000
+skip OpAutoCompareHook on None
+OpAutoCompareHook: torch.Tensor.scatter_add_                          allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.dim                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.dim                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.dim                                   allclose: True    max_diff:          0.000000000
+skip OpAutoCompareHook on torch.Tensor.size
+OpAutoCompareHook: torch.Tensor.expand                                allclose: True    max_diff:          0.000000000
+skip OpAutoCompareHook on torch.Tensor.size
+skip OpAutoCompareHook on torch.Tensor.numel
+OpAutoCompareHook: torch.Tensor.max                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.int                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.add                                   allclose: True    max_diff:          0.000000000
+...
+OpAutoCompareHook: torch.functional.norm                              allclose: True    max_diff:          0.001953125
+OpAutoCompareHook: torch.functional.norm                              allclose: True    max_diff:         71.062500000
+OpAutoCompareHook: torch.functional.norm                              allclose: True    max_diff:        237.750000000
+OpAutoCompareHook: torch.functional.norm                              allclose: True    max_diff:          0.000488281
+OpAutoCompareHook: torch.functional.norm                              allclose: False    max_diff:       1473.750000000
+OpAutoCompareHook: torch.functional.norm                              input: {'args': ({'shape': torch.Size([2048, 8192]), 'stride': (8192, 1), 'numel': 16777216, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067372762112},), 'kwargs': {'p': '2', 'dim': 'None', 'keepdim': 'False', 'out': 'None', 'dtype': 'None'}}
+OpAutoCompareHook: torch.functional.norm                              output: ({'shape': torch.Size([]), 'stride': (), 'numel': 1, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067180820992},)
+op_capture_result/torch.functional.norm/93/device/input.pth saved
+op_capture_result/torch.functional.norm/93/device/output.pth saved
+op_capture_result/torch.functional.norm/93/cpu/input.pth saved
+op_capture_result/torch.functional.norm/93/cpu/output.pth saved
+...
+OpAutoCompareHook: torch.triu                                         allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.bool                                  allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.tolist                            0th allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.tolist                            1th allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.tolist                            2th allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.tolist                            3th allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.tolist                            0th allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.tolist                            1th allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.tolist                            2th allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.tolist                            3th allclose: True    max_diff:          0.000000000
+skip OpAutoCompareHook on npu.npu_fusion_attention
+...
+OpAutoCompareHook: torch.Tensor.div                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.item                                  allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.div                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.exp                                          allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.item                                  allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.float                                 allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.float                                 allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.add                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.div                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.item                                  allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.item                                  allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.float                                 allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.float                                 allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.add                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.div                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.item                                  allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.item                                  allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.float                                 allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.float                                 allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.add                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.div                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.item                                  allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.item                                  allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.fill_                                 allclose: True    max_diff:          0.000000000
+...
+OpAutoCompareHook: torch.Tensor.to                                    allclose: False    max_diff:          0.000000000 Inconsistent dtypes: torch.float32 torch.float64
+OpAutoCompareHook: torch.Tensor.mean                                  allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.to                                    allclose: False    max_diff:          0.000000000 Inconsistent dtypes: torch.float32 torch.float64
+OpAutoCompareHook: torch.Tensor.std                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.to                                    allclose: False    max_diff:          0.000000000 Inconsistent dtypes: torch.float32 torch.float64
+OpAutoCompareHook: torch.Tensor.mean                                  allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.to                                    allclose: False    max_diff:          0.000000000 Inconsistent dtypes: torch.float32 torch.float64
+OpAutoCompareHook: torch.Tensor.std                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.to                                    allclose: False    max_diff:          0.000000000 Inconsistent dtypes: torch.float32 torch.float64
+OpAutoCompareHook: torch.Tensor.mean                                  allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.to                                    allclose: False    max_diff:          0.000000000 Inconsistent dtypes: torch.float32 torch.float64
+OpAutoCompareHook: torch.Tensor.std                                   allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.to                                    allclose: False    max_diff:          0.000000000 Inconsistent dtypes: torch.float32 torch.float64
+OpAutoCompareHook: torch.Tensor.mean                                  allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.to                                    allclose: False    max_diff:          0.000000000 Inconsistent dtypes: torch.float32 torch.float64
 ```
 
 #### 性能分析工具
@@ -184,31 +303,4 @@ SyncExecuteTimer: torch.Tensor.div forward elasped 0.07224083 ms
 
 ```
 #模型训练时算子耗时分析 (前向 + 反向)
-apply OpTimeMeasureHook on torch.Tensor.to
-OpTimeMeasureHook: torch.Tensor.to                forward elasped:  0.03719330 ms     input: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'cpu', 'requires_grad': True, 'layout': 'torch.strided', 'data': 522728256},), 'kwargs': {'device': 'npu:0', 'non_blocking': 'False'}} output: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179823104},)}
-apply OpTimeMeasureHook on torch.Tensor.mul
-OpTimeMeasureHook: torch.Tensor.mul               forward elasped:  0.04839897 ms     input: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179823104}, '2')} output: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179824128},)}
-apply OpTimeMeasureHook on torch.Tensor.add
-OpTimeMeasureHook: torch.Tensor.add               forward elasped:  0.04172325 ms     input: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179824128}, {'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179823104})} output: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179825152},)}
-apply OpTimeMeasureHook on torch.Tensor.sub
-OpTimeMeasureHook: torch.Tensor.sub               forward elasped:  0.03623962 ms     input: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179825152}, {'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179823104})} output: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179826176},)}
-apply OpTimeMeasureHook on torch.Tensor.div
-OpTimeMeasureHook: torch.Tensor.div               forward elasped:  0.04053116 ms     input: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179826176}, {'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179825152})} output: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179827200},)}
-apply OpTimeMeasureHook on torch.Tensor.sort
-OpTimeMeasureHook: torch.Tensor.sort              forward elasped:  0.06961823 ms     input: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179827200},)} output: {'args': (torch.return_types.sort(
-values={'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179828224},
-indices={'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.int64', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179830272}),)}
-apply OpTimeMeasureHook on torch.Tensor.__getitem__
-OpTimeMeasureHook: torch.Tensor.__getitem__       forward elasped:  0.02193451 ms     input: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179828224}, ('slice(2, 8, 2)', 'slice(None, None, 3)'))} output: {'args': ({'shape': torch.Size([3, 7]), 'stride': (40, 3), 'numel': 21, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179828384},)}
-apply OpTimeMeasureHook on torch.Tensor.sum
-OpTimeMeasureHook: torch.Tensor.sum               forward elasped:  0.08320808 ms     input: {'args': ({'shape': torch.Size([3, 7]), 'stride': (40, 3), 'numel': 21, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179828384},)} output: {'args': ({'shape': torch.Size([]), 'stride': (), 'numel': 1, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179829248},)}
-skip OpTimeMeasureHook on torch.Tensor.backward
-OpTimeMeasureHook: torch.Tensor.sum               backward elasped: 0.01859665 ms     grad_inputs: {'args': (({'shape': torch.Size([3, 7]), 'stride': (0, 0), 'numel': 21, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179829760},),)} output: {'args': (({'shape': torch.Size([]), 'stride': (), 'numel': 1, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179829760},),)}
-OpTimeMeasureHook: torch.Tensor.__getitem__       backward elasped: 0.17166138 ms     grad_inputs: {'args': (({'shape': torch.Size([3, 20]), 'stride': (20, 1), 'numel': 60, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179832320},),)} output: {'args': (({'shape': torch.Size([3, 7]), 'stride': (0, 0), 'numel': 21, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179829760},),)}
-OpTimeMeasureHook: torch.Tensor.sort              backward elasped: 0.04267693 ms     grad_inputs: {'args': (({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179833856},),)} output: {'args': (({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179832832},),)}
-OpTimeMeasureHook: torch.Tensor.div               backward elasped: 0.07128716 ms     grad_inputs: {'args': (({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179832320}, {'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179836928}),)} output: {'args': (({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179833856},),)}
-OpTimeMeasureHook: torch.Tensor.sub               backward elasped: 0.04243851 ms     grad_inputs: {'args': (({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179832320}, {'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179833344}),)} output: {'args': (({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179832320},),)}
-OpTimeMeasureHook: torch.Tensor.add               backward elasped: 0.01525879 ms     grad_inputs: {'args': (({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179836928}, {'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179836928}),)} output: {'args': (({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179836928},),)}
-OpTimeMeasureHook: torch.Tensor.mul               backward elasped: 0.05102158 ms     grad_inputs: {'args': (({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179832320}, 'None'),)} output: {'args': (({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179836928},),)}
-OpTimeMeasureHook: torch.Tensor.to                backward elasped: 0.03504753 ms     grad_inputs: {'args': (({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'cpu', 'requires_grad': False, 'layout': 'torch.strided', 'data': 140480797080320},),)} output: {'args': (({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179833344},),)}
 ```
