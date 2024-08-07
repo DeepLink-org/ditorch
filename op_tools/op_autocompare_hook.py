@@ -34,6 +34,33 @@ def compre_obj(a, b):
         return f"unhandle type:{a} {b}"
 
 
+def cpu_fp16_to_fp32(obj):
+    if isinstance(obj, torch.Tensor):
+        if obj.dtype in [torch.half, torch.float16, torch.bfloat16]:
+            return obj.to(torch.float32)
+        else:
+            return obj
+    elif isinstance(obj, (tuple, list)):
+        return type(obj)([cpu_fp16_to_fp32(v) for v in obj])
+    elif isinstance(obj, dict):
+        return {k: cpu_fp16_to_fp32(v) for k, v in obj.items()}
+    else:
+        return obj
+
+
+def dtype_convert(src, dst):
+    if isinstance(src, torch.Tensor):
+        if src.dtype == torch.float32 and dst.dtype in [torch.half, torch.float16, torch.bfloat16]:
+            return src.to(dst.dtype)
+        else:
+            return src
+    elif isinstance(src, (tuple, list)):
+        return type(src)([dtype_convert(src[i], dst[i]) for i in range(len(src))])
+    elif isinstance(src, dict):
+        return {k: dtype_convert(src[k], dst[k]) for k in src.keys()}
+    else:
+        return src
+
 class OpAutoCompareHook(BaseHook):
     def __init__(self, name) -> None:
         super().__init__(name)
@@ -84,5 +111,10 @@ class OpAutoCompareHook(BaseHook):
         if self.is_cpu_op:
             return
         with DisableHookGuard():
-            self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
+            # convert dtype from float16 or bfloat16 to float32, incase the caculate is not supported on cpu
+            self.args_cpu_to_fp32 = cpu_fp16_to_fp32(self.args_cpu)
+            self.kwargs_cpu_to_fp32 = cpu_fp16_to_fp32(self.kwargs_cpu)
+            self.result_cpu_to_fp32 = self.func(*self.args_cpu_to_fp32, **self.kwargs_cpu_to_fp32)
+            # convert the dtype of result back
+            self.result_cpu = dtype_convert(self.result_cpu_to_fp32, self.result)
             self.compare_result(self.result, self.result_cpu)
