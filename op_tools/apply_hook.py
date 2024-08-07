@@ -6,6 +6,7 @@ from .op_capture_hook import OpCaptureHook
 from .op_fallback_hook import OpFallbackHook
 from .op_autocompare_hook import OpAutoCompareHook
 from .op_dispatch_watch_hook import OpDispatchWatcherHook
+from .op_time_measure_hook import OpTimeMeasureHook
 from .utils import is_cpu_op, is_opname_match
 import inspect
 
@@ -143,6 +144,46 @@ class OpAutoCompare(TorchFunctionMode):
             new_func = OpAutoCompareHook(name)(func)
             return new_func(*args, **(kwargs or {}))
         else:
+            return func(*args, **(kwargs or {}))
+
+    def start(self):
+        super().__enter__()
+
+    def stop(self):
+        super().__exit__(None, None, None)
+
+
+class OpTimeMeasure(TorchFunctionMode):
+    """
+    Set the OP_TIME_MEASURE_DISABLE_LIST environment variable to ignore specific operators or operators in a specific mode
+    Set the OP_TIME_MEASURE_LIST environment variable to only take effect on these operators
+    Usage1:
+    with OpTimeMeasure():
+        f()
+    Usage2:
+    time_measurer = OpTimeMeasure()
+    time_measurer.start()
+    f()
+    time_measurer.end()
+    """
+
+    def is_should_measure(self, name, func, args, kwargs=None):
+        if not is_should_apply_hook(name, func, args, kwargs=None):
+            return False
+
+        if is_opname_match(name, os.getenv("OP_TIME_MEASURE_DISABLE_LIST", "")):
+            return False
+
+        return is_opname_match(name, os.getenv("OP_TIME_MEASURE_LIST", ".*"))
+
+    def __torch_function__(self, func, types, args, kwargs=None):
+        name = resolve_name(func)
+        if self.is_should_measure(name, func, args, kwargs):
+            print(f"apply OpTimeMeasure on {name}")
+            new_func = OpTimeMeasureHook(name)(func)
+            return new_func(*args, **(kwargs or {}))
+        else:
+            print(f"skip OpTimeMeasure on {name}")
             return func(*args, **(kwargs or {}))
 
     def start(self):

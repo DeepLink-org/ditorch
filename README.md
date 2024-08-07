@@ -143,6 +143,7 @@ OpAutoCompareHook: torch.Tensor.to                                    compare_re
 ```
 
 #### 性能分析工具
+离线分析 + 实时分析
 用模型训练过程中真实的输入输出分析算子和通信的耗时，分析出性能瓶颈
 ```
 # 测量算子耗时（输入为使用算子抓取工具在模型训练时抓取到的真实数据）
@@ -178,4 +179,27 @@ ditorch.framework: torch_npu:2.1.0.post3
 SyncExecuteTimer: torch.Tensor.div forward elasped 91.06540680 ms
 SyncExecuteTimer: torch.Tensor.div forward elasped 0.24318695 ms
 SyncExecuteTimer: torch.Tensor.div forward elasped 0.07224083 ms
+```
+
+```
+#模型训练时算子耗时分析
+OpTimeMeasureHook: torch.Tensor.to                elasped 0.03838539 ms     input: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'cpu', 'requires_grad': True, 'layout': 'torch.strided', 'data': 543617536},), 'kwargs': {'device': 'npu:0', 'non_blocking': 'False'}} output: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179823104},), 'kwargs': {}}
+apply OpTimeMeasure on torch.Tensor.mul
+OpTimeMeasureHook: torch.Tensor.mul               elasped 0.05078316 ms     input: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179823104}, '2'), 'kwargs': {}} output: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179824128},), 'kwargs': {}}
+apply OpTimeMeasure on torch.Tensor.add
+OpTimeMeasureHook: torch.Tensor.add               elasped 0.03504753 ms     input: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179824128}, {'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179823104}), 'kwargs': {}} output: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179825152},), 'kwargs': {}}
+apply OpTimeMeasure on torch.Tensor.sub
+OpTimeMeasureHook: torch.Tensor.sub               elasped 0.03385544 ms     input: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179825152}, {'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179823104}), 'kwargs': {}} output: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179826176},), 'kwargs': {}}
+apply OpTimeMeasure on torch.Tensor.div
+OpTimeMeasureHook: torch.Tensor.div               elasped 0.03552437 ms     input: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179826176}, {'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179825152}), 'kwargs': {}} output: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179827200},), 'kwargs': {}}
+apply OpTimeMeasure on torch.Tensor.sort
+OpTimeMeasureHook: torch.Tensor.sort              elasped 0.06437302 ms     input: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179827200},), 'kwargs': {}} output: {'args': (torch.return_types.sort(
+values={'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179828224},
+indices={'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.int64', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179830272}),), 'kwargs': {}}
+apply OpTimeMeasure on torch.Tensor.__getitem__
+OpTimeMeasureHook: torch.Tensor.__getitem__       elasped 0.02193451 ms     input: {'args': ({'shape': torch.Size([10, 20]), 'stride': (20, 1), 'numel': 200, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179828224}, ('slice(2, 8, 2)', 'slice(None, None, 3)')), 'kwargs': {}} output: {'args': ({'shape': torch.Size([3, 7]), 'stride': (40, 3), 'numel': 21, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179828384},), 'kwargs': {}}
+apply OpTimeMeasure on torch.Tensor.sum
+OpTimeMeasureHook: torch.Tensor.sum               elasped 0.07343292 ms     input: {'args': ({'shape': torch.Size([3, 7]), 'stride': (40, 3), 'numel': 21, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179828384},), 'kwargs': {}} output: {'args': ({'shape': torch.Size([]), 'stride': (), 'numel': 1, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179829248},), 'kwargs': {}}
+skip OpTimeMeasure on torch.Tensor.backward
+skip OpTimeMeasure on torch.Tensor.__repr__
 ```

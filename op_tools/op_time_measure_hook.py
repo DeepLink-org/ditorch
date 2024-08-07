@@ -1,0 +1,60 @@
+import torch
+import ditorch
+import time
+from .base_hook import BaseHook, DisableHookGuard
+
+from .save_op_args import serialize_args_to_dict
+
+
+class BackwardHookHandle:
+    def __init__(self, name, id) -> None:
+        self.name = name
+        self.id = id
+
+    def grad_fun_prehook(self):
+        def grad_fun(grad_inputs, grad_outputs):
+            pass
+
+    def grad_fun_posthook(self):
+        def grad_fun(grad_inputs, grad_outputs):
+            pass
+
+        return grad_fun
+
+
+class OpTimeMeasureHook(BaseHook):
+    def __init__(self, name) -> None:
+        super().__init__(name)
+
+    def before_call_op(self, *args, **kwargs):
+        torch.cuda.current_stream().synchronize()
+        self.start_time = time.time()
+
+    def after_call_op(self, result):
+        torch.cuda.current_stream().synchronize()
+        self.end_time = time.time()
+        self.foward_elasped = self.end_time - self.start_time
+
+        self.backward_hook_handle = BackwardHookHandle(self.name, self.id)
+        if isinstance(self.result, torch.Tensor):
+            if self.result.grad_fn is not None:
+                self.result.grad_fn.register_hook(
+                    self.backward_hook_handle.grad_fun_posthook()
+                )
+        elif isinstance(self.result, (tuple, list)) or type(
+            self.result
+        ).__module__.startswith("torch.return_types"):
+            # torch.return_types is a structseq, aka a "namedtuple"-like thing defined by the Python C-API.
+            for i in range(len(self.result)):
+                if (
+                    isinstance(self.result[i], torch.Tensor)
+                    and self.result[i].grad_fn is not None
+                ):
+                    self.result[i].grad_fn.register_hook(
+                        self.backward_hook_handle.grad_fun_posthook()
+                    )
+
+        with DisableHookGuard():
+            print(
+                f"OpTimeMeasureHook: {self.name:<30} elasped {(self.foward_elasped * 1000):<.8f} ms     input: {serialize_args_to_dict(*self.args, **self.kwargs)} output: {serialize_args_to_dict(self.result)}"
+            )

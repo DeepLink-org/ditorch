@@ -1,1 +1,7 @@
-from .apply_hook import OpCapture, OpFallback, OpAutoCompare, OpDispatchWatcher
+from .apply_hook import (
+    OpCapture,
+    OpFallback,
+    OpAutoCompare,
+    OpDispatchWatcher,
+    OpTimeMeasure,
+)
