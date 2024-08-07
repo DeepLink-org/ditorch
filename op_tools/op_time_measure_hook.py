@@ -12,12 +12,20 @@ class BackwardHookHandle:
         self.id = id
 
     def grad_fun_prehook(self):
-        def grad_fun(grad_inputs, grad_outputs):
-            pass
+        def grad_fun(grad_inputs):
+            torch.cuda.current_stream().synchronize()
+            self.start_time = time.time()
+
+        return grad_fun
 
     def grad_fun_posthook(self):
         def grad_fun(grad_inputs, grad_outputs):
-            pass
+            torch.cuda.current_stream().synchronize()
+            self.end_time = time.time()
+            self.backward_elasped = self.end_time - self.start_time
+            print(
+                f"OpTimeMeasureHook: {self.name:<30} backeard elasped {(self.backward_elasped * 1000):<.8f} ms     grad_inputs: {serialize_args_to_dict(grad_inputs)} output: {serialize_args_to_dict(grad_outputs)}"
+            )
 
         return grad_fun
 
@@ -41,6 +49,9 @@ class OpTimeMeasureHook(BaseHook):
                 self.result.grad_fn.register_hook(
                     self.backward_hook_handle.grad_fun_posthook()
                 )
+                self.result.grad_fn.register_prehook(
+                    self.backward_hook_handle.grad_fun_prehook()
+                )
         elif isinstance(self.result, (tuple, list)) or type(
             self.result
         ).__module__.startswith("torch.return_types"):
@@ -52,6 +63,10 @@ class OpTimeMeasureHook(BaseHook):
                 ):
                     self.result[i].grad_fn.register_hook(
                         self.backward_hook_handle.grad_fun_posthook()
+                    )
+
+                    self.result[i].grad_fn.register_prehook(
+                        self.backward_hook_handle.grad_fun_prehook()
                     )
 
         with DisableHookGuard():
