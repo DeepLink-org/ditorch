@@ -117,6 +117,8 @@ class OpFallback(TorchFunctionMode):
 
 
 RANDOM_NUMBER_GEN_OPS = [
+    "torch.Tensor.random_",
+    "torch.randperm",
     "torch.bernoulli",
     "torch.poisson",
     "torch.randint_like",
