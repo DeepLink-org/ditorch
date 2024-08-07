@@ -34,7 +34,6 @@ def to_device(device, obj, dtype_cast_dict=dict()):
     elif type(obj).__module__.startswith("torch.return_types"):
         return [to_device(device, v, dtype_cast_dict) for v in obj]
     else:
-        print(f"{__file__} unhandled type {obj}")
         return obj
 
 

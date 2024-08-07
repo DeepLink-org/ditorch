@@ -6,7 +6,7 @@ import op_tools
 
 def f():
     a = torch.rand(10, requires_grad=True).cuda().half()
-    a = torch.bernoulli(a)
+    a = torch.bernoulli(a) + a
 
     b = a * 2
     c = b + a

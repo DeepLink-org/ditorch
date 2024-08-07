@@ -179,11 +179,11 @@ class OpTimeMeasure(TorchFunctionMode):
     def __torch_function__(self, func, types, args, kwargs=None):
         name = resolve_name(func)
         if self.is_should_measure(name, func, args, kwargs):
-            print(f"apply OpTimeMeasure on {name}")
+            print(f"apply OpTimeMeasureHook on {name}")
             new_func = OpTimeMeasureHook(name)(func)
             return new_func(*args, **(kwargs or {}))
         else:
-            print(f"skip OpTimeMeasure on {name}")
+            print(f"skip OpTimeMeasureHook on {name}")
             return func(*args, **(kwargs or {}))
 
     def start(self):

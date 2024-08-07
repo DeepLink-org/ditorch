@@ -2,36 +2,27 @@ import torch
 from .base_hook import BaseHook, DisableHookGuard
 from .utils import to_device, is_cpu_op
 from .op_fallback_hook import OpFallbackHook
-from .save_op_args import save_op_args
+from .save_op_args import save_op_args, serialize_args_to_dict
 
 
-def compre_obj(a, b):
-    # We assume they are of the same type: torch.nn.parameter.Parameter and torch.Tensor
-    if isinstance(a, torch.Tensor) and isinstance(b, torch.Tensor):
-        atol, rtol = 1e-3, 1e-3
-        a_cpu, b_cpu = a.cpu(), b.cpu()
-        if a_cpu.dtype == torch.bool:
-            a_cpu = a_cpu.int()
-        if b_cpu.dtype == torch.bool:
-            b_cpu = b_cpu.int()
-        diff = torch.abs(a_cpu - b_cpu)
-        max_diff = diff.max().item()
-        if a_cpu.dtype == b_cpu.dtype:
-            return max_diff
-        else:
-            return f"Inconsistent dtypes: {a.dtype} {b.dtype}, max_diff:{max_diff}"
-    elif type(a) is not type(b):
-        return f"Inconsistent types: {type(a)} {type(b)}"
-    elif isinstance(a, (list, tuple)):
-        return type(a)([compre_obj(a[i], b[i]) for i in range(len(a))])
-    elif isinstance(a, dict):
-        return {k: compre_obj(a[k], b[k]) for k in a.keys()}
-    elif isinstance(a, (int, float, complex)):
-        return abs(a - b)
-    elif a is None:
-        return 0.0
-    else:
-        return f"{__file__} unhandle type:{a} {b}"
+def tensor_max_diff(a, b):
+    a_cpu, b_cpu = a.cpu(), b.cpu()
+    if a_cpu.dtype == torch.bool:
+        a_cpu = a_cpu.int()
+    if b_cpu.dtype == torch.bool:
+        b_cpu = b_cpu.int()
+    diff = torch.abs(a_cpu - b_cpu)
+    max_diff = diff.max().item()
+    return max_diff
+
+
+def tensor_allclose(a, b, atol=1e-3, rtol=1e-3):
+    a_cpu, b_cpu = a.cpu(), b.cpu()
+    try:
+        return torch.allclose(a_cpu, b_cpu, atol=atol, rtol=rtol)
+    except Exception as e:
+        return False
+    return False
 
 
 class OpAutoCompareHook(BaseHook):
@@ -43,40 +34,6 @@ class OpAutoCompareHook(BaseHook):
     def __init__(self, name) -> None:
         super().__init__(name)
 
-    def compare_result(self, device_result, cpu_result):
-        self.compare_result = compre_obj(device_result, cpu_result)
-        allclose = True
-        if isinstance(self.compare_result, (int, float, complex)):  # f"{max_diff:.9f}"
-            print(
-                f"OpAutoCompareHook: {self.name:<50} max_diff: {f'{self.compare_result:20.9f}'}"
-            )
-            if self.compare_result > 1e-3:
-                allclose = False
-        elif isinstance(self.compare_result, (list, tuple)):
-            for i in range(len(self.compare_result)):
-                print(
-                    f"OpAutoCompareHook: {self.name:<50} {i}th \tmax_diff: {f'{self.compare_result[i]:20.9f}'}"
-                )
-                if self.compare_result[i] > 1e-3:
-                    allclose = False
-        elif isinstance(self.compare_result, (dict,)):
-            for k, v in self.compare_result.items():
-                print(
-                    f"OpAutoCompareHook: {self.name:<50} {k} \tmax_diff: {f'{v:20.9f}'}"
-                )
-                if v > 1e-3:
-                    allclose = False
-        else:
-            print(
-                f"OpAutoCompareHook: {self.name:<50} compare_result: {self.compare_result}"
-            )
-
-        if not allclose:
-            save_op_args(self.name, "device/input", *self.args, **self.kwargs)
-            save_op_args(self.name, "device/output", self.result)
-            save_op_args(self.name, "cpu/input", *self.args_cpu, **self.kwargs_cpu)
-            save_op_args(self.name, "cpu/output", self.result_cpu)
-
     def before_call_op(self, *args, **kwargs):
         with DisableHookGuard():
             self.is_cpu_op, self.device = is_cpu_op(*args, **kwargs)
@@ -85,22 +42,97 @@ class OpAutoCompareHook(BaseHook):
             self.args_cpu = to_device(
                 "cpu",
                 self.args,
-                dtype_cast_dict=OpAutoCompareHook.AUTO_COMPARE_DTYPE_CAST_DICT,
             )
             self.kwargs_cpu = to_device(
                 "cpu",
                 self.kwargs or {},
-                dtype_cast_dict=OpAutoCompareHook.AUTO_COMPARE_DTYPE_CAST_DICT,
             )
 
     def after_call_op(self, result):
         if self.is_cpu_op:
             return
         with DisableHookGuard():
-            self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
-            self.result_device = to_device(
-                "cpu",
-                self.result,
-                dtype_cast_dict=OpAutoCompareHook.AUTO_COMPARE_DTYPE_CAST_DICT,
-            )
+            try:
+                self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
+                self.result_device = to_device(
+                    "cpu",
+                    self.result,
+                )
+            except Exception as e:
+                # some op on cpu backend may not support half, bfloat16
+                self.args_cpu = to_device(
+                    "cpu",
+                    self.args_cpu,
+                    dtype_cast_dict=OpAutoCompareHook.AUTO_COMPARE_DTYPE_CAST_DICT,
+                )
+                self.kwargs_cpu = to_device(
+                    "cpu",
+                    self.kwargs_cpu or {},
+                    dtype_cast_dict=OpAutoCompareHook.AUTO_COMPARE_DTYPE_CAST_DICT,
+                )
+                self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
+
+                self.result_device = to_device(
+                    "cpu",
+                    self.result,
+                    dtype_cast_dict=OpAutoCompareHook.AUTO_COMPARE_DTYPE_CAST_DICT,
+                )
             self.compare_result(self.result_device, self.result_cpu)
+
+    def compare_result(self, a, b, atol=1e-3):
+        error_info = ""
+        max_diff = float("nan")
+        allclose = False
+        if isinstance(a, torch.Tensor) and isinstance(b, torch.Tensor):
+            max_diff = tensor_max_diff(a, b)
+            allclose = tensor_allclose(a, b)
+            if a.dtype != b.dtype:
+                error_info = f"Inconsistent dtypes: {a.dtype} {b.dtype}"
+            print(
+                f"OpAutoCompareHook: {self.name:<50} allclose: {allclose}    max_diff: {f'{max_diff:20.9f}'} {error_info}"
+            )
+        elif type(a) != type(b):
+            error_info = f"Inconsistent types: {a} {b}"
+            print(
+                f"OpAutoCompareHook: {self.name:<50} allclose: {allclose}    max_diff: {f'{max_diff:20.9f}'} {error_info}"
+            )
+        elif isinstance(a, (bool, int, float)):
+            allclose = a == b
+            max_diff = a - b
+            print(
+                f"OpAutoCompareHook: {self.name:<50} allclose: {allclose}    max_diff: {f'{max_diff:20.9f}'}"
+            )
+        elif type(a).__module__.startswith("torch.return_types") or isinstance(
+            a, (tuple, list)
+        ):
+            max_diff_list = []
+            allclose_list = []
+            error_info_i = ""
+            for i in range(len(a)):
+                max_diff_i = tensor_max_diff(a[i], b[i])
+                allclose_i = tensor_allclose(a[i], b[i])
+                max_diff_list.append(max_diff_i)
+                allclose_list.append(allclose_i)
+                if a[0].dtype != b[0].dtype:
+                    error_info_i = f"Inconsistent dtypes: {a[i].dtype} {b[i].dtype}"
+                print(
+                    f"OpAutoCompareHook: {self.name:<46} {i}th allclose: {allclose_i}    max_diff: {f'{max_diff_i:20.9f}'} {error_info_i}"
+                )
+            allclose = all(allclose_list)
+            max_diff = max(max_diff_list)
+        else:
+            print(
+                f"OpAutoCompareHook: {self.name:} {__file__} unhandle output type: {type(a)}"
+            )
+
+        if not allclose and max_diff > 1e-3:
+            print(
+                f"OpAutoCompareHook: {self.name:<50} input: {serialize_args_to_dict(*self.args, **self.kwargs)}"
+            )
+            print(
+                f"OpAutoCompareHook: {self.name:<50} output: {serialize_args_to_dict(self.result)['args']}"
+            )
+            save_op_args(self.name, "device/input", *self.args, **self.kwargs)
+            save_op_args(self.name, "device/output", self.result)
+            save_op_args(self.name, "cpu/input", *self.args_cpu, **self.kwargs_cpu)
+            save_op_args(self.name, "cpu/output", self.result_cpu)

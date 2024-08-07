@@ -31,8 +31,9 @@ def serialize_args_to_dict(*args, **kwargs):
 
     data = {
         "args": type(args)([serialize_value(arg) for arg in args]),
-        "kwargs": {k: serialize_value(v) for k, v in kwargs.items()},
     }
+    if len(kwargs) > 0:
+        data["kwargs"] = {k: serialize_value(v) for k, v in kwargs.items()}
     return data
 
 
