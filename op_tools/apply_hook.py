@@ -104,9 +104,11 @@ class OpFallback(TorchFunctionMode):
     def __torch_function__(self, func, types, args, kwargs=None):
         name = resolve_name(func)
         if self.is_should_fallback(name, func, args, kwargs):
+            print(f"apply OpFallbackHook on {name}")
             new_func = OpFallbackHook(name)(func)
             return new_func(*args, **(kwargs or {}))
         else:
+            print(f"skip OpFallbackHook on {name}")
             return func(*args, **(kwargs or {}))
 
     def start(self):
@@ -210,6 +212,7 @@ class OpTimeMeasure(TorchFunctionMode):
     def __torch_function__(self, func, types, args, kwargs=None):
         name = resolve_name(func)
         if self.is_should_measure(name, func, args, kwargs):
+            print(f"apply OpTimeMeasureHook on {name}")
             new_func = OpTimeMeasureHook(name)(func)
             return new_func(*args, **(kwargs or {}))
         else:

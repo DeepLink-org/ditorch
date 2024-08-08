@@ -8,10 +8,11 @@ class OpFallbackHook(BaseHook):
         torch.half: torch.float32,
         torch.bfloat16: torch.float32,
     }
+
     def __init__(self, name) -> None:
         super().__init__(name)
 
-    def is_dtype_should_convert_back(self):
+    def get_dtype_convert_back_dict(self):
         convert_dict = dict()
         for i in range(len(self.args)):
             arg = self.args[i]
@@ -28,7 +29,6 @@ class OpFallbackHook(BaseHook):
         self.dtype_convert_back_dict = convert_dict
         return convert_dict
 
-
     def before_call_op(self, *args, **kwargs):
         with DisableHookGuard():
             self.is_cpu_op, self.device = is_cpu_op(*args, **kwargs)
@@ -36,13 +36,23 @@ class OpFallbackHook(BaseHook):
                 return
             self.args_device = self.args
             self.kwargs_device = self.kwargs
-            self.args = to_device("cpu", self.args, dtype_cast_dict= OpFallbackHook.FALLBACK_DTYPE_CAST_DICT)
-            self.kwargs = to_device("cpu", self.kwargs or {}, dtype_cast_dict= OpFallbackHook.FALLBACK_DTYPE_CAST_DICT)
+            self.args = to_device(
+                "cpu",
+                self.args,
+                dtype_cast_dict=OpFallbackHook.FALLBACK_DTYPE_CAST_DICT,
+            )
+            self.kwargs = to_device(
+                "cpu",
+                self.kwargs or {},
+                dtype_cast_dict=OpFallbackHook.FALLBACK_DTYPE_CAST_DICT,
+            )
 
     def after_call_op(self, result):
         if self.is_cpu_op:
             return
         with DisableHookGuard():
-            dtype_convert_back_dict = self.is_dtype_should_convert_back()
-            self.result = to_device(self.device, self.result, dtype_convert_back_dict)
-
+            dtype_convert_back_dict = self.get_dtype_convert_back_dict()
+            self.result_cpu = self.result
+            self.result = to_device(
+                self.device, self.result_cpu, dtype_convert_back_dict
+            )

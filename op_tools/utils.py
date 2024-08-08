@@ -3,21 +3,24 @@ import re
 import importlib
 
 
+def traverse_container(container):
+    if isinstance(container, dict):
+        for key, value in container.items():
+            yield from traverse_container(value)
+    elif isinstance(container, (list, tuple, set)):
+        for item in container:
+            yield from traverse_container(item)
+    else:
+        yield container
+
+
 def is_cpu_op(*args, **kwargs):
-    device = "cpu"
-    for v in args:
-        if isinstance(v, torch.Tensor):
-            if v.is_cpu:
-                return True, "cpu"
-            else:
-                device = v.device
-    for k, v in kwargs.items():
-        if isinstance(v, torch.Tensor):
-            if v.is_cpu:
-                return True, "cpu"
-            else:
-                device = v.device
-    return False, device
+    for obj in traverse_container(args):
+        if isinstance(obj, torch.Tensor):
+            if not obj.is_cpu:
+                return False, obj.device
+
+    return True, "cpu"
 
 
 def to_device(device, obj, dtype_cast_dict=dict()):
@@ -34,6 +37,7 @@ def to_device(device, obj, dtype_cast_dict=dict()):
     elif type(obj).__module__.startswith("torch.return_types"):
         return [to_device(device, v, dtype_cast_dict) for v in obj]
     else:
+        print(f"{__file__}: unhandled type: {obj}")
         return obj
 
 
