@@ -323,3 +323,20 @@ OpTimeMeasureHook: torch.nn.init.normal_          forward elasped:  701.74193382
 ...
 
 ```
+
+#### 算子fallback 能力
+
+```
+# fallback 所有torch算子时部分输出
+...
+apply OpFallbackHook on torch.nn.init.kaiming_uniform_
+apply OpFallbackHook on torch.nn.init.normal_
+apply OpFallbackHook on torch.Tensor.div
+apply OpFallbackHook on torch.Tensor.add
+apply OpFallbackHook on torch.Tensor.mul
+apply OpFallbackHook on torch.Tensor.add
+apply OpFallbackHook on torch.Tensor.sub
+apply OpFallbackHook on torch.Tensor.sort
+...
+
+```
