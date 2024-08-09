@@ -7,6 +7,7 @@ class BaseHook(ABC):
 
     def __init__(self, name) -> None:
         self.name = name
+        self.exception = None
 
     def before_call_op(self, *args, **kwargs):
         self.args = args
@@ -26,7 +27,11 @@ class BaseHook(ABC):
                 self.args = args
                 self.kwargs = kwargs
                 self.before_call_op(*args, **kwargs)
-                self.result = self.func(*self.args, **self.kwargs)
+                try:
+                    self.result = self.func(*self.args, **self.kwargs)
+                except Exception as e:
+                    self.result = None
+                    self.exception = e
                 self.after_call_op(self.result)
             else:
                 self.result = func(*args, **kwargs)

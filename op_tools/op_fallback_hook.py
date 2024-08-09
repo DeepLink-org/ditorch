@@ -1,6 +1,7 @@
 import torch
 from .base_hook import BaseHook, DisableHookGuard
 from .utils import to_device, is_cpu_op
+from .save_op_args import serialize_args_to_dict
 
 
 class OpFallbackHook(BaseHook):
@@ -34,25 +35,45 @@ class OpFallbackHook(BaseHook):
             self.is_cpu_op, self.device = is_cpu_op(*args, **kwargs)
             if self.is_cpu_op:
                 return
+            print(
+                f"OpFallbackHook: {self.name:<50} input: {serialize_args_to_dict(*self.args, **self.kwargs)}"
+            )
             self.args_device = self.args
             self.kwargs_device = self.kwargs
             self.args = to_device(
                 "cpu",
                 self.args,
-                dtype_cast_dict=OpFallbackHook.FALLBACK_DTYPE_CAST_DICT,
             )
             self.kwargs = to_device(
                 "cpu",
                 self.kwargs or {},
-                dtype_cast_dict=OpFallbackHook.FALLBACK_DTYPE_CAST_DICT,
             )
 
     def after_call_op(self, result):
         if self.is_cpu_op:
             return
         with DisableHookGuard():
-            dtype_convert_back_dict = self.get_dtype_convert_back_dict()
-            self.result_cpu = self.result
+            if self.result is not None and self.exception is None:
+                self.result_cpu = self.result
+                dtype_convert_back_dict = dict()
+            else:
+                # cpu backend do not support half or bfloat16
+                self.args = to_device(
+                    "cpu",
+                    self.args_device,
+                    dtype_cast_dict=OpFallbackHook.FALLBACK_DTYPE_CAST_DICT,
+                )
+                self.kwargs = to_device(
+                    "cpu",
+                    self.kwargs_device or {},
+                    dtype_cast_dict=OpFallbackHook.FALLBACK_DTYPE_CAST_DICT,
+                )
+                self.result_cpu = self.func(*self.args, **self.kwargs)
+                dtype_convert_back_dict = self.get_dtype_convert_back_dict()
+
             self.result = to_device(
                 self.device, self.result_cpu, dtype_convert_back_dict
+            )
+            print(
+                f"OpFallbackHook: {self.name:<50} output: {serialize_args_to_dict(self.result)['args']} cpu output: {serialize_args_to_dict(self.result_cpu)['args']} dtype_convert_back_dict:{dtype_convert_back_dict}"
             )

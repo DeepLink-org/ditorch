@@ -26,8 +26,8 @@ def is_cpu_op(*args, **kwargs):
 def to_device(device, obj, dtype_cast_dict=dict()):
     if isinstance(obj, torch.Tensor):
         if obj.dtype in list(dtype_cast_dict.keys()):
-            obj = obj.to(dtype_cast_dict[obj.dtype])
-        return obj.to(device)
+            obj = obj.to(dtype_cast_dict[obj.dtype], non_blocking=False)
+        return obj.to(device, non_blocking=False)
     elif isinstance(obj, (tuple, list)):
         return type(obj)([to_device(device, v, dtype_cast_dict) for v in obj])
     elif isinstance(obj, dict):
@@ -37,7 +37,6 @@ def to_device(device, obj, dtype_cast_dict=dict()):
     elif type(obj).__module__.startswith("torch.return_types"):
         return [to_device(device, v, dtype_cast_dict) for v in obj]
     else:
-        print(f"{__file__}: unhandled type: {obj}")
         return obj
 
 

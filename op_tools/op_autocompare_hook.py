@@ -59,7 +59,7 @@ class OpAutoCompareHook(BaseHook):
                     self.result,
                 )
             except Exception as e:
-                # some op on cpu backend may not support half, bfloat16
+                # some op on cpu backend not support half, bfloat16
                 self.args_cpu = to_device(
                     "cpu",
                     self.args_cpu,

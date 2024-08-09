@@ -32,6 +32,7 @@ def is_should_apply_hook(name, func, args, kwargs=None):
         "torch.Tensor.__repr__",
         "torch.Tensor.__format__",
         "torch.Tensor.type",
+        "torch.Tensor.dim",
     ]
     if name in EXCLUDE_OPS:
         return False
@@ -79,6 +80,47 @@ class OpCapture(TorchFunctionMode):
         super().__exit__(None, None, None)
 
 
+VIEW_OPS = [
+    "torch.Tensor.reshape",
+    "torch.Tensor.adjoint",
+    "torch.Tensor.as_strided",
+    "torch.Tensor.detach",
+    "torch.Tensor.diagonal",
+    "torch.Tensor.expand",
+    "torch.Tensor.expand_as",
+    "torch.Tensor.movedim",
+    "torch.Tensor.narrow",
+    "torch.Tensor.permute",
+    "torch.Tensor.select",
+    "torch.Tensor.squeeze",
+    "torch.Tensor.transpose",
+    "torch.Tensor.t",
+    "torch.Tensor.T",
+    "torch.Tensor.H",
+    "torch.Tensor.mT",
+    "torch.Tensor.mH",
+    "torch.Tensor.real",
+    "torch.Tensor.imag",
+    "torch.Tensor.view_as_real",
+    "torch.Tensor.unflatten",
+    "torch.Tensor.unfold",
+    "torch.Tensor.unsqueeze",
+    "torch.Tensor.view",
+    "torch.Tensor.view_as",
+    "torch.Tensor.unbind",
+    "torch.Tensor.split",
+    "torch.Tensor.hsplit",
+    "torch.Tensor.vsplit",
+    "torch.Tensor.tensor_split",
+    "torch.Tensor.split_with_sizes",
+    "torch.Tensor.swapaxes",
+    "torch.Tensor.swapdims",
+    "torch.Tensor.chunk",
+    "torch.Tensor.indices",
+    "torch.Tensor.values",
+]
+
+
 class OpFallback(TorchFunctionMode):
     """
     Set the OP_FALLBACK_DISABLE_LIST environment variable to ignore specific operators or operators in a specific mode
@@ -98,13 +140,14 @@ class OpFallback(TorchFunctionMode):
             return False
         if is_opname_match(name, os.getenv("OP_FALLBACK_DISABLE_LIST", "")):
             return False
+        # if name in VIEW_OPS:
+        #    return False
 
         return is_opname_match(name, os.getenv("OP_FALLBACK_LIST", ".*"))
 
     def __torch_function__(self, func, types, args, kwargs=None):
         name = resolve_name(func)
         if self.is_should_fallback(name, func, args, kwargs):
-            print(f"apply OpFallbackHook on {name}")
             new_func = OpFallbackHook(name)(func)
             return new_func(*args, **(kwargs or {}))
         else:

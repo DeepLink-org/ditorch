@@ -18,6 +18,17 @@ def f():
     y = torch.cat((a, a, a), dim=0)  # first input type is tuple
     assert not y.is_cpu
 
+    base = 10000
+    dim = 1024
+    inv_freq = 1.0 / (
+        base ** (torch.arange(0, dim, 2, device="cuda", dtype=torch.float32) / dim)
+    )
+
+    x = torch.randn(3, 4).cuda().to(torch.bfloat16)
+    y = x.clone()
+    z = y.half()
+    n = z.cpu()
+
 
 f()
 

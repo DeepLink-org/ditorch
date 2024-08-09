@@ -20,7 +20,7 @@ def serialize_args_to_dict(*args, **kwargs):
     def serialize_value(value):
         if isinstance(value, torch.Tensor):
             return tensor_to_dict(value)
-        if isinstance(value, (torch.device, torch.dtype)):
+        elif isinstance(value, (torch.device, torch.dtype, torch.Size)):
             return str(value)
         elif isinstance(value, (list, tuple)):
             return type(value)([serialize_value(v) for v in value])
