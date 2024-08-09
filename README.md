@@ -328,12 +328,22 @@ SyncExecuteTimer: torch.Tensor.div backward elasped 1.24096870 ms
 
 ##### 只跑指定算子3遍前向
 ```
-ditorch/op_tools# python run_op_from_data.py /op_capture_result/torch.Tensor.div/2278281/5  --run_times 3 --only_run_forward True
+ditorch/op_tools# python run_op_from_data.py /op_capture_result/torch.Tensor.div/2278281/5  --run_times 3 --only_run_forward True --sync_time_measure True
 ditorch.framework: torch_npu:2.1.0.post3
 /deeplink_afs/zhaoguochun/ditorch/op_tools/op_capture_result/torch.Tensor.div/2278281/5
 SyncExecuteTimer: torch.Tensor.div forward elasped 91.06540680 ms
 SyncExecuteTimer: torch.Tensor.div forward elasped 0.24318695 ms
 SyncExecuteTimer: torch.Tensor.div forward elasped 0.07224083 ms
+```
+
+##### 离线算子精度测试
+```
+python run_op_from_data.py op_capture_result/torch.Tensor.div/2507674/4 --run_times 1 --only_run_forward True --acc_check True
+ditorch.framework: torch_npu:2.1.0.post3
+op_capture_result/torch.Tensor.div/2507674/4
+OpAutoCompareHook: torch.Tensor.div                                   allclose: True    max_diff:          0.000000060
+OpAutoCompareHook: torch.Tensor.div                                   allclose: True    max_diff:          0.000000060
+OpAutoCompareHook: torch.Tensor.div                                   allclose: True    max_diff:          0.000000060
 ```
 
 ##### 模型训练时算子耗时分析 (前向 + 反向)
