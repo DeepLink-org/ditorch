@@ -89,18 +89,18 @@ class OpAutoCompareHook(BaseHook):
             if a.dtype != b.dtype:
                 error_info = f"Inconsistent dtypes: {a.dtype} {b.dtype}"
             print(
-                f"OpAutoCompareHook: {self.name:<50} allclose: {allclose}    max_diff: {f'{max_diff:20.9f}'} {error_info}"
+                f"OpAutoCompareHook: {self.name:<50} allclose: {allclose}\tmax_diff: {f'{max_diff:20.9f}'} {error_info}"
             )
         elif type(a) != type(b):
             error_info = f"Inconsistent types: {a} {b}"
             print(
-                f"OpAutoCompareHook: {self.name:<50} allclose: {allclose}    max_diff: {f'{max_diff:20.9f}'} {error_info}"
+                f"OpAutoCompareHook: {self.name:<50} allclose: {allclose}\tmax_diff: {f'{max_diff:20.9f}'} {error_info}"
             )
         elif isinstance(a, (bool, int, float)):
             allclose = a == b
             max_diff = a - b
             print(
-                f"OpAutoCompareHook: {self.name:<50} allclose: {allclose}    max_diff: {f'{max_diff:20.9f}'}"
+                f"OpAutoCompareHook: {self.name:<50} allclose: {allclose}\tmax_diff: {f'{max_diff:20.9f}'}"
             )
         elif type(a).__module__.startswith("torch.return_types") or isinstance(
             a, (tuple, list)
@@ -117,7 +117,7 @@ class OpAutoCompareHook(BaseHook):
                     if a[0].dtype != b[0].dtype:
                         error_info_i = f"Inconsistent dtypes: {a[i].dtype} {b[i].dtype}"
                     print(
-                        f"OpAutoCompareHook: {self.name:<46} {i}th allclose: {allclose_i}    max_diff: {f'{max_diff_i:20.9f}'} {error_info_i}"
+                        f"OpAutoCompareHook: {self.name:<46} {i}th allclose: {allclose_i}\tmax_diff: {f'{max_diff_i:20.9f}'} {error_info_i}"
                     )
                 else:
                     allclose_i = a[i] == b[i]
@@ -125,7 +125,7 @@ class OpAutoCompareHook(BaseHook):
                     max_diff_list.append(max_diff_i)
                     allclose_list.append(allclose_i)
                     print(
-                        f"OpAutoCompareHook: {self.name:<46} {i}th allclose: {allclose_i}    max_diff: {f'{max_diff_i:20.9f}'} {error_info_i}"
+                        f"OpAutoCompareHook: {self.name:<46} {i}th allclose: {allclose_i}\tmax_diff: {f'{max_diff_i:20.9f}'} {error_info_i}"
                     )
 
             allclose = all(allclose_list)

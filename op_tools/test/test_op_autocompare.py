@@ -18,6 +18,10 @@ def f():
     x = torch.randn(1).cuda()
     print(bool(x), x.bool(), x.item())
 
+    m = torch.nn.Linear(4, 5, device="cuda").half()
+    x = torch.randn(3, 5, 4, device="cuda", requires_grad=True).half()
+    y = m(x)
+
 
 f()
 
