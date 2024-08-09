@@ -25,14 +25,14 @@ def parse_args():
     parser.add_argument(
         "--sync_time_measure",
         type=bool,
-        default=True,
+        default=False,
         help="Run the operator synchronously and test the operator running time",
     )
 
     parser.add_argument(
         "--acc_check",
         type=bool,
-        default=True,
+        default=False,
         help="Run the operator and test for accuracy",
     )
     args = parser.parse_args()
