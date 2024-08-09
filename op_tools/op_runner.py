@@ -3,10 +3,10 @@ import os
 import torch
 import ditorch
 import time
-from .utils import to_device, is_cpu_op, get_function_from_string
-
-
+from .utils import to_device, is_cpu_op, get_function_from_string, traverse_container
 import argparse
+from .op_autocompare_hook import compare_result
+from .save_op_args import serialize_args_to_dict
 
 
 class OpRunnerHook(ABC):
@@ -23,18 +23,34 @@ class OpRunnerHook(ABC):
         pass
 
 
-class EventTimer(OpRunnerHook):
+class AsyncEventTimer(OpRunnerHook):
     def __init__(self) -> None:
         super().__init__()
-        self.event_pair_list = list()
+        self.forward_start_event = torch.cuda.Event(
+            enable_timing=True, blocking=False, interprocess=False
+        )
+        self.forward_end_event = torch.cuda.Event(
+            enable_timing=True, blocking=False, interprocess=False
+        )
+
+        self.backward_start_event = torch.cuda.Event(
+            enable_timing=True, blocking=False, interprocess=False
+        )
+        self.backward_end_event = torch.cuda.Event(
+            enable_timing=True, blocking=False, interprocess=False
+        )
 
     def before_forward(self):
-        start_event = torch.cuda.Event(
-            enable_timing=True, blocking=False, interprocess=False
-        )
-        end_event = torch.cuda.Event(
-            enable_timing=True, blocking=False, interprocess=False
-        )
+        self.forward_start_event.record(torch.cuda.current_stream)
+
+    def after_forward(self):
+        self.forward_end_event.record(torch.cuda.current_stream)
+
+    def before_backward(self):
+        self.backward_start_event.record(torch.cuda.current_stream)
+
+    def after_backward(self):
+        self.backward_end_event.record(torch.cuda.current_stream)
 
 
 class SyncExecuteTimer(OpRunnerHook):
@@ -66,12 +82,65 @@ class SyncExecuteTimer(OpRunnerHook):
         )
 
 
+class OpAccyChecker(OpRunnerHook):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def before_forward(self):
+        pass
+
+    def after_forward(self):
+        self.result_cpu = self.runner.fun(
+            *self.runner.args_cpu, **self.runner.kwargs_cpu
+        )
+        allclose, max_diff = compare_result(
+            self.runner.name, self.runner.result, self.result_cpu
+        )
+        if not allclose and max_diff > 1e-3:
+            print(
+                f"OpAccyChecker: {self.name:<50} input: {serialize_args_to_dict(*self.args, **self.kwargs)}"
+            )
+            print(
+                f"OpAccyChecker: {self.name:<50} output: {serialize_args_to_dict(self.result)['args']}"
+            )
+
+    def before_backward(self):
+        pass
+
+    def after_backward(self):
+        pass
+
+
 class OpRunner:
     def __init__(self, dir=".", hook=OpRunnerHook()) -> None:
         self.dir = dir
-        self.hook = hook
-        self.hook.runner = self
+        self.hooks = []
+        self.add_hook(hook)
         print(f"{dir}")
+        self.load_forward_input()
+        self.load_forward_output()
+        self.load_backward_data()
+
+    def add_hook(self, hook):
+        if hook is not None and isinstance(hook, OpRunnerHook):
+            hook.runner = self
+            self.hooks.append(hook)
+
+    def run_before_forward(self):
+        for hook in self.hooks:
+            hook.before_forward()
+
+    def run_after_forward(self):
+        for hook in self.hooks:
+            hook.after_forward()
+
+    def run_before_backward(self):
+        for hook in self.hooks:
+            hook.before_backward()
+
+    def run_after_backward(self):
+        for hook in self.hooks:
+            hook.after_backward()
 
     def load_forward_input(self):
         self.input = torch.load(self.dir + "/input.pth", map_location="cpu")
@@ -80,7 +149,6 @@ class OpRunner:
         self.args = to_device("cuda", self.args_cpu)
         self.kwargs = to_device("cuda", self.kwargs_cpu or {})
         self.name = self.input["name"]
-        # self.id = self.input["id"]
         self.fun = get_function_from_string(self.name)
 
     def load_forward_output(self):
@@ -104,15 +172,14 @@ class OpRunner:
             self.grad_outputs_cpu = None
 
     def run_forward(self):
-        self.load_forward_input()
-        self.hook.before_forward()
+
+        self.run_before_forward()
         self.result = self.fun(*self.args, **self.kwargs)
-        self.hook.after_forward()
+        self.run_after_forward()
 
     def run_backward(self):
-        self.load_backward_data()
         if self.grad_outputs is None:
             return
-        self.hook.before_backward()
+        self.run_before_backward()
         self.result.backward(*self.grad_outputs["args"], **self.grad_outputs["kwargs"])
-        self.hook.after_backward()
+        self.run_after_backward()

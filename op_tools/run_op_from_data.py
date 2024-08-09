@@ -1,10 +1,10 @@
 import torch
 import ditorch
 import argparse
-from op_tools.op_runner import OpRunner, SyncExecuteTimer
+from op_tools.op_runner import OpRunner, SyncExecuteTimer, OpAccyChecker
 
 
-def main():
+def parse_args():
     parser = argparse.ArgumentParser(
         description="Run the operator from the data captured by the OpCapture tool"
     )
@@ -22,9 +22,35 @@ def main():
         default=False,
         help="Only the forward calculation of the operator is run, not the backward calculation",
     )
+    parser.add_argument(
+        "--sync_time_measure",
+        type=bool,
+        default=True,
+        help="Run the operator synchronously and test the operator running time",
+    )
+
+    parser.add_argument(
+        "--acc_check",
+        type=bool,
+        default=True,
+        help="Run the operator and test for accuracy",
+    )
     args = parser.parse_args()
-    timer = SyncExecuteTimer()
-    runner = OpRunner(args.dir, timer)
+    return args
+
+
+def main():
+    args = parse_args()
+
+    runner = OpRunner(args.dir)
+    if args.sync_time_measure:
+        timer = SyncExecuteTimer()
+        runner.add_hook(timer)
+
+    if args.acc_check:
+        acc_checker = OpAccyChecker()
+        runner.add_hook(acc_checker)
+
     for i in range(args.run_times):
         runner.run_forward()
         if not args.only_run_forward:
