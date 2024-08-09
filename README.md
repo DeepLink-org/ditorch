@@ -14,7 +14,26 @@ import ditorch
 
 #### 算子参数抓取工具
 抓取模型真实训练过程中真实的输入输出
+
+```
+# usage1
+import op_tools
+capture = op_tools.OpCapture()
+capture.start()
+code_snippet_to_capture
+capture.stop()
+...
+```
+
+```
+# usage2
+import op_tools
+with op_tools.OpCapture():
+    code_snippet_to_capture()
+```
+
 ##### 抓取前向和反向的所有输入输出
+
 ```
 op_capture_result/0/2024-08-06--11-41/torch.Tensor.to/8/input.pth saved
 op_capture_result/0/2024-08-06--11-41/torch.Tensor.to/8/output.pth saved
@@ -88,6 +107,22 @@ op_capture_result/0/2024-08-06--11-46/torch.Tensor.sum/33/output.pth saved
 1. 用模型训练过程中真实输入输出，离线对比
 2. 模型训练时实时与cpu对比分析精度
 ##### 基于InternEvo + ditorch + torch_npu 在华为910B上实时精度分析输出片段
+```
+# usage1
+import op_tools
+with op_tools.OpAutoCompare():
+    code_snippet_to_autocompare()
+```
+
+```
+# usage1
+import op_tools
+autocompare = op_tools.OpAutoCompare()
+autocompare.start()
+code_snippet_to_autocompare()
+autocompare.stop()
+```
+
 ```
 OpAutoCompareHook: torch.nn.functional.linear                         allclose: False    max_diff:          0.003906250
 OpAutoCompareHook: torch.nn.functional.linear                         input: {'args': ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20075956404224}, {'shape': torch.Size([2048, 2048]), 'stride': (2048, 1), 'numel': 4194304, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20078077673472}, 'None')}
@@ -303,6 +338,22 @@ SyncExecuteTimer: torch.Tensor.div forward elasped 0.07224083 ms
 
 ##### 模型训练时算子耗时分析 (前向 + 反向)
 ```
+# usage1
+import op_tools
+with op_tools.OpTimeMeasure():
+    code_snippet_to_time_measure()
+```
+
+```
+# usage2
+import op_tools
+timemeasure = op_tools.OpTimeMeasure()
+timemeasure.start()
+code_snippet_to_time_measure()
+timemeasure.end()
+```
+
+```
 ...
 OpTimeMeasureHook: torch.Tensor.is_floating_point forward elasped:  0.00929832 ms     input: {'args': ({'shape': torch.Size([8192, 2048]), 'stride': (2048, 1), 'numel': 16777216, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067618127872},)} output: {'args': ('True',)}
 OpTimeMeasureHook: torch.Tensor.to                forward elasped:  0.01168251 ms     input: {'args': ({'shape': torch.Size([8192, 2048]), 'stride': (2048, 1), 'numel': 16777216, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067618127872}, 'None', 'torch.bfloat16', 'False')} output: {'args': ({'shape': torch.Size([8192, 2048]), 'stride': (2048, 1), 'numel': 16777216, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067618127872},)}
@@ -325,7 +376,19 @@ OpTimeMeasureHook: torch.nn.init.normal_          forward elasped:  701.74193382
 ```
 
 #### 算子fallback 能力
-OP_FALLBACK_DISABLE_LIST
+```
+# usage 1
+with op_tools.OpFallback():
+    code_snippet_op_to_be_fallbacked()
+```
+
+```
+# usage 2
+fallback = op_tools.OpFallback()
+fallback.start()
+code_snippet_op_to_be_fallbacked()
+fallback.end()
+```
 
 ##### 只fallback 指定算子 export OP_FALLBACK_LIST="torch.nn.functional.linear"
 ```
