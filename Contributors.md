@@ -2,7 +2,7 @@
 
 ## 贡献代码
 
-欢迎加入 DIOPI 社区，我们致力于打造训练框架和人工智能芯片之间的标准算子接口，我们欢迎任何类型的贡献，包括但不限于
+欢迎加入 ditorch 社区，我们致力于打造训练框架和人工智能芯片之间的标准算子接口，我们欢迎任何类型的贡献，包括但不限于
 
 **修复错误**
 
@@ -33,7 +33,7 @@
 
 #### 1. 复刻仓库
 
-当你第一次提交拉取请求时，先复刻仓库原代码库，这里以 IMPL 为例。点击 GitHub 页面右上角的 **Fork** 按钮，复刻后的代码库将会出现在你的 GitHub 个人主页下。
+当你第一次提交拉取请求时，先复刻仓库原代码库。点击 GitHub 页面右上角的 **Fork** 按钮，复刻后的代码库将会出现在你的 GitHub 个人主页下。
 <!--
 （图片待修改）
 <img src="" width="1200">
@@ -41,25 +41,25 @@
 将代码克隆到本地
 
 ```shell
-git clone git@github.com:{username}/DIOPI.git
+git clone git@github.com:{username}/ditorch.git
 ```
 
 添加原代码库为上游代码库
 
 ```bash
-git remote add upstream git@github.com:DeepLink-org/DIOPI
+git remote add upstream git@github.com:DeepLink-org/ditorch
 ```
 
 检查 remote 是否添加成功，在终端输入 `git remote -v`
 
 ```bash
-origin	git@github.com:{username}/DIOPI.git (fetch)
-origin	git@github.com:{username}/DIOPI.git (push)
-upstream	git@github.com:DeepLink-org/DIOPI (fetch)
-upstream	git@github.com:DeepLink-org/DIOPI (push)
+origin	git@github.com:{username}/ditorch.git (fetch)
+origin	git@github.com:{username}/ditorch.git (push)
+upstream	git@github.com:DeepLink-org/ditorch (fetch)
+upstream	git@github.com:DeepLink-org/ditorch (push)
 ```
 
-> 这里对 origin 和 upstream 进行一个简单的介绍，当我们使用 git clone 来克隆代码时，会默认创建一个 origin 的 remote，它指向我们克隆的代码库地址，而 upstream 则是我们自己添加的，用来指向原始代码库地址。当然如果你不喜欢他叫 upstream，也可以自己修改，比如叫 diopi。我们通常向 origin 提交代码（即 fork 下来的远程仓库），然后向 upstream 提交一个 pull request。如果提交的代码和最新的代码发生冲突，再从 upstream 拉取最新的代码，和本地分支解决冲突，再提交到 origin。
+> 这里对 origin 和 upstream 进行一个简单的介绍，当我们使用 git clone 来克隆代码时，会默认创建一个 origin 的 remote，它指向我们克隆的代码库地址，而 upstream 则是我们自己添加的，用来指向原始代码库地址。当然如果你不喜欢他叫 upstream，也可以自己修改。我们通常向 origin 提交代码（即 fork 下来的远程仓库），然后向 upstream 提交一个 pull request。如果提交的代码和最新的代码发生冲突，再从 upstream 拉取最新的代码，和本地分支解决冲突，再提交到 origin。
 
 
 #### 2. 创建开发分支
@@ -78,7 +78,7 @@ git pull upstream master
 
 
 #### 3. 提交代码并在本地通过一致性测试
-提交的代码需要通过一致性测试套件以保证实现的正确性，具体可以参考一致性测试套件的[README](https://github.com/DeepLink-org/DIOPI/diopi-test)。
+提交的代码需要通过一致性测试套件以保证实现的正确性，具体可以参考一致性测试套件的[README](https://github.com/DeepLink-org/ditorch)。
 
 
 #### 4. 推送代码到远程
@@ -112,7 +112,7 @@ git push -u origin {branch_name}
 
 (1) PR 描述应该包含修改理由、修改内容以及修改后带来的影响，并关联相关 Issue（具体方式见[文档](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue)）
 
-(2) 如果是第一次为 DIOPI 做贡献，需要签署 CLA
+(2) 如果是第一次为 ditorch 做贡献，需要签署 CLA
 <!--
 （图片待修改）
 <img src="https://user-images.githubusercontent.com/57566630/167307569-a794b967-6e28-4eac-a942-00deb657815f.png" width="1200">
@@ -129,8 +129,6 @@ git push -u origin {branch_name}
 <img src="https://user-images.githubusercontent.com/57566630/202145400-cc2cd8c4-10b0-472f-ba37-07e6f50acc67.png" width="1200">
 -->
 所有 reviewer 同意合入 PR 后，我们会尽快将 PR 合并到主分支。
-
-(5) 当前只有impl文件夹支持开发者贡献代码，proto与diopi_test后续会逐步开放。
 
 #### 6. 解决冲突
 
@@ -169,4 +167,4 @@ git merge upstream/master
    - 描述里介绍`拉取请求`的主要修改内容，结果，以及对其他部分的影响, 参考`拉取请求`模板
    - 关联相关的`议题` (issue) 和其他`拉取请求`
 
-5. 如果引入了其他三方库，或借鉴了三方库的代码，请确认他们的许可证和 DIOPI License 兼容，并在借鉴的代码上补充 `This code is inspired from http://`
+5. 如果引入了其他三方库，或借鉴了三方库的代码，请确认他们的许可证和 License 兼容，并在借鉴的代码上补充 `This code is inspired from http://`
