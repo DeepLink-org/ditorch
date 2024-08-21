@@ -5,10 +5,10 @@ Ditorch 是设备无关 torch, 旨在屏蔽各硬件厂商 torch 差异，为用
 
 ![ditorch 结构图](ditorch_v2.png)
 
-# 核心点
+# 核心功能
 ## 1. 可无感切换 pytorch 至国产芯片
 
-两行代码即可像官方pytorch一样在国产芯片上使用pytorch。
+只需添加两行代码，即可在国产芯片上像官方pytorch一样使用。
 ```
 import torch
 import ditorch
@@ -302,8 +302,9 @@ OpAutoCompareHook: torch.Tensor.mean                                  allclose: 
 OpAutoCompareHook: torch.Tensor.to                                    allclose: False    max_diff:          0.000000000 Inconsistent dtypes: torch.float32 torch.float64
 ```
 
-### 性能分析工具
-性能分析工具同样可以支持（1）离线分析，和（2）实时分析。
+### 速度分析工具
+
+速度分析工具同样可以支持（1）离线分析和（2）实时分析。
 
 用模型训练过程中真实的输入输出分析算子和通信的耗时，分析出性能瓶颈
 ```
@@ -353,7 +354,7 @@ OpAutoCompareHook: torch.Tensor.div                                   allclose: 
 OpAutoCompareHook: torch.Tensor.div                                   allclose: True    max_diff:          0.000000060
 ```
 
-##### 模型训练时算子耗时分析 (前向 + 反向)
+#### **模型训练时算子耗时分析 (前向 + 反向)**
 ```
 # usage1
 import op_tools
@@ -392,7 +393,7 @@ OpTimeMeasureHook: torch.nn.init.normal_          forward elasped:  701.74193382
 
 ```
 
-#### 算子fallback 能力
+### 算子fallback 能力
 ```
 # usage 1
 with op_tools.OpFallback():
@@ -407,7 +408,7 @@ code_snippet_op_to_be_fallbacked()
 fallback.end()
 ```
 
-##### 只fallback 指定算子 export OP_FALLBACK_LIST="torch.nn.functional.linear"
+#### **只fallback 指定算子 export OP_FALLBACK_LIST="torch.nn.functional.linear"**
 ```
 skip OpFallbackHook on torch.Tensor.float
 skip OpFallbackHook on torch.Tensor.add
@@ -479,7 +480,7 @@ skip OpFallbackHook on torch.Tensor.shape.__get__
 ...
 ```
 
-##### fallback指定算子以外所有算子（export OP_FALLBACK_DISABLE_LIST="torch.nn.functional.linear"）
+#### **fallback指定算子以外所有算子（export OP_FALLBACK_DISABLE_LIST="torch.nn.functional.linear"）**
 ```
 ...
 skip OpFallbackHook on torch.nn.functional.linear
@@ -497,7 +498,7 @@ OpFallbackHook: torch.Tensor.view                                  input: {'args
 
 ```
 
-##### fallback所有算子时部分输出
+#### **fallback所有算子时部分输出**
 ```
 OpFallbackHook: torch.nn.functional.linear                         input: {'args': ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20074851205120}, {'shape': torch.Size([2048, 2048]), 'stride': (2048, 1), 'numel': 4194304, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067599254528}, 'None')}
 OpFallbackHook: torch.nn.functional.linear                         output: ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20074920411136},) cpu output: ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.bfloat16', 'device': 'cpu', 'requires_grad': False, 'layout': 'torch.strided', 'data': 139739386380352},) dtype_convert_back_dict:{}
