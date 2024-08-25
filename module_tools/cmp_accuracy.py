@@ -6,6 +6,22 @@ import json
 from collections import OrderedDict
 from prettytable import PrettyTable
 from collections import namedtuple
+import fcntl
+
+
+lock_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dir_lock.lock")
+def safe_mkdir_with_lock(path, lock_file=lock_file):
+    assert os.path.exists(lock_file), "the lock file does not exist."
+    with open(lock_file, 'w') as lock:
+        while(True):
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX)  # 获得独占锁
+            except BlockingIOError:
+                continue
+            if not os.path.exists(path):
+                os.makedirs(path)
+            fcntl.flock(lock, fcntl.LOCK_UN)  # 释放锁
+            break
 
 
 class Data:
@@ -52,17 +68,21 @@ class CompLayerAcc:
             model (torch.nn.Module): The model to be compared.
             is_dump_benchmark (bool): Whether to dump the benchmark data.
         """
-
+        self.rank = os.environ['RANK']
         self.model = model
         self.is_dump_benchmark = is_dump_benchmark
         self.saved_datas = set()
         self.sub_dir = "expected" if self.is_dump_benchmark else "real"
-        self.data_root_path = os.path.join("accuracy_data", self.sub_dir)
+        self.data_root_path = os.path.join("accuracy_data", f"rank{self.rank}", self.sub_dir)
         if not os.path.exists(self.data_root_path):
-            os.makedirs(self.data_root_path)
+            safe_mkdir_with_lock(self.data_root_path)
         if not os.path.exists(os.path.join(self.data_root_path, "forward")):
             os.makedirs(os.path.join(self.data_root_path, "forward"))
+        if not os.path.exists(os.path.join(self.data_root_path, "backward")):
             os.makedirs(os.path.join(self.data_root_path, "backward"))
+
+        self.module_full_names_txt_path =  os.path.join(self.data_root_path, f"module_full_names.txt")
+
         self.layer_names_for_forward = set()
         self.layer_names_for_backward = set()
         self.inspectModules = None
@@ -86,18 +106,14 @@ class CompLayerAcc:
         print(self.model)
         self.walk_model()
         self.module_full_names = [".".join(m.full_name) for m in self.inspectModules]
-        save_list_as_txt(
-            self.module_full_names,
-            os.path.join(self.data_root_path, "module_full_names.txt"),
-        )
+        save_list_as_txt(self.module_full_names, self.module_full_names_txt_path)
         return self.model
 
     def _hook_for_dump_args_forward(self, layer_name):
         def true_hook(module, args, output):
             data = {"layer_name": layer_name, "inputs": args, "output": output}
-            Data.save(
-                data, os.path.join(self.data_root_path, "forward", layer_name + ".pt")
-            )
+            save_path = os.path.join(self.data_root_path, "forward", f"{layer_name}.pt")
+            Data.save( data, save_path)
 
         return true_hook
 
@@ -108,9 +124,8 @@ class CompLayerAcc:
                 "grad_input": grad_input,
                 "grad_output": grad_output,
             }
-            Data.save(
-                data, os.path.join(self.data_root_path, "backward", layer_name + ".pt")
-            )
+            save_path = os.path.join(self.data_root_path, "backward", f"{layer_name}.pt")
+            Data.save(data, save_path)
 
         return true_hook
 
@@ -187,10 +202,10 @@ def compare(data_expected, data_real, cmp_res_list):
             )
 
 
-def compare_accuracy(
-    data_expected_dir="accuracy_data/expected", data_real_dir="accuracy_data/real"
+def single_process_cmp_accuracy(
+    data_expected_dir="accuracy_data/expected", data_real_dir="accuracy_data/real", rank=0
 ):
-    table = PrettyTable(["No.", "layer_name", "forward", "backward"])
+    table = PrettyTable([f"No.(rank{rank})", "layer_name", "forward", "backward"])
     table.align = "l"
     cmp_res = {}
 
@@ -255,3 +270,12 @@ def compare_accuracy(
         grad_input_cmp_res_str = json.dumps(grad_input_cmp_res)
         table.add_row([i, full_name, output_cmp_res_str, grad_input_cmp_res_str])
     print(table)
+
+
+def compare_accuracy(data_dir="accuracy_data"):
+    sub_dirs = [d for d in os.listdir(data_dir) if os.path.isdir(os.path.join(data_dir, d))]
+    for dir in sub_dirs:
+        rank = int(dir[4:])
+        sub_dir = os.path.join(data_dir, dir)
+        single_process_cmp_accuracy(os.path.join(sub_dir, "expected"), os.path.join(sub_dir, "real"), rank)
+
