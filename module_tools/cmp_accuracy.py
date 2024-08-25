@@ -50,7 +50,7 @@ class CompLayerAcc:
 
         Args:
             model (torch.nn.Module): The model to be compared.
-            is_dump_benchmark (bool):   Whether to dump the benchmark data.
+            is_dump_benchmark (bool): Whether to dump the benchmark data.
         """
 
         self.model = model
