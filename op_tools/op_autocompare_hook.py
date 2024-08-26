@@ -1,4 +1,5 @@
 import torch
+import math
 from .base_hook import BaseHook, DisableHookGuard
 from .utils import to_device, is_cpu_op
 from .op_fallback_hook import OpFallbackHook
@@ -19,7 +20,7 @@ def tensor_max_diff(a, b):
 def tensor_allclose(a, b, atol=1e-3, rtol=1e-3):
     a_cpu, b_cpu = a.cpu(), b.cpu()
     try:
-        return torch.allclose(a_cpu, b_cpu, atol=atol, rtol=rtol)
+        return torch.allclose(a_cpu, b_cpu, atol=atol, rtol=rtol, equal_nan=True)
     except Exception as e:
         return False
     return False
@@ -43,7 +44,7 @@ def compare_result(name, a, b, atol=1e-3):
             f"OpAutoCompareHook: {name:<50} allclose: {allclose}\tmax_diff: {f'{max_diff:20.9f}'} {error_info}"
         )
     elif isinstance(a, (bool, int, float)):
-        allclose = a == b
+        allclose = a == b or (math.isnan(a) and math.isnan(b))
         max_diff = a - b
         print(
             f"OpAutoCompareHook: {name:<50} allclose: {allclose}\tmax_diff: {f'{max_diff:20.9f}'}"
@@ -66,7 +67,7 @@ def compare_result(name, a, b, atol=1e-3):
                     f"OpAutoCompareHook: {name:<46} {i}th allclose: {allclose_i}\tmax_diff: {f'{max_diff_i:20.9f}'} {error_info_i}"
                 )
             else:
-                allclose_i = a[i] == b[i]
+                allclose_i = a[i] == b[i] or (math.isnan(a[i]) and math.isnan(b[i]))
                 max_diff_i = a[i] - b[i]
                 max_diff_list.append(max_diff_i)
                 allclose_list.append(allclose_i)
