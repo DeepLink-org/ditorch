@@ -186,7 +186,7 @@ skip OpAutoCompareHook on npu.npu_fusion_attention
 
 #### **离线算子精度测试**
 ```
-python op_tools/run_op_from_data.py /deeplink/op_capture_result/torch.Tensor.div/2334011/5  --acc_check True --run_times 1
+python op_tools/run_op_from_data.py /deeplink/op_capture_result/torch.Tensor.div/2334011/5  --acc_check --run_times 1
 ditorch.framework: torch_npu:2.1.0.post3
 OpAutoCompareHook: torch.Tensor.div                                   allclose: True    max_diff:          0.000000060
 OpAutoCompareHook: torch.Tensor.div 0th input grad                    allclose: True    max_diff:          0.000000954
@@ -200,20 +200,19 @@ OpAutoCompareHook: torch.Tensor.div 1th input grad                    allclose: 
 用模型训练过程中真实的输入输出分析算子和通信的耗时，分析出性能瓶颈
 ```
 # 测量算子耗时（输入为使用算子抓取工具在模型训练时抓取到的真实数据）
- python run_op_from_data.py /op_capture_result/torch.Tensor.div/2278281/5  --run_times 3
+python op_tools/run_op_from_data.py /deeplink/op_capture_result/torch.Tensor.div/2334011/5 --run_times 3 --sync_time_measure
 ditorch.framework: torch_npu:2.1.0.post3
-/op_capture_result/torch.Tensor.div/2278281/5
-SyncExecuteTimer: torch.Tensor.div forward elasped 72.62969017 ms
-SyncExecuteTimer: torch.Tensor.div backward elasped 171.01812363 ms
-SyncExecuteTimer: torch.Tensor.div forward elasped 0.08916855 ms
-SyncExecuteTimer: torch.Tensor.div backward elasped 2.09069252 ms
-SyncExecuteTimer: torch.Tensor.div forward elasped 0.06723404 ms
-SyncExecuteTimer: torch.Tensor.div backward elasped 3.06391716 ms
+SyncExecuteTimer: torch.Tensor.div forward  elasped 69.61202621 ms
+SyncExecuteTimer: torch.Tensor.div backward elasped 169.42977905 ms
+SyncExecuteTimer: torch.Tensor.div forward  elasped 0.08678436 ms
+SyncExecuteTimer: torch.Tensor.div backward elasped 2.97260284 ms
+SyncExecuteTimer: torch.Tensor.div forward  elasped 0.04935265 ms
+SyncExecuteTimer: torch.Tensor.div backward elasped 0.16641617 ms
 ```
 
 #### **只跑指定算子3遍前向**
 ```
-ditorch/op_tools# python run_op_from_data.py /op_capture_result/torch.Tensor.div/2278281/5  --run_times 3 --only_run_forward True --sync_time_measure True
+ditorch/op_tools# python run_op_from_data.py /op_capture_result/torch.Tensor.div/2278281/5  --run_times 3 --only_run_forward --sync_time_measure
 ditorch.framework: torch_npu:2.1.0.post3
 /deeplink_afs/zhaoguochun/ditorch/op_tools/op_capture_result/torch.Tensor.div/2278281/5
 SyncExecuteTimer: torch.Tensor.div forward elasped 91.06540680 ms
