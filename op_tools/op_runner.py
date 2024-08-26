@@ -64,9 +64,9 @@ class SyncExecuteTimer(OpRunnerHook):
     def after_forward(self):
         torch.cuda.current_stream().synchronize()
         self.forward_end_time = time.time()
-        self.elasped_time = self.forward_end_time - self.forward_start_time
+        self.forward_elasped_time = self.forward_end_time - self.forward_start_time
         print(
-            f"SyncExecuteTimer: {self.runner.name} forward elasped {self.elasped_time * 1000:>.8f} ms "
+            f"SyncExecuteTimer: {self.runner.name} forward  elasped {self.forward_elasped_time * 1000:>.8f} ms "
         )
 
     def before_backward(self):
@@ -76,9 +76,9 @@ class SyncExecuteTimer(OpRunnerHook):
     def after_backward(self):
         torch.cuda.current_stream().synchronize()
         self.backward_end_time = time.time()
-        self.elasped_time = self.backward_end_time - self.forward_start_time
+        self.backward_elasped_time = self.backward_end_time - self.forward_start_time
         print(
-            f"SyncExecuteTimer: {self.runner.name} backward elasped {self.elasped_time * 1000:>.8f} ms"
+            f"SyncExecuteTimer: {self.runner.name} backward elasped {self.backward_elasped_time * 1000:>.8f} ms"
         )
 
 
