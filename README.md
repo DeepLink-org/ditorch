@@ -26,7 +26,7 @@ import ditorch
 | 4 | [算子 Fallback](#tool4) | 可将指定、全部算子在设备上运行的操作 fallback 到 CPU 计算 |
 
 
-### **算子参数抓取工具** <a id="tool1"></a> 
+### **算子参数抓取工具** <a id="tool1"></a>
 抓取模型真实训练过程中真实的输入输出：
 ```
 # usage1
@@ -45,7 +45,7 @@ with op_tools.OpCapture():
     code_snippet_to_capture()
 ```
 
-#### **抓取前向和反向的所有输入输出** 
+#### **抓取前向和反向的所有输入输出**
 
 ```
 op_capture_result/0/2024-08-06--11-41/torch.Tensor.to/8/input.pth saved
@@ -114,7 +114,7 @@ op_capture_result/0/2024-08-06--11-46/torch.Tensor.sum/33/input.pth saved
 op_capture_result/0/2024-08-06--11-46/torch.Tensor.sum/33/output.pth saved
 ...
 ```
-### **精度分析工具** <a id="tool2"></a> 
+### **精度分析工具** <a id="tool2"></a>
 精度分析工具可以实现：
 1. 离线分析：用模型训练过程中真实输入输出，离线对比。
 2. 实时精度对比：模型训练时实时与cpu对比分析精度。
@@ -184,6 +184,15 @@ skip OpAutoCompareHook on npu.npu_fusion_attention
 
 ```
 
+#### **离线算子精度测试**
+```
+python op_tools/run_op_from_data.py /deeplink/op_capture_result/torch.Tensor.div/2334011/5  --acc_check True --run_times 1
+ditorch.framework: torch_npu:2.1.0.post3
+OpAutoCompareHook: torch.Tensor.div                                   allclose: True    max_diff:          0.000000060
+OpAutoCompareHook: torch.Tensor.div 0th input grad                    allclose: True    max_diff:          0.000000954
+OpAutoCompareHook: torch.Tensor.div 1th input grad                    allclose: True    max_diff:          0.000000238
+```
+
 ### 速度分析工具 <a id="tool3"> </a>
 
 速度分析工具同样可以支持（1）离线分析和（2）实时分析。
@@ -210,16 +219,6 @@ ditorch.framework: torch_npu:2.1.0.post3
 SyncExecuteTimer: torch.Tensor.div forward elasped 91.06540680 ms
 SyncExecuteTimer: torch.Tensor.div forward elasped 0.24318695 ms
 SyncExecuteTimer: torch.Tensor.div forward elasped 0.07224083 ms
-```
-
-#### **离线算子精度测试**
-```
-python run_op_from_data.py op_capture_result/torch.Tensor.div/2507674/4 --run_times 3 --only_run_forward True --acc_check True
-ditorch.framework: torch_npu:2.1.0.post3
-op_capture_result/torch.Tensor.div/2507674/4
-OpAutoCompareHook: torch.Tensor.div                                   allclose: True    max_diff:          0.000000060
-OpAutoCompareHook: torch.Tensor.div                                   allclose: True    max_diff:          0.000000060
-OpAutoCompareHook: torch.Tensor.div                                   allclose: True    max_diff:          0.000000060
 ```
 
 #### **模型训练时算子耗时分析 (前向 + 反向)**
