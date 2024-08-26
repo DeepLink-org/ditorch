@@ -93,7 +93,7 @@ op_capture_result/0/2024-08-06--11-41/torch.Tensor.sort/34/grad_outputs.pth save
 ...
 ```
 
-#### **排除指定算子，抓取所有其他算子 OP_CAPTURE_DISABLE_LIST="torch.Tensor.add,torch.Tensor.sub"
+#### **排除指定算子，抓取所有其他算子 OP_CAPTURE_DISABLE_LIST="torch.Tensor.add,torch.Tensor.sub"**
 ```
 apply OpCaptureHook on torch.Tensor.to
 op_capture_result/0/2024-08-06--11-46/torch.Tensor.to/29/input.pth saved
