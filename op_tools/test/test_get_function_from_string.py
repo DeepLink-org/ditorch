@@ -1,3 +1,4 @@
+# Copyright (c) 2024, DeepLink.
 from op_tools.utils import get_function_from_string
 
 import unittest
