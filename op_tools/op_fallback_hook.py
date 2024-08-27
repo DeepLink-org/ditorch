@@ -1,3 +1,4 @@
+# Copyright (c) 2024, DeepLink.
 import torch
 from .base_hook import BaseHook, DisableHookGuard
 from .utils import to_device, is_cpu_op

@@ -1,3 +1,4 @@
+# Copyright (c) 2024, DeepLink.
 import os
 import torch
 from torch.overrides import TorchFunctionMode, resolve_name

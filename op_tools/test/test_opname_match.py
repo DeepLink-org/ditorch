@@ -1,3 +1,4 @@
+# Copyright (c) 2024, DeepLink.
 from op_tools.utils import is_opname_match
 
 import unittest
