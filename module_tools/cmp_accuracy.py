@@ -247,9 +247,9 @@ def compare(data_expected, data_real, cmp_res_list, rtol, atol):
         )
         cmp_res["allclose"] = 1 if is_allclose else 0
         if not is_allclose:
-            diff = data_real - data_expected
-            max_diff = torch.max(torch.abs(diff))
-            max_index = torch.argmax(max_diff)
+            diff_abs = torch.abs(data_real - data_expected)
+            max_index = torch.argmax(diff_abs)
+            max_diff = torch.max(diff_abs)
             max_diff_data_expected = data_expected.flatten()[max_index]
             max_diff_data_real = data_real.flatten()[max_index]
             relative_err = (
