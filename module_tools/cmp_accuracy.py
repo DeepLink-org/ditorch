@@ -6,6 +6,7 @@ import json
 from collections import OrderedDict
 from prettytable import PrettyTable
 from collections import namedtuple
+from typing import Union
 import fcntl
 
 
@@ -60,8 +61,23 @@ def load_list_from_txt(path):
         return [line.strip() for line in f]
 
 
+def for_each_tensor(inputs: Union[list[torch.Tensor], tuple[torch.Tensor], torch.Tensor, int, float], func):
+    if isinstance(inputs, torch.Tensor):
+        return func(inputs)
+    elif isinstance(inputs, (list, tuple)):
+        return tuple([for_each_tensor(item, func) for item in inputs])
+    else:
+        return inputs
+
+
+def clone_tensors(inputs: Union[list[torch.Tensor], tuple[torch.Tensor], torch.Tensor, int, float]):
+    return for_each_tensor(inputs, lambda x: x.clone())
+
+def tensors_to_cpu(inputs:Union[list[torch.Tensor], tuple[torch.Tensor], torch.Tensor, int, float]):
+    return for_each_tensor(inputs, lambda x: x.cpu())
+
 class CompLayerAcc:
-    def __init__(self, model: torch.nn.Module, is_dump_benchmark: bool):
+    def __init__(self, model: torch.nn.Module, is_dump_benchmark: bool, is_fixed_input: bool):
         """Compare the accuracy of the forward and backward of the model layer by layer.
 
         Args:
@@ -72,21 +88,31 @@ class CompLayerAcc:
         self.model = model
         self.is_dump_benchmark = is_dump_benchmark
         self.saved_datas = set()
+        self.top_dir = "accuracy_data"
         self.sub_dir = "expected" if self.is_dump_benchmark else "real"
-        self.data_root_path = os.path.join("accuracy_data", f"rank{self.rank}", self.sub_dir)
+        self.data_root_path = os.path.join(self.top_dir, f"rank{self.rank}", self.sub_dir)
         if not os.path.exists(self.data_root_path):
             safe_mkdir_with_lock(self.data_root_path)
-        if not os.path.exists(os.path.join(self.data_root_path, "forward")):
-            os.makedirs(os.path.join(self.data_root_path, "forward"))
-        if not os.path.exists(os.path.join(self.data_root_path, "backward")):
-            os.makedirs(os.path.join(self.data_root_path, "backward"))
+        self.forward_path = os.path.join(self.data_root_path, "forward")
+        self.backward_path = os.path.join(self.data_root_path, "backward")
+        self.is_fixed_input = is_fixed_input
+        self.fixed_input_path = os.path.join(self.top_dir, f"rank{self.rank}", "expected")
+        if self.is_fixed_input:
+            assert os.path.exists(self.fixed_input_path), "Please dump the fixed input data first."
+        if not os.path.exists(self.forward_path):
+            os.makedirs(self.forward_path)
+        if not os.path.exists(self.backward_path):
+            os.makedirs(self.backward_path)
 
-        self.module_full_names_txt_path =  os.path.join(self.data_root_path, f"module_full_names.txt")
+        self.modules_full_name_txt_path =  os.path.join(self.data_root_path, f"modules_full_name.txt")
+        self.modules_full_name_run_txt_path = os.path.join(self.data_root_path, f"modules_full_name_run.txt")
+        self.modules_full_name = None
+        self.modules_full_name_run = []
 
         self.layer_names_for_forward = set()
         self.layer_names_for_backward = set()
         self.inspectModules = None
-        self.module_full_names = None
+        self.is_1st_backward = True
 
     def walk_model(self):
         self.inspectModules = list(walk_modules(self.model))
@@ -98,47 +124,55 @@ class CompLayerAcc:
             module.register_forward_hook(
                 self._hook_for_dump_args_forward(module_full_name)
             )
-            module.register_backward_hook(
+            module.register_full_backward_hook(
                 self._hook_for_dump_args_backward(module_full_name)
             )
 
     def insert_hook(self):
         print(self.model)
         self.walk_model()
-        self.module_full_names = [".".join(m.full_name) for m in self.inspectModules]
-        save_list_as_txt(self.module_full_names, self.module_full_names_txt_path)
+        self.modules_full_name = [".".join(m.full_name) for m in self.inspectModules]
+        save_list_as_txt(self.modules_full_name, self.modules_full_name_txt_path)
         return self.model
 
+    def _hook_for_change_input_forward(self, layer_name):
+        def true_hook(module, input):
+            input_data = Data.load(os.path.join(self.fixed_input_path, f"{layer_name}.pt"))
+            return input_data["input"]
+
+
     def _hook_for_dump_args_forward(self, layer_name):
-        def true_hook(module, args, output):
-            data = {"layer_name": layer_name, "inputs": args, "output": output}
-            save_path = os.path.join(self.data_root_path, "forward", f"{layer_name}.pt")
-            Data.save( data, save_path)
+        def true_hook(module, input, output):
+            self.modules_full_name_run.append(layer_name)
+            data = {"layer_name": layer_name, "input": tensors_to_cpu(input), "output":tensors_to_cpu(output)}
+            save_path = os.path.join(self.forward_path, f"{layer_name}.pt")
+            Data.save(data, save_path)
 
         return true_hook
 
     def _hook_for_dump_args_backward(self, layer_name):
         def true_hook(module, grad_input, grad_output):
+            if self.is_1st_backward:
+                save_list_as_txt(self.modules_full_name_run, self.modules_full_name_run_txt_path)
+                self.is_1st_backward = False
             data = {
-                "layer_name": layer_name,
-                "grad_input": grad_input,
-                "grad_output": grad_output,
+                "layer_name": tensors_to_cpu(layer_name),
+                "grad_input": tensors_to_cpu(grad_input),
+                "grad_output": tensors_to_cpu(grad_output),
             }
-            save_path = os.path.join(self.data_root_path, "backward", f"{layer_name}.pt")
+            save_path = os.path.join(self.backward_path, f"{layer_name}.pt")
             Data.save(data, save_path)
 
         return true_hook
 
 
-def compare(data_expected, data_real, cmp_res_list):
+def compare(data_expected, data_real, cmp_res_list, rtol, atol):
     # all data saved in cmp_res_list, a trick for pass ref to function
     assert len(cmp_res_list) == 1, "cmp_res_list should only have one element"
     assert isinstance(
         cmp_res_list[0], OrderedDict
     ), "cmp_res_list[0] should be a OrderedDict"
     cmp_res = cmp_res_list[0]
-    atol = 1e-3
-    rtol = 1e-3
     if data_expected is None or data_real is None:
         assert (
             data_expected == data_real
@@ -163,14 +197,14 @@ def compare(data_expected, data_real, cmp_res_list):
         if not is_allclose:
             diff = data_real - data_expected
             max_diff = torch.max(torch.abs(diff))
-            max_index = torch.argmax(diff)
+            max_index = torch.argmax(max_diff)
             max_diff_data_expected = data_expected.flatten()[max_index]
             max_diff_data_real = data_real.flatten()[max_index]
             relative_err = (
                 max_diff_data_real - max_diff_data_expected
             ) / max_diff_data_expected
             cmp_res["err"] = (
-                f"max_diff: {max_diff}, expected: {max_diff_data_expected}, real: {max_diff_data_real}, relative err: {relative_err:.6f}"
+                f"max_diff: {max_diff:.6f}, expected: {max_diff_data_expected:.6f}, real: {max_diff_data_real:.6f}, relative err: {relative_err:.6f}"
             )
 
     elif isinstance(data_expected, (list, tuple)) and isinstance(
@@ -181,7 +215,7 @@ def compare(data_expected, data_real, cmp_res_list):
         ), "the data_expected and data_real is type of tuple or list, but the length of data_expected and data_real is not equal"
         for i in range(len(data_expected)):
             cmp_res[i] = OrderedDict()
-            compare(data_expected[i], data_real[i], [cmp_res[i]])
+            compare(data_expected[i], data_real[i], [cmp_res[i]], rtol, atol)
 
     elif isinstance(data_expected, str) or isinstance(data_real, str):
         assert type(data_expected) == type(
@@ -198,33 +232,36 @@ def compare(data_expected, data_real, cmp_res_list):
         if not is_allclose:
             relative_err = (data_real - data_expected) / data_expected
             cmp_res["err"] = (
-                f"diff: {data_real - data_expected}, expected: {data_expected}, real: {data_real}, relative err: {relative_err:.6f}"
+                f"diff: {data_real - data_expected:.6f}, expected: {data_expected:.6f}, real: {data_real:.6f}, relative err: {relative_err:.6f}"
             )
 
 
 def single_process_cmp_accuracy(
     data_expected_dir="accuracy_data/expected", data_real_dir="accuracy_data/real", rank=0
 ):
-    table = PrettyTable([f"No.(rank{rank})", "layer_name", "forward", "backward"])
+    rtol = 1e-3
+    atol = 1e-3
+    table = PrettyTable([f"No.(rank{rank})", "layer_name", f"forward(atol:{atol}, frtol:{rtol})", f"backward(atol:{atol},rtol:{rtol}"])
     table.align = "l"
     cmp_res = {}
 
-    module_name_path_expected = os.path.join(data_expected_dir, "module_full_names.txt")
-    module_name_path_real = os.path.join(data_real_dir, "module_full_names.txt")
+    module_name_path_expected = os.path.join(data_expected_dir, "modules_full_name_run.txt")
+    module_name_path_real = os.path.join(data_real_dir, "modules_full_name_run.txt")
 
     assert os.path.exists(
         module_name_path_expected
-    ), " module_full_name.txt is not exist in {data_expected_dir}"
+    ), " modules_full_name_run.txt is not exist in {data_expected_dir}"
     assert os.path.exists(
         module_name_path_real
-    ), " module_full_name.txt is not exist in {data_real_dir}"
-
-    assert filecmp.cmp(
-        module_name_path_expected, module_name_path_real, shallow=False
-    ), "the two module_full_name.txt is not equal"
-    full_name_modules = load_list_from_txt(module_name_path_real)
-    for i in range(len(full_name_modules)):
-        full_name = full_name_modules[i]
+    ), " modules_full_name_run.txt is not exist in {data_real_dir}"
+    modules_expected = load_list_from_txt(module_name_path_expected)
+    modules_real = load_list_from_txt(module_name_path_real)
+    modules_intersection = list(filter(lambda x: x in modules_real, modules_expected))
+    modules_only_in_expected = list(filter(lambda x: x not in modules_intersection, modules_expected))
+    modules_only_in_real= list(filter(lambda x: x not in modules_intersection, modules_real))
+    import pdb;pdb.set_trace()
+    for i in range(len(modules_intersection)):
+        full_name = modules_intersection[i]
         # cmp forward
         expected_forward_path = os.path.join(
             data_expected_dir, "forward", full_name + ".pt"
@@ -242,6 +279,8 @@ def single_process_cmp_accuracy(
                 forward_data_expected["output"],
                 forward_data_real["output"],
                 [output_cmp_res],
+                rtol,
+                atol
             )
         cmp_res["output"] = output_cmp_res
 
@@ -262,6 +301,8 @@ def single_process_cmp_accuracy(
                 backward_data_expected["grad_input"],
                 backward_data_real["grad_input"],
                 [grad_input_cmp_res],
+                rtol,
+                atol
             )
         cmp_res["grad_input"] = grad_input_cmp_res
 
@@ -270,6 +311,13 @@ def single_process_cmp_accuracy(
         grad_input_cmp_res_str = json.dumps(grad_input_cmp_res)
         table.add_row([i, full_name, output_cmp_res_str, grad_input_cmp_res_str])
     print(table)
+    if modules_only_in_expected:
+        print("Modules that exist only in the expected module:")
+        print("\n".join([" " * 4 + m_str for m_str in modules_only_in_expected]))
+    if modules_only_in_real:
+        print("Modules that exist only in the real module:"),
+        print("\n".join([" " * 4 + m_str for m_str in modules_only_in_real]))
+    print("=" * 80)
 
 
 def compare_accuracy(data_dir="accuracy_data"):
@@ -278,4 +326,3 @@ def compare_accuracy(data_dir="accuracy_data"):
         rank = int(dir[4:])
         sub_dir = os.path.join(data_dir, dir)
         single_process_cmp_accuracy(os.path.join(sub_dir, "expected"), os.path.join(sub_dir, "real"), rank)
-
