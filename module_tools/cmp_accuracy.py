@@ -299,8 +299,8 @@ def single_process_cmp_accuracy(
         [
             f"No.(rank{rank})",
             "layer_name",
-            f"forward(atol:{atol}, frtol:{rtol})",
-            f"backward(atol:{atol},rtol:{rtol}",
+            f"forward: output(atol:{atol}, rtol:{rtol})",
+            f"backward: grad_input(atol:{atol}, rtol:{rtol})",
         ]
     )
     table.align = "l"
@@ -326,9 +326,6 @@ def single_process_cmp_accuracy(
     modules_only_in_real = list(
         filter(lambda x: x not in modules_intersection, modules_real)
     )
-    import pdb
-
-    pdb.set_trace()
     for i in range(len(modules_intersection)):
         full_name = modules_intersection[i]
         # cmp forward
