@@ -11,13 +11,17 @@ on:
 env:
   DEEPLINK_PATH: '/mnt/cache/share/deeplinkci/github/${{ github.repository }}'
 
+concurrency:
+  group: camb-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   checkout_code:
     name: checkout code
     runs-on: tps-camb-ci
     steps:
       - name: Checkout Code
-        uses: DeepLink-org/ditorch/.github/actions/checkout-code@wgs/add_ci
+        uses: DeepLink-org/ditorch/.github/actions/checkout-code@main
 
   Build:
     name: build on camb
@@ -27,7 +31,7 @@ jobs:
       - name: build
         run: |
           set -ex
-          cd ${DEEPLINK_PATH}
+          cd ${DEEPLINK_PATH} && rm -rf ${GITHUB_JOB} && cp -R source ${GITHUB_JOB}  && cd ${GITHUB_JOB}
           echo "start to build"
 
   Test:
@@ -38,5 +42,5 @@ jobs:
       - name: test
         run: |
           set -ex
-          cd ${DEEPLINK_PATH}
+          cd ${DEEPLINK_PATH}/${GITHUB_JOB} && cd Build
           echo "start to test"
