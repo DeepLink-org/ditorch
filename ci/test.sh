@@ -1,0 +1,1 @@
+find . -name test*.py | xargs -I {} python {}

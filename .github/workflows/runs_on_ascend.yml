@@ -40,3 +40,4 @@ jobs:
           set -ex
           cd ${DEEPLINK_PATH}
           echo "start to test"
+          bash ci/test.sh
