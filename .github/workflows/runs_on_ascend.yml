@@ -1,0 +1,42 @@
+name: runs on ascend
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+
+env:
+  DEEPLINK_PATH: '/mnt/cache/share/deeplinkci/github/${{ github.repository }}'
+
+jobs:
+  Checkout_Code:
+    name: checkout code
+    runs-on: tps-ascend-ci-910b
+    steps:
+      - name: Checkout Code
+        uses: DeepLink-org/ditorch/.github/actions/checkout-code@wgs/add_ci
+
+  Build:
+    name: build on ascend
+    runs-on: tps-ascend-ci-910b
+    needs: [checkout_code]
+    steps:
+      - name: build
+        run: |
+          set -ex
+          cd ${DEEPLINK_PATH}
+          echo "start to build"
+
+  Test:
+    name: test on ascend
+    runs-on: tps-ascend-ci-910b
+    needs: [Build]
+    steps:
+      - name: test
+        run: |
+          set -ex
+          cd ${DEEPLINK_PATH}
+          echo "start to test"
