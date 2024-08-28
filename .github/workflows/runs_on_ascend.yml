@@ -14,14 +14,14 @@ env:
 jobs:
   Checkout_Code:
     name: checkout code
-    runs-on: dicp-ascend-ci-910b
+    runs-on: tps-ascend-ci-910b
     steps:
       - name: Checkout Code
         uses: DeepLink-org/ditorch/.github/actions/checkout-code@wgs/add_ci
 
   Build:
     name: build on ascend
-    runs-on: dicp-ascend-ci-910b
+    runs-on: tps-ascend-ci-910b
     needs: [checkout_code]
     steps:
       - name: build
@@ -32,7 +32,7 @@ jobs:
 
   Test:
     name: test on ascend
-    runs-on: dicp-ascend-ci-910b
+    runs-on: tps-ascend-ci-910b
     needs: [Build]
     steps:
       - name: test
