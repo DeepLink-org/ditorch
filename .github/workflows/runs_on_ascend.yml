@@ -42,6 +42,11 @@ jobs:
       - name: test
         run: |
           set -ex
+          echo "DEEPLINK_PATH:" ${DEEPLINK_PATH}
+          echo "GITHUB_JOB:" ${GITHUB_JOB}
+          echo $PWD
+          ls ${DEEPLINK_PATH}
+
           cd ${DEEPLINK_PATH}/${GITHUB_JOB}
           echo "start to test"
           ls -l
