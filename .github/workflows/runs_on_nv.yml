@@ -1,0 +1,41 @@
+name: runs on nv
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+
+env:
+  DEEPLINK_PATH: '/mnt/cache/share/deeplinkci/github/${{ github.repository }}'
+
+jobs:
+  checkout_code:
+    name: checkout code
+    runs-on: tps-sco-ci
+    steps:
+      - name: Checkout Code
+        uses: DeepLink-org/ditorch/.github/actions/checkout-code@wgs/add_ci
+
+  Build:
+    name: build on nv
+    runs-on: tps-sco-ci
+    steps:
+      - name: build
+        run: |
+          set -ex
+          cd ${DEEPLINK_PATH}
+          echo "start to build"
+
+  Test:
+    name: test on nv
+    runs-on: tps-sco-ci
+    steps:
+      - name: test
+        run: |
+          set -ex
+          cd ${DEEPLINK_PATH}
+          echo "start to test"
+
