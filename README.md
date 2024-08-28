@@ -181,7 +181,17 @@ OpAutoCompareHook: torch.Tensor.tolist                            2th allclose: 
 OpAutoCompareHook: torch.Tensor.tolist                            3th allclose: True    max_diff:          0.000000000
 skip OpAutoCompareHook on npu.npu_fusion_attention
 ...
-
+OpAutoCompareHook: torch.Tensor.sum (ins[0].grad)                     allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.sort (ins[0].grad)                    allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.add (ins[0].grad)                     allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.add (ins[0].grad)                     allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.add (ins[1].grad)                     allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.Tensor.half (ins[0].grad)                    allclose: True    max_diff:          0.000000000
+...
+OpAutoCompareHook: torch.nn.functional.linear (ins[2].grad)           allclose: True    max_diff:          0.000000000
+OpAutoCompareHook: torch.nn.functional.linear (ins[1].grad)           allclose: True    max_diff:          0.000000238
+OpAutoCompareHook: torch.nn.functional.linear (ins[0].grad)           allclose: True    max_diff:          0.000000060
+...
 ```
 
 #### **离线算子精度测试**
