@@ -11,13 +11,17 @@ on:
 env:
   DEEPLINK_PATH: '/mnt/cache/share/deeplinkci/github/${{ github.repository }}'
 
+concurrency:
+  group: camb-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   checkout_code:
     name: checkout code
     runs-on: tps-camb-ci
     steps:
       - name: Checkout Code
-        uses: DeepLink-org/ditorch/.github/actions/checkout-code@wgs/add_ci
+        uses: DeepLink-org/ditorch/.github/actions/checkout-code@main
 
   Build:
     name: build on camb

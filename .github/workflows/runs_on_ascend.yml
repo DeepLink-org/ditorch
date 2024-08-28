@@ -11,13 +11,17 @@ on:
 env:
   DEEPLINK_PATH: '/mnt/cache/share/deeplinkci/github/${{ github.repository }}'
 
+concurrency:
+  group: ascend-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   Checkout_Code:
     name: checkout code
     runs-on: tps-ascend-ci-910b
     steps:
       - name: Checkout Code
-        uses: DeepLink-org/ditorch/.github/actions/checkout-code@wgs/add_ci
+        uses: DeepLink-org/ditorch/.github/actions/checkout-code@main
 
   Build:
     name: build on ascend
