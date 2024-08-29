@@ -42,6 +42,7 @@ jobs:
       - name: test
         run: |
           set -ex
+          source /mnt/cache/share/platform/cienv/ditorch_env
           cd ${DEEPLINK_PATH}/${GITHUB_RUN_NUMBER} && rm -rf ${GITHUB_JOB} && cp -R Build ${GITHUB_JOB}  && cd ${GITHUB_JOB}
           echo "start to test"
           bash ci/test.sh
