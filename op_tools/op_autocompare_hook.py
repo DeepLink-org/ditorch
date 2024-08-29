@@ -208,9 +208,6 @@ class OpAutoCompareHook(BaseHook):
 
     def compare_all_grad(self):
         if self.count_params_with_requires_grad() > len(self.grad_inputs):
-            print(
-                f"{self.name}: The gradients of {self.count_params_with_requires_grad()} parameters need to be calculated, but only {len(self.grad_inputs)} are obtained."
-            )
             return
         for i in range(len(self.args)):
             arg = self.args[i]
@@ -241,7 +238,7 @@ class OpAutoCompareHook(BaseHook):
                     continue
                 allclose, max_diff = compare_result(
                     self.name + f" (ins[{index}].grad)",
-                    grad,
+                    to_device("cpu", grad, self.dtype_cast_dict),
                     arg_cpu.grad,
                 )
                 if not allclose and max_diff > 1e-3:

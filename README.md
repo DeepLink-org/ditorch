@@ -188,6 +188,7 @@ OpAutoCompareHook: torch.Tensor.add (ins[0].grad)                     allclose: 
 OpAutoCompareHook: torch.Tensor.add (ins[1].grad)                     allclose: True    max_diff:          0.000000000
 OpAutoCompareHook: torch.Tensor.half (ins[0].grad)                    allclose: True    max_diff:          0.000000000
 ...
+OpAutoCompareHook: torch.nn.functional.silu (ins[0].grad)             allclose: True    max_diff:          0.000000000
 OpAutoCompareHook: torch.nn.functional.linear (ins[2].grad)           allclose: True    max_diff:          0.000000000
 OpAutoCompareHook: torch.nn.functional.linear (ins[1].grad)           allclose: True    max_diff:          0.000000238
 OpAutoCompareHook: torch.nn.functional.linear (ins[0].grad)           allclose: True    max_diff:          0.000000060
