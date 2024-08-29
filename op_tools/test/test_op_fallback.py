@@ -24,7 +24,7 @@ def f():
         base ** (torch.arange(0, dim, 2, device="cuda", dtype=torch.float32) / dim)
     )
 
-    x = torch.randn(3, 4).cuda().to(torch.bfloat16)
+    x = torch.randn(3, 4).cuda().to(torch.float16)  # camb_mlu370 not support bfloat16
     y = x.clone()
     z = y.half()
     n = z.cpu()
