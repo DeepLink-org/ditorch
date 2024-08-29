@@ -15,7 +15,6 @@ def f():
     sorted, indices = e.sort()  # return torch.return_type.sort
     assert not sorted.is_cpu
     sorted.sum().backward()
-    print(c)
     y = torch.cat((a, a, a), dim=0)  # first input type is tuple
     assert not y.is_cpu
 
