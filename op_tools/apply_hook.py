@@ -8,7 +8,7 @@ from .op_fallback_hook import OpFallbackHook
 from .op_autocompare_hook import OpAutoCompareHook
 from .op_dispatch_watch_hook import OpDispatchWatcherHook
 from .op_time_measure_hook import OpTimeMeasureHook
-from .utils import is_cpu_op, is_opname_match
+from .utils import is_cpu_op, is_opname_match, traverse_container
 import inspect
 
 
@@ -295,7 +295,8 @@ class OpTimeMeasure(OpToolBase):
         super().__exit__(None, None, None)
 
 
-class OpDispatchWatcher(TorchDispatchMode):
+# class OpDispatchWatcher(TorchDispatchMode):
+class OpDispatchWatcher(OpToolBase):
     """
     Usage1:
     with OpDispatchWatcher():
@@ -306,11 +307,56 @@ class OpDispatchWatcher(TorchDispatchMode):
     f()
     """
 
-    def __torch_dispatch__(self, func, types, args, kwargs=None):
+    def __init__(self):
+        super().__init__()
+
+    def is_should_watch(self, name, func, args, kwargs):
+        if name is None or func is None:
+            return False
+        if is_opname_match(name, os.getenv("OP_DISPATCH_WATCH_DISABLE_LIST", "")):
+            return False
+        return is_opname_match(name, os.getenv("OP_DISPATCH_WATCH_LIST", ".*"))
+
+
+    def set_output_requires_grad_if_output_omits_requires_grad_attribute(
+        self, name, args, kwargs, output
+    ):
+        input_requires_grad = False
+        for arg in traverse_container(args):
+            if isinstance(arg, torch.Tensor) and arg.requires_grad:
+                input_requires_grad = True
+        if input_requires_grad == False:
+            return output
+        output_requires_grad = False
+        for arg in traverse_container(output):
+            if isinstance(arg, torch.Tensor) and arg.requires_grad:
+                output_requires_grad = True
+        if output_requires_grad:
+            return output
+        if name.find("detach") >= 0:
+            return output
+
+        if not torch.is_grad_enabled():
+            return output
+
+        for arg in traverse_container(output):
+            if isinstance(arg, torch.Tensor) and arg.is_floating_point():
+                arg.requires_grad = True
+
+        return output
+
+    # def __torch_dispatch__(self, func, types, args, kwargs=None):
+    def __torch_function__(self, func, types, args, kwargs=None):
         name = resolve_name(func)
-        if name is not None:
+        if self.is_should_watch(name, func, args, kwargs):
             new_func = OpDispatchWatcherHook(name)(func)
-            return new_func(*args, **(kwargs or {}))
+            output = new_func(*args, **(kwargs or {}))
+            output = (
+                self.set_output_requires_grad_if_output_omits_requires_grad_attribute(
+                    name, args, kwargs, output
+                )
+            )
+            return output
         else:
             return func(*args, **(kwargs or {}))
 

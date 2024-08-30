@@ -14,6 +14,13 @@ def f():
     f = torch.cos(e)
     g = e.abs()
     f.sum()
+    f.backward(torch.ones_like(f))
+
+    x = torch.randn(3, 4, requires_grad=True).cuda()
+    assert x.requires_grad
+
+    y = x.to(torch.half)
+    assert y.requires_grad
 
 
 f()
@@ -47,3 +54,32 @@ print("dispatch process of the operator when autocompare is enabled:")
 with op_tools.OpDispatchWatcher():
     with op_tools.OpAutoCompare():
         f()
+
+
+from torch.utils._python_dispatch import TorchDispatchMode
+
+
+class TesTorchDispatchMode(TorchDispatchMode):
+
+    def __torch_dispatch__(self, func, types, args, kwargs=None):
+        return func(*args, **kwargs)
+
+
+x = torch.randn(3, 4, requires_grad=True, device="cuda")
+x_cpu = x.cpu()
+n = x.half()
+with TesTorchDispatchMode():
+    y = x.half()
+    z = x + x
+    y_cpu = x_cpu + x_cpu
+assert y_cpu.requires_grad
+assert n.requires_grad
+assert z.requires_grad
+
+# When TorchDispatchMode is turned on, the requires_grad of the output Tensor of
+# some operators (aten.to.dtype, aten._to_copy.default, aten.to.dtype_layout, aten.view.default eq.)
+# will be accidentally changed to False. This should be a bug in pytorch.
+# I once tried to modify the requires_grad attribute of the output Tensor,
+# but found that I could not modify this attribute directly in __torch_dispatch__
+
+# assert (y.requires_grad)
