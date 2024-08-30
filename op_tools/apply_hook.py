@@ -84,7 +84,6 @@ class OpCapture(OpToolBase):
         else:
             if name not in self.skiped_op:
                 print(f"skip OpCaptureHook on {name}")
-            else:
                 self.skiped_op.add(name)
 
             return func(*args, **(kwargs or {}))
@@ -170,7 +169,6 @@ class OpFallback(OpToolBase):
         else:
             if name not in self.skiped_op:
                 print(f"skip OpFallbackHook on {name}")
-            else:
                 self.skiped_op.add(name)
             return func(*args, **(kwargs or {}))
 
@@ -242,7 +240,6 @@ class OpAutoCompare(OpToolBase):
         else:
             if name not in self.skiped_op:
                 print(f"skip OpAutoCompareHook on {name}")
-            else:
                 self.skiped_op.add(name)
             return func(*args, **(kwargs or {}))
 
@@ -284,7 +281,6 @@ class OpTimeMeasure(OpToolBase):
         else:
             if name not in self.skiped_op:
                 print(f"skip OpTimeMeasureHook on {name}")
-            else:
                 self.skiped_op.add(name)
             return func(*args, **(kwargs or {}))
 
