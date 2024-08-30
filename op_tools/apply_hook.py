@@ -295,7 +295,7 @@ class OpTimeMeasure(OpToolBase):
         super().__exit__(None, None, None)
 
 
-class OpDispatchWatcher(TorchDispatchMode):
+class OpDispatchWatcher(OpToolBase):
     """
     Usage1:
     with OpDispatchWatcher():
@@ -306,9 +306,19 @@ class OpDispatchWatcher(TorchDispatchMode):
     f()
     """
 
-    def __torch_dispatch__(self, func, types, args, kwargs=None):
+    def __init__(self):
+        super().__init__()
+
+    def is_should_watch(self, name, func, args, kwargs):
+        if name is None or func is None:
+            return False
+        if is_opname_match(name, os.getenv("OP_DISPATCH_WATCH_DISABLE_LIST", "")):
+            return False
+        return is_opname_match(name, os.getenv("OP_DISPATCH_WATCH_LIST", ".*"))
+
+    def __torch_function__(self, func, types, args, kwargs=None):
         name = resolve_name(func)
-        if name is not None:
+        if self.is_should_watch(name, func, args, kwargs):
             new_func = OpDispatchWatcherHook(name)(func)
             return new_func(*args, **(kwargs or {}))
         else:
