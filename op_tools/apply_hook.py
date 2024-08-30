@@ -8,7 +8,7 @@ from .op_fallback_hook import OpFallbackHook
 from .op_autocompare_hook import OpAutoCompareHook
 from .op_dispatch_watch_hook import OpDispatchWatcherHook
 from .op_time_measure_hook import OpTimeMeasureHook
-from .utils import is_cpu_op, is_opname_match, traverse_container
+from .utils import is_cpu_op, is_opname_match
 import inspect
 
 
