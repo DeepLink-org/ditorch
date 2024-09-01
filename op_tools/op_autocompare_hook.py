@@ -110,7 +110,8 @@ class BackwardHookHandle:
         hook_handle = None
 
         def grad_fun(grad):
-            self.compare_hook.compare_grad(index, grad)
+            self.compare_hook.set_input_grad(index, grad)
+            self.compare_hook.compare_all_grad()
             hook_handle.remove()
 
         hook_handle = tensor.register_hook(grad_fun)
@@ -189,11 +190,11 @@ class OpAutoCompareHook(BaseHook):
                 if isinstance(result, torch.Tensor):
                     if result.grad_fn is not None:
                         self.backward_hook_handle.register_grad_fn_hook(result)
-            index = 0
+            index = -1
             for arg in traverse_container(self.args):
+                index += 1
                 if isinstance(arg, torch.Tensor) and arg.requires_grad:
                     self.backward_hook_handle.register_tensor_hook(index, arg)
-                    index += 1
 
     def run_backward_on_cpu(self, grad_inputs, grad_output):
         self.grad_inputs = grad_inputs
@@ -208,6 +209,16 @@ class OpAutoCompareHook(BaseHook):
             if isinstance(result_cpu, torch.Tensor) and result_cpu.requires_grad:
                 result_cpu.backward(*self.grad_outputs_cpu)
 
+        self.args_cpu_grad = []
+        for i in range(len(self.args_cpu)):
+            if (
+                isinstance(self.args_cpu[i], torch.Tensor)
+                and self.args_cpu[i].grad is not None
+            ):
+                self.args_cpu_grad.append(self.args_cpu[i].grad)
+            else:
+                self.args_cpu_grad.append(None)
+
     def count_params_with_requires_grad(self):
         count = 0
         for arg in traverse_container(self.args):
@@ -216,39 +227,28 @@ class OpAutoCompareHook(BaseHook):
         return count
 
     def compare_all_grad(self):
-        if self.count_params_with_requires_grad() > len(self.grad_inputs):
+        """
+        Since the order in which the two backward hooks registered by different operators are called is not exactly the same, and the gradient can only be calculated on the CPU after the grad_fn hook is called, there is a judgment here, because only when the gradient on the CPU is calculated and all the gradients of the device parameters are obtained, can the gradient information be compared.
+        """
+        if not hasattr(self, "args_cpu_grad"):
             return
+        if not (hasattr(self, "args_grad") and self.args_grad[0] is not None):
+            return
+
         for i in range(len(self.args)):
             arg = self.args[i]
-            arg_cpu = self.args_cpu[i]
 
             if isinstance(arg, torch.Tensor) and arg.requires_grad:
+                arg_cpu_grad = self.args_cpu_grad[i]
                 allclose, max_diff = compare_result(
                     self.name + f" (ins[{i}].grad)",
-                    self.grad_inputs_cpu[i],
-                    arg_cpu.grad,
+                    self.args_grad[i],
+                    arg_cpu_grad,
                 )
                 if not allclose and max_diff > 1e-3:
                     print(f"{self.name} {i}th grad is not allclose ")
 
-    def compare_grad(self, index, grad):
-        if not hasattr(self, "grad_inputs"):
-            return
-        if self.count_params_with_requires_grad() <= len(self.grad_inputs):
-            return
-        temp_index = -1
-        for i in range(len(self.args)):
-            arg = self.args[i]
-            arg_cpu = self.args_cpu[i]
-
-            if isinstance(arg, torch.Tensor) and arg.requires_grad:
-                temp_index += 1
-                if temp_index != index:
-                    continue
-                allclose, max_diff = compare_result(
-                    self.name + f" (ins[{index}].grad)",
-                    to_device("cpu", grad, self.dtype_cast_dict),
-                    arg_cpu.grad,
-                )
-                if not allclose and max_diff > 1e-3:
-                    print(f"{self.name} {index}th grad is not allclose ")
+    def set_input_grad(self, index, grad):
+        if not hasattr(self, "args_grad"):
+            self.args_grad = [None for i in range(len(self.args))]
+        self.args_grad[index] = to_device("cpu", grad, self.dtype_cast_dict)
