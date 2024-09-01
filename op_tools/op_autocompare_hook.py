@@ -1,6 +1,8 @@
 # Copyright (c) 2024, DeepLink.
 import torch
 import math
+import gc
+
 from .base_hook import BaseHook, DisableHookGuard
 from .utils import to_device, is_cpu_op, traverse_container
 from .op_fallback_hook import OpFallbackHook
@@ -93,16 +95,25 @@ class BackwardHookHandle:
     def __init__(self, compare_hook) -> None:
         self.compare_hook = compare_hook
 
-    def grad_fun_hook(self):
+    def register_grad_fn_hook(self, tensor):
+        hook_handle = None
+
         def grad_fun(grad_inputs, grad_outputs):
             self.compare_hook.run_backward_on_cpu(grad_inputs, grad_outputs)
             self.compare_hook.compare_all_grad()
+            hook_handle.remove()
 
+        hook_handle = tensor.grad_fn.register_hook(grad_fun)
         return grad_fun
 
-    def grad_tensor_hook(self, index):
+    def register_tensor_hook(self, index, tensor):
+        hook_handle = None
+
         def grad_fun(grad):
             self.compare_hook.compare_grad(index, grad)
+            hook_handle.remove()
+
+        hook_handle = tensor.register_hook(grad_fun)
 
         return grad_fun
 
@@ -177,13 +188,11 @@ class OpAutoCompareHook(BaseHook):
             for result in traverse_container(self.result):
                 if isinstance(result, torch.Tensor):
                     if result.grad_fn is not None:
-                        result.grad_fn.register_hook(
-                            self.backward_hook_handle.grad_fun_hook()
-                        )
+                        self.backward_hook_handle.register_grad_fn_hook(result)
             index = 0
             for arg in traverse_container(self.args):
                 if isinstance(arg, torch.Tensor) and arg.requires_grad:
-                    arg.register_hook(self.backward_hook_handle.grad_tensor_hook(index))
+                    self.backward_hook_handle.register_tensor_hook(index, arg)
                     index += 1
 
     def run_backward_on_cpu(self, grad_inputs, grad_output):
