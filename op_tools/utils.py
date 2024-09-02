@@ -78,3 +78,16 @@ def get_function_from_string(func_str):
         attrs.append(attr)
 
     return attrs[len(parts) - 1]
+
+
+def get_dtype_cast_dict_form_str(config):
+    """
+    'torch.float16->torch.float32,torch.bfloat16->torch.float32' -> {torch.float16:torch.float32, torch.bfloat16:torch.float32}
+    """
+    dtype_cast_dict = dict()
+    if config is not None:
+        for item in config.split(","):
+            dtype_cast_dict[get_function_from_string(item.split("->")[0])] = (
+                get_function_from_string(item.split("->")[1])
+            )
+    return dtype_cast_dict
