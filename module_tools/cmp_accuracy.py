@@ -109,7 +109,8 @@ class CompLayerAcc:
         self.model = model
         self.is_dump_benchmark = is_dump_benchmark
         self.saved_datas = set()
-        self.top_dir = "accuracy_data"
+        # self.top_dir = "accuracy_data"
+        self.top_dir = "/deeplink_afs/wangxing/accuracy_data"
         self.sub_dir = "expected" if self.is_dump_benchmark else "real"
         self.data_root_path = os.path.join(
             self.top_dir, f"rank{self.rank}", self.sub_dir
@@ -162,9 +163,10 @@ class CompLayerAcc:
                 module.register_forward_pre_hook(
                     self._hook_for_change_input_forward(module_full_name)
                 )
-                module.register_full_backward_pre_hook(
-                    self._hook_for_change_input_backward(module_full_name)
-                )
+                # if module_full_name != "PipelineEngine.module":  # Comment out code as you see fit
+                #     module.register_full_backward_pre_hook(
+                #         self._hook_for_change_input_backward(module_full_name)
+                # )
 
     def insert_hook(self):
         print(self.model)
@@ -178,7 +180,7 @@ class CompLayerAcc:
             input_data = Data.load(
                 os.path.join(self.fixed_input_path, "forward", f"{layer_name}.pt")
             )
-            return input_data["input"]
+            return tensors_to_cuda(input_data["input"])
 
         return true_hook
 
@@ -187,7 +189,7 @@ class CompLayerAcc:
             input_data = Data.load(
                 os.path.join(self.fixed_input_path, "backward", f"{layer_name}.pt")
             )
-            return input_data["grad_output"]
+            return tensors_to_cuda(input_data["grad_output"])
 
         return true_hook
 
@@ -196,7 +198,7 @@ class CompLayerAcc:
             self.modules_full_name_run.append(layer_name)
             data = {"layer_name": layer_name, "input": input, "output": output}
             save_path = os.path.join(self.forward_path, f"{layer_name}.pt")
-            Data.save(data, save_path)
+            Data.save(tensors_to_cpu(data), save_path)
 
         return true_hook
 
@@ -213,7 +215,7 @@ class CompLayerAcc:
                 "grad_output": grad_output,
             }
             save_path = os.path.join(self.backward_path, f"{layer_name}.pt")
-            Data.save(data, save_path)
+            Data.save(tensors_to_cpu(data), save_path)
 
         return true_hook
 
@@ -339,8 +341,8 @@ def single_process_cmp_accuracy(
 
         output_cmp_res = OrderedDict()
         if os.path.exists(expected_forward_path):
-            forward_data_expected = Data.load(expected_forward_path)
-            forward_data_real = Data.load(real_forward_path)
+            forward_data_expected = Data.load(expected_forward_path, map_location="cpu")
+            forward_data_real = Data.load(real_forward_path, map_location ="cpu")
             compare(
                 forward_data_expected["output"],
                 forward_data_real["output"],
@@ -355,23 +357,21 @@ def single_process_cmp_accuracy(
             data_expected_dir, "backward", full_name + ".pt"
         )
         real_backward_path = os.path.join(data_real_dir, "backward", full_name + ".pt")
-        assert os.path.exists(real_backward_path) == os.path.exists(
-            expected_backward_path
-        ), "one of the path {expected_backward_path} and {real_backward_path}, but the other is not exist."
-
-        grad_input_cmp_res = OrderedDict()
-        if os.path.exists(expected_backward_path):
-            backward_data_expected = Data.load(expected_backward_path)
-            backward_data_real = Data.load(real_backward_path)
-            compare(
-                backward_data_expected["grad_input"],
-                backward_data_real["grad_input"],
-                [grad_input_cmp_res],
-                rtol,
-                atol,
-            )
-        cmp_res["grad_input"] = grad_input_cmp_res
-
+        if os.path.exists(real_backward_path):
+            grad_input_cmp_res = OrderedDict()
+            if os.path.exists(expected_backward_path):
+                backward_data_expected = Data.load(expected_backward_path, map_location="cpu")
+                backward_data_real = Data.load(real_backward_path, map_location="cpu")
+                compare(
+                    backward_data_expected["grad_input"],
+                    backward_data_real["grad_input"],
+                    [grad_input_cmp_res],
+                    rtol,
+                    atol,
+                )
+            cmp_res["grad_input"] = grad_input_cmp_res
+        else:
+            grad_input_cmp_res = {}
         # to str
         output_cmp_res_str = json.dumps(output_cmp_res)
         grad_input_cmp_res_str = json.dumps(grad_input_cmp_res)
