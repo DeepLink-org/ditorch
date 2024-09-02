@@ -62,6 +62,14 @@ def is_opname_match(name, op_pattern=None):
     return False
 
 
+def is_inplace_op(name):
+    return (
+        name.endswith("_")
+        and (not name.endswith("__"))
+        and (name.startswith("torch.Tensor."))
+    )
+
+
 def get_function_from_string(func_str):
     parts = func_str.split(".")
     attrs = [importlib.import_module(parts[0])]

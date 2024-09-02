@@ -29,11 +29,9 @@ def f():
 f()
 
 # usage1
-print("normal run, op dispatch process:")
 with op_tools.OpAutoCompare():
     f()
 
-print("\n")
 
 # usage2
 comparer = op_tools.OpAutoCompare()

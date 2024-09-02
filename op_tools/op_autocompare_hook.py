@@ -1,8 +1,10 @@
 # Copyright (c) 2024, DeepLink.
 import torch
 import math
+import gc
+
 from .base_hook import BaseHook, DisableHookGuard
-from .utils import to_device, is_cpu_op, traverse_container
+from .utils import to_device, is_cpu_op, traverse_container, is_inplace_op
 from .op_fallback_hook import OpFallbackHook
 from .save_op_args import save_op_args, serialize_args_to_dict
 
@@ -93,16 +95,26 @@ class BackwardHookHandle:
     def __init__(self, compare_hook) -> None:
         self.compare_hook = compare_hook
 
-    def grad_fun_hook(self):
+    def register_grad_fn_hook(self, tensor):
+        hook_handle = None
+
         def grad_fun(grad_inputs, grad_outputs):
             self.compare_hook.run_backward_on_cpu(grad_inputs, grad_outputs)
             self.compare_hook.compare_all_grad()
+            hook_handle.remove()
 
+        hook_handle = tensor.grad_fn.register_hook(grad_fun)
         return grad_fun
 
-    def grad_tensor_hook(self, index):
+    def register_tensor_hook(self, index, tensor):
+        hook_handle = None
+
         def grad_fun(grad):
-            self.compare_hook.compare_grad(index, grad)
+            self.compare_hook.set_input_grad(index, grad)
+            self.compare_hook.compare_all_grad()
+            hook_handle.remove()
+
+        hook_handle = tensor.register_hook(grad_fun)
 
         return grad_fun
 
@@ -151,7 +163,13 @@ class OpAutoCompareHook(BaseHook):
                     self.kwargs_cpu or {},
                     dtype_cast_dict=self.dtype_cast_dict,
                 )
-                self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
+                # RuntimeError: a leaf Variable that requires grad is being used in an in-place operation.
+                if is_inplace_op(self.name) and self.args[0].requires_grad:
+                    args_cpu = [item for item in self.args_cpu]
+                    args_cpu[0] = args_cpu[0].clone()
+                    self.result_cpu = self.func(*args_cpu, **self.kwargs_cpu)
+                else:
+                    self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
 
                 self.result_device = to_device(
                     "cpu",
@@ -161,30 +179,28 @@ class OpAutoCompareHook(BaseHook):
             allclose, max_diff = compare_result(
                 self.name, self.result_device, self.result_cpu
             )
-            if not allclose and max_diff > 1e-3:
+
+            self.forward_allclose = allclose
+            self.forward_op_id = self.id
+            if not allclose:
                 print(
                     f"OpAutoCompareHook: {self.name:<60} input: {serialize_args_to_dict(*self.args, **self.kwargs)}"
                 )
                 print(
                     f"OpAutoCompareHook: {self.name:<60} output: {serialize_args_to_dict(self.result)['args']}"
                 )
-                save_op_args(self.name, "device/input", *self.args, **self.kwargs)
-                save_op_args(self.name, "device/output", self.result)
-                save_op_args(self.name, "cpu/input", *self.args_cpu, **self.kwargs_cpu)
-                save_op_args(self.name, "cpu/output", self.result_cpu)
+                self.save_forward_args()
 
             self.backward_hook_handle = BackwardHookHandle(self)
             for result in traverse_container(self.result):
                 if isinstance(result, torch.Tensor):
                     if result.grad_fn is not None:
-                        result.grad_fn.register_hook(
-                            self.backward_hook_handle.grad_fun_hook()
-                        )
-            index = 0
+                        self.backward_hook_handle.register_grad_fn_hook(result)
+            index = -1
             for arg in traverse_container(self.args):
+                index += 1
                 if isinstance(arg, torch.Tensor) and arg.requires_grad:
-                    arg.register_hook(self.backward_hook_handle.grad_tensor_hook(index))
-                    index += 1
+                    self.backward_hook_handle.register_tensor_hook(index, arg)
 
     def run_backward_on_cpu(self, grad_inputs, grad_output):
         self.grad_inputs = grad_inputs
@@ -199,6 +215,16 @@ class OpAutoCompareHook(BaseHook):
             if isinstance(result_cpu, torch.Tensor) and result_cpu.requires_grad:
                 result_cpu.backward(*self.grad_outputs_cpu)
 
+        self.args_cpu_grad = []
+        for i in range(len(self.args_cpu)):
+            if (
+                isinstance(self.args_cpu[i], torch.Tensor)
+                and self.args_cpu[i].grad is not None
+            ):
+                self.args_cpu_grad.append(self.args_cpu[i].grad)
+            else:
+                self.args_cpu_grad.append(None)
+
     def count_params_with_requires_grad(self):
         count = 0
         for arg in traverse_container(self.args):
@@ -207,39 +233,84 @@ class OpAutoCompareHook(BaseHook):
         return count
 
     def compare_all_grad(self):
-        if self.count_params_with_requires_grad() > len(self.grad_inputs):
+        """
+        Since the order in which the two backward hooks registered by different operators are called is not exactly the same, and the gradient can only be calculated on the CPU after the grad_fn hook is called, there is a judgment here, because only when the gradient on the CPU is calculated and all the gradients of the device parameters are obtained, can the gradient information be compared.
+        """
+        if not hasattr(self, "args_cpu_grad"):
             return
+        if not hasattr(self, "args_grad"):
+            return
+
+        # Check if all gradients have been obtained
         for i in range(len(self.args)):
             arg = self.args[i]
-            arg_cpu = self.args_cpu[i]
+            if isinstance(arg, torch.Tensor) and (
+                arg.requires_grad and self.args_grad[i] is None
+            ):
+                return
+
+        all_grad_allclose = True
+        for i in range(len(self.args)):
+            arg = self.args[i]
 
             if isinstance(arg, torch.Tensor) and arg.requires_grad:
+                arg_cpu_grad = self.args_cpu_grad[i]
                 allclose, max_diff = compare_result(
                     self.name + f" (ins[{i}].grad)",
-                    self.grad_inputs_cpu[i],
-                    arg_cpu.grad,
+                    self.args_grad[i],
+                    arg_cpu_grad,
                 )
-                if not allclose and max_diff > 1e-3:
-                    print(f"{self.name} {i}th grad is not allclose ")
 
-    def compare_grad(self, index, grad):
-        if not hasattr(self, "grad_inputs"):
-            return
-        if self.count_params_with_requires_grad() <= len(self.grad_inputs):
-            return
-        temp_index = -1
-        for i in range(len(self.args)):
-            arg = self.args[i]
-            arg_cpu = self.args_cpu[i]
+                if not allclose:
+                    all_grad_allclose = False
+        if not all_grad_allclose:
+            # Parameters are not saved when forward accuracy is normal
+            if self.forward_allclose:
+                self.save_forward_args()
+            self.save_backward_args
 
-            if isinstance(arg, torch.Tensor) and arg.requires_grad:
-                temp_index += 1
-                if temp_index != index:
-                    continue
-                allclose, max_diff = compare_result(
-                    self.name + f" (ins[{index}].grad)",
-                    to_device("cpu", grad, self.dtype_cast_dict),
-                    arg_cpu.grad,
-                )
-                if not allclose and max_diff > 1e-3:
-                    print(f"{self.name} {index}th grad is not allclose ")
+        self = None
+        gc.collect()
+
+    def set_input_grad(self, index, grad):
+        if not hasattr(self, "args_grad"):
+            self.args_grad = [None for i in range(len(self.args))]
+        self.args_grad[index] = to_device("cpu", grad, self.dtype_cast_dict)
+
+    def save_forward_args(self):
+        save_op_args(
+            self.name,
+            f"{self.forward_op_id}/device/input",
+            *self.args,
+            **self.kwargs,
+        )
+        save_op_args(self.name, f"{self.forward_op_id}/device/output", self.result)
+        save_op_args(
+            self.name,
+            f"{self.forward_op_id}/cpu/input",
+            *self.args_cpu,
+            **self.kwargs_cpu,
+        )
+        save_op_args(self.name, f"{self.forward_op_id}/cpu/output", self.result_cpu)
+
+    def save_backward_args(self):
+        save_op_args(
+            self.name,
+            f"{self.forward_op_id}/device/grad_outputs",
+            *tuple(self.grad_output),
+        )
+        save_op_args(
+            self.name,
+            f"{self.forward_op_id}/device/grad_inputs",
+            *tuple(self.args_grad),
+        )
+        save_op_args(
+            self.name,
+            f"{self.forward_op_id}/cpu/grad_inputs",
+            *tuple(self.args_cpu_grad),
+        )
+        save_op_args(
+            self.name,
+            f"{self.forward_op_id}/cpu/grad_outputs",
+            *tuple(self.grad_outputs_cpu),
+        )
