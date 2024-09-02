@@ -165,7 +165,6 @@ class OpAutoCompareHook(BaseHook):
                 )
                 # RuntimeError: a leaf Variable that requires grad is being used in an in-place operation.
                 if is_inplace_op(self.name) and self.args[0].requires_grad:
-                    print(f"inplace op")
                     args_cpu = [item for item in self.args_cpu]
                     args_cpu[0] = args_cpu[0].clone()
                     self.result_cpu = self.func(*args_cpu, **self.kwargs_cpu)
@@ -180,17 +179,17 @@ class OpAutoCompareHook(BaseHook):
             allclose, max_diff = compare_result(
                 self.name, self.result_device, self.result_cpu
             )
-            if not allclose and max_diff > 1e-3:
+
+            self.forward_allclose = allclose
+            self.forward_op_id = self.id
+            if not allclose:
                 print(
                     f"OpAutoCompareHook: {self.name:<60} input: {serialize_args_to_dict(*self.args, **self.kwargs)}"
                 )
                 print(
                     f"OpAutoCompareHook: {self.name:<60} output: {serialize_args_to_dict(self.result)['args']}"
                 )
-                save_op_args(self.name, "device/input", *self.args, **self.kwargs)
-                save_op_args(self.name, "device/output", self.result)
-                save_op_args(self.name, "cpu/input", *self.args_cpu, **self.kwargs_cpu)
-                save_op_args(self.name, "cpu/output", self.result_cpu)
+                self.save_forward_args()
 
             self.backward_hook_handle = BackwardHookHandle(self)
             for result in traverse_container(self.result):
@@ -250,6 +249,7 @@ class OpAutoCompareHook(BaseHook):
             ):
                 return
 
+        all_grad_allclose = True
         for i in range(len(self.args)):
             arg = self.args[i]
 
@@ -260,12 +260,57 @@ class OpAutoCompareHook(BaseHook):
                     self.args_grad[i],
                     arg_cpu_grad,
                 )
-                if not allclose and max_diff > 1e-3:
-                    print(f"{self.name} {i}th grad is not allclose ")
 
+                if not allclose:
+                    all_grad_allclose = False
+        if not all_grad_allclose:
+            # Parameters are not saved when forward accuracy is normal
+            if self.forward_allclose:
+                self.save_forward_args()
+            self.save_backward_args
+
+        self = None
         gc.collect()
 
     def set_input_grad(self, index, grad):
         if not hasattr(self, "args_grad"):
             self.args_grad = [None for i in range(len(self.args))]
         self.args_grad[index] = to_device("cpu", grad, self.dtype_cast_dict)
+
+    def save_forward_args(self):
+        save_op_args(
+            self.name,
+            f"{self.forward_op_id}/device/input",
+            *self.args,
+            **self.kwargs,
+        )
+        save_op_args(self.name, f"{self.forward_op_id}/device/output", self.result)
+        save_op_args(
+            self.name,
+            f"{self.forward_op_id}/cpu/input",
+            *self.args_cpu,
+            **self.kwargs_cpu,
+        )
+        save_op_args(self.name, f"{self.forward_op_id}/cpu/output", self.result_cpu)
+
+    def save_backward_args(self):
+        save_op_args(
+            self.name,
+            f"{self.forward_op_id}/device/grad_outputs",
+            *tuple(self.grad_output),
+        )
+        save_op_args(
+            self.name,
+            f"{self.forward_op_id}/device/grad_inputs",
+            *tuple(self.args_grad),
+        )
+        save_op_args(
+            self.name,
+            f"{self.forward_op_id}/cpu/grad_inputs",
+            *tuple(self.args_cpu_grad),
+        )
+        save_op_args(
+            self.name,
+            f"{self.forward_op_id}/cpu/grad_outputs",
+            *tuple(self.grad_outputs_cpu),
+        )
