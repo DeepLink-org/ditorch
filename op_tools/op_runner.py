@@ -1,3 +1,4 @@
+# Copyright (c) 2024, DeepLink.
 from abc import ABC
 import os
 import torch
@@ -64,9 +65,9 @@ class SyncExecuteTimer(OpRunnerHook):
     def after_forward(self):
         torch.cuda.current_stream().synchronize()
         self.forward_end_time = time.time()
-        self.elasped_time = self.forward_end_time - self.forward_start_time
+        self.forward_elasped_time = self.forward_end_time - self.forward_start_time
         print(
-            f"SyncExecuteTimer: {self.runner.name} forward elasped {self.elasped_time * 1000:>.8f} ms "
+            f"SyncExecuteTimer: {self.runner.name} forward  elasped {self.forward_elasped_time * 1000:>.8f} ms "
         )
 
     def before_backward(self):
@@ -76,9 +77,9 @@ class SyncExecuteTimer(OpRunnerHook):
     def after_backward(self):
         torch.cuda.current_stream().synchronize()
         self.backward_end_time = time.time()
-        self.elasped_time = self.backward_end_time - self.forward_start_time
+        self.backward_elasped_time = self.backward_end_time - self.forward_start_time
         print(
-            f"SyncExecuteTimer: {self.runner.name} backward elasped {self.elasped_time * 1000:>.8f} ms"
+            f"SyncExecuteTimer: {self.runner.name} backward elasped {self.backward_elasped_time * 1000:>.8f} ms"
         )
 
 
@@ -90,11 +91,11 @@ class OpAccyChecker(OpRunnerHook):
         pass
 
     def after_forward(self):
-        self.result_cpu = self.runner.fun(
+        self.runner.result_cpu = self.runner.fun(
             *self.runner.args_cpu, **self.runner.kwargs_cpu
         )
         allclose, max_diff = compare_result(
-            self.runner.name, self.runner.result, self.result_cpu
+            self.runner.name, self.runner.result, self.runner.result_cpu
         )
         if not allclose and max_diff > 1e-3:
             print(
@@ -108,7 +109,18 @@ class OpAccyChecker(OpRunnerHook):
         pass
 
     def after_backward(self):
-        pass
+        self.runner.run_backward_on_cpu()
+        for i in range(len(self.runner.args)):
+            arg = self.runner.args[i]
+            arg_cpu = self.runner.args_cpu[i]
+            if isinstance(arg, torch.Tensor) and arg.requires_grad:
+                allclose, max_diff = compare_result(
+                    self.runner.name + f" {i}th input grad ",
+                    self.runner.grad_inputs["args"][i],
+                    arg_cpu.grad,
+                )
+                if not allclose and max_diff > 1e-3:
+                    print(f"{i}th grad is not allclose ")
 
 
 class OpRunner:
@@ -145,15 +157,15 @@ class OpRunner:
     def load_forward_input(self):
         self.input = torch.load(self.dir + "/input.pth", map_location="cpu")
         self.args_cpu = self.input["args"]
-        self.kwargs_cpu = self.input["kwargs"]
+        self.kwargs_cpu = self.input["kwargs"] or {}
         self.args = to_device("cuda", self.args_cpu)
-        self.kwargs = to_device("cuda", self.kwargs_cpu or {})
+        self.kwargs = to_device("cuda", self.kwargs_cpu)
         self.name = self.input["name"]
         self.fun = get_function_from_string(self.name)
 
     def load_forward_output(self):
-        self.output = torch.load(self.dir + "/output.pth", map_location="cpu")
-        self.output = to_device("cuda", self.output)
+        self.output_cpu = torch.load(self.dir + "/output.pth", map_location="cpu")
+        self.output = to_device("cuda", self.output_cpu)
 
     def load_backward_data(self):
         grad_inputs_path = self.dir + "/grad_inputs.pth"
@@ -171,8 +183,16 @@ class OpRunner:
             self.grad_outputs = None
             self.grad_outputs_cpu = None
 
-    def run_forward(self):
+    def run_backward_on_cpu(self):
+        self.result_cpu = self.fun(*self.args_cpu, **self.kwargs_cpu)
+        for arg_cpu in traverse_container(self.args_cpu):
+            if isinstance(arg_cpu, torch.Tensor) and arg_cpu.grad is not None:
+                arg_cpu.grad.zero_()
+        self.result_cpu.backward(
+            *self.grad_outputs_cpu["args"], **self.grad_outputs_cpu["kwargs"]
+        )
 
+    def run_forward(self):
         self.run_before_forward()
         self.result = self.fun(*self.args, **self.kwargs)
         self.run_after_forward()

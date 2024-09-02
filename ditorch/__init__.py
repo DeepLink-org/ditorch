@@ -1,3 +1,4 @@
+# Copyright (c) 2024, DeepLink.
 framework = None
 try:
     from ditorch import torch_npu_adapter

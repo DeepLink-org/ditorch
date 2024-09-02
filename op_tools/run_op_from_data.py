@@ -1,3 +1,4 @@
+# Copyright (c) 2024, DeepLink.
 import torch
 import ditorch
 import argparse
@@ -10,6 +11,7 @@ def parse_args():
     )
 
     parser.add_argument("dir", type=str, help="data dir")
+
     parser.add_argument(
         "--run_times",
         type=int,
@@ -18,21 +20,18 @@ def parse_args():
     )
     parser.add_argument(
         "--only_run_forward",
-        type=bool,
-        default=False,
+        action="store_true",
         help="Only the forward calculation of the operator is run, not the backward calculation",
     )
     parser.add_argument(
         "--sync_time_measure",
-        type=bool,
-        default=False,
+        action="store_true",
         help="Run the operator synchronously and test the operator running time",
     )
 
     parser.add_argument(
         "--acc_check",
-        type=bool,
-        default=False,
+        action="store_true",
         help="Run the operator and test for accuracy",
     )
     args = parser.parse_args()

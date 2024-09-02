@@ -1,3 +1,4 @@
+# Copyright (c) 2024, DeepLink.
 import torch
 import ditorch
 
@@ -14,7 +15,6 @@ def f():
     sorted, indices = e.sort()  # return torch.return_type.sort
     assert not sorted.is_cpu
     sorted.sum().backward()
-    print(c)
     y = torch.cat((a, a, a), dim=0)  # first input type is tuple
     assert not y.is_cpu
 
@@ -24,7 +24,7 @@ def f():
         base ** (torch.arange(0, dim, 2, device="cuda", dtype=torch.float32) / dim)
     )
 
-    x = torch.randn(3, 4).cuda().to(torch.bfloat16)
+    x = torch.randn(3, 4).cuda().to(torch.float16)  # camb_mlu370 not support bfloat16
     y = x.clone()
     z = y.half()
     n = z.cpu()

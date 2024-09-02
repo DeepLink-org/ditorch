@@ -1,3 +1,4 @@
+# Copyright (c) 2024, DeepLink.
 import torch
 import ditorch
 
@@ -14,7 +15,6 @@ def f():
     sorted, indices = e.sort()  # return torch.return_type.sort
     y = sorted[2:8:2, ::3]
     y.sum().backward()
-    print(c)
 
 
 # usage1

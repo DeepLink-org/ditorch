@@ -1,3 +1,4 @@
+# Copyright (c) 2024, DeepLink.
 import os
 import torch
 from torch.overrides import TorchFunctionMode, resolve_name
@@ -42,7 +43,13 @@ def is_should_apply_hook(name, func, args, kwargs=None):
     return True
 
 
-class OpCapture(TorchFunctionMode):
+class OpToolBase(TorchFunctionMode):
+    def __init__(self):
+        super().__init__()
+        self.skiped_op = set()
+
+
+class OpCapture(OpToolBase):
     """
     Set the OP_CAPTURE_DISABLE_LIST environment variable to ignore specific operators or operators in a specific mode
     Set the OP_CAPTURE_LIST environment variable to only take effect on these operators
@@ -55,6 +62,9 @@ class OpCapture(TorchFunctionMode):
     f()
     capturer.end()
     """
+
+    def __init__(self):
+        super().__init__()
 
     def is_should_capture(self, name, func, args, kwargs=None):
         if not is_should_apply_hook(name, func, args, kwargs=None):
@@ -72,11 +82,15 @@ class OpCapture(TorchFunctionMode):
             new_func = OpCaptureHook(name)(func)
             return new_func(*args, **(kwargs or {}))
         else:
-            print(f"skip OpCaptureHook on {name}")
+            if name not in self.skiped_op:
+                print(f"skip OpCaptureHook on {name}")
+                self.skiped_op.add(name)
+
             return func(*args, **(kwargs or {}))
 
     def start(self):
         super().__enter__()
+        self.skiped_op.clear()
 
     def stop(self):
         super().__exit__(None, None, None)
@@ -123,7 +137,7 @@ VIEW_OPS = [
 ]
 
 
-class OpFallback(TorchFunctionMode):
+class OpFallback(OpToolBase):
     """
     Set the OP_FALLBACK_DISABLE_LIST environment variable to ignore specific operators or operators in a specific mode
     Set the OP_FALLBACK_LIST environment variable to only take effect on these operators
@@ -153,11 +167,14 @@ class OpFallback(TorchFunctionMode):
             new_func = OpFallbackHook(name)(func)
             return new_func(*args, **(kwargs or {}))
         else:
-            print(f"skip OpFallbackHook on {name}")
+            if name not in self.skiped_op:
+                print(f"skip OpFallbackHook on {name}")
+                self.skiped_op.add(name)
             return func(*args, **(kwargs or {}))
 
     def start(self):
         super().__enter__()
+        self.skiped_op.clear()
 
     def stop(self):
         super().__exit__(None, None, None)
@@ -190,7 +207,7 @@ RANDOM_NUMBER_GEN_OPS = [
 ]
 
 
-class OpAutoCompare(TorchFunctionMode):
+class OpAutoCompare(OpToolBase):
     """
     Set the OP_AUTOCOMPARE_DISABLE_LIST environment variable to ignore specific operators or operators in a specific mode
     Set the OP_AUTOCOMPARE_LIST environment variable to only take effect on these operators
@@ -221,7 +238,9 @@ class OpAutoCompare(TorchFunctionMode):
             new_func = OpAutoCompareHook(name)(func)
             return new_func(*args, **(kwargs or {}))
         else:
-            print(f"skip OpAutoCompareHook on {name}")
+            if name not in self.skiped_op:
+                print(f"skip OpAutoCompareHook on {name}")
+                self.skiped_op.add(name)
             return func(*args, **(kwargs or {}))
 
     def start(self):
@@ -231,7 +250,7 @@ class OpAutoCompare(TorchFunctionMode):
         super().__exit__(None, None, None)
 
 
-class OpTimeMeasure(TorchFunctionMode):
+class OpTimeMeasure(OpToolBase):
     """
     Set the OP_TIME_MEASURE_DISABLE_LIST environment variable to ignore specific operators or operators in a specific mode
     Set the OP_TIME_MEASURE_LIST environment variable to only take effect on these operators
@@ -257,11 +276,12 @@ class OpTimeMeasure(TorchFunctionMode):
     def __torch_function__(self, func, types, args, kwargs=None):
         name = resolve_name(func)
         if self.is_should_measure(name, func, args, kwargs):
-            print(f"apply OpTimeMeasureHook on {name}")
             new_func = OpTimeMeasureHook(name)(func)
             return new_func(*args, **(kwargs or {}))
         else:
-            print(f"skip OpTimeMeasureHook on {name}")
+            if name not in self.skiped_op:
+                print(f"skip OpTimeMeasureHook on {name}")
+                self.skiped_op.add(name)
             return func(*args, **(kwargs or {}))
 
     def start(self):
@@ -271,7 +291,7 @@ class OpTimeMeasure(TorchFunctionMode):
         super().__exit__(None, None, None)
 
 
-class OpDispatchWatcher(TorchDispatchMode):
+class OpDispatchWatcher(OpToolBase):
     """
     Usage1:
     with OpDispatchWatcher():
@@ -282,9 +302,19 @@ class OpDispatchWatcher(TorchDispatchMode):
     f()
     """
 
-    def __torch_dispatch__(self, func, types, args, kwargs=None):
+    def __init__(self):
+        super().__init__()
+
+    def is_should_watch(self, name, func, args, kwargs):
+        if name is None or func is None:
+            return False
+        if is_opname_match(name, os.getenv("OP_DISPATCH_WATCH_DISABLE_LIST", "")):
+            return False
+        return is_opname_match(name, os.getenv("OP_DISPATCH_WATCH_LIST", ".*"))
+
+    def __torch_function__(self, func, types, args, kwargs=None):
         name = resolve_name(func)
-        if name is not None:
+        if self.is_should_watch(name, func, args, kwargs):
             new_func = OpDispatchWatcherHook(name)(func)
             return new_func(*args, **(kwargs or {}))
         else:

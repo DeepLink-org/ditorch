@@ -1,0 +1,49 @@
+name: runs on ascend
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+
+env:
+  DEEPLINK_PATH: '/mnt/cache/share/deeplinkci/github/${{ github.repository }}'
+
+concurrency:
+  group: ascend-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  Checkout_Code:
+    name: checkout code
+    runs-on: tps-ascend-ci-910b
+    steps:
+      - name: Checkout Code
+        uses: DeepLink-org/ditorch/.github/actions/checkout-code@main
+
+  Build:
+    name: build on ascend
+    runs-on: tps-ascend-ci-910b
+    needs: [checkout_code]
+    steps:
+      - name: build
+        run: |
+          set -ex
+          cd ${DEEPLINK_PATH}/${GITHUB_RUN_NUMBER} && rm -rf ${GITHUB_JOB} && cp -R source ${GITHUB_JOB}  && cd ${GITHUB_JOB}
+          echo "start to build"
+
+  Test:
+    name: test on ascend
+    runs-on: tps-ascend-ci-910b
+    needs: [Build]
+    steps:
+      - name: test
+        run: |
+          set -ex
+          source /mnt/cache/share/platform/cienv/ditorch_env
+          cd ${DEEPLINK_PATH}/${GITHUB_RUN_NUMBER} && rm -rf ${GITHUB_JOB} && cp -R Build ${GITHUB_JOB}  && cd ${GITHUB_JOB}
+          echo "start to test"
+          bash ci/test.sh
+

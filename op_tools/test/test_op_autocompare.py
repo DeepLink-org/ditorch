@@ -1,3 +1,4 @@
+# Copyright (c) 2024, DeepLink.
 import torch
 import ditorch
 
@@ -16,21 +17,21 @@ def f():
     sorted.sum().backward()
 
     x = torch.randn(1).cuda()
-    print(bool(x), x.bool(), x.item())
+    bool(x), x.bool(), x.item()
 
-    m = torch.nn.Linear(4, 5, device="cuda").half()
+    m = torch.nn.Linear(4, 5, device="cuda").half()  # cpu not support half
     x = torch.randn(3, 5, 4, device="cuda", requires_grad=True).half()
     y = m(x)
+    z = torch.nn.functional.silu(y)
+    z.backward(torch.ones_like(z))
 
 
 f()
 
 # usage1
-print("normal run, op dispatch process:")
 with op_tools.OpAutoCompare():
     f()
 
-print("\n")
 
 # usage2
 comparer = op_tools.OpAutoCompare()

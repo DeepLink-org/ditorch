@@ -1,3 +1,4 @@
+# Copyright (c) 2024, DeepLink.
 import torch
 import ditorch
 
@@ -14,7 +15,11 @@ def f():
     sorted, indices = e.sort()  # return torch.return_type.sort
     y = sorted[2:8:2, ::3]
     y.sum().backward()
-    print(c)
+
+    m = torch.nn.Linear(4, 4, device="cuda").half()
+    x = torch.randn(3, 4, 4, device="cuda", requires_grad=True, dtype=torch.half)
+    y = m(x)
+    y.backward(torch.ones_like(y))
 
 
 # usage1

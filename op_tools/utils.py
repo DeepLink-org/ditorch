@@ -1,3 +1,4 @@
+# Copyright (c) 2024, DeepLink.
 import torch
 import re
 import importlib
@@ -10,6 +11,9 @@ def traverse_container(container):
     elif isinstance(container, (list, tuple, set)):
         for item in container:
             yield from traverse_container(item)
+    elif type(container).__module__.startswith("torch.return_types"):
+        for i in range(len(container)):
+            yield container[i]
     else:
         yield container
 
@@ -27,7 +31,9 @@ def to_device(device, obj, dtype_cast_dict=dict()):
     if isinstance(obj, torch.Tensor):
         if obj.dtype in list(dtype_cast_dict.keys()):
             obj = obj.to(dtype_cast_dict[obj.dtype], non_blocking=False)
-        return obj.to(device, non_blocking=False)
+        new_obj = obj.detach().to(device, non_blocking=False)
+        new_obj.requires_grad = obj.requires_grad
+        return new_obj
     elif isinstance(obj, (tuple, list)):
         return type(obj)([to_device(device, v, dtype_cast_dict) for v in obj])
     elif isinstance(obj, dict):
@@ -54,6 +60,14 @@ def is_opname_match(name, op_pattern=None):
         if name in re.findall(pattern, name):
             return True
     return False
+
+
+def is_inplace_op(name):
+    return (
+        name.endswith("_")
+        and (not name.endswith("__"))
+        and (name.startswith("torch.Tensor."))
+    )
 
 
 def get_function_from_string(func_str):
