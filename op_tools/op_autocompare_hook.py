@@ -239,8 +239,16 @@ class OpAutoCompareHook(BaseHook):
         """
         if not hasattr(self, "args_cpu_grad"):
             return
-        if not (hasattr(self, "args_grad") and self.args_grad[0] is not None):
+        if not hasattr(self, "args_grad"):
             return
+
+        # Check if all gradients have been obtained
+        for i in range(len(self.args)):
+            arg = self.args[i]
+            if isinstance(arg, torch.Tensor) and (
+                arg.requires_grad and self.args_grad[i] is None
+            ):
+                return
 
         for i in range(len(self.args)):
             arg = self.args[i]

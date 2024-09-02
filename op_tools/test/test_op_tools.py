@@ -88,6 +88,12 @@ class TestOpTools(unittest.TestCase):
             z = y.div_(2)
             z.backward(torch.ones_like(z))
 
+    def test_op_autocompare_mul_op(self):
+        with op_tools.OpAutoCompare():
+            x = torch.randn(32, 1, 32, 32, requires_grad=True).to(device=device)
+            z = torch.mul(x, x)
+            z.backward(torch.ones_like(z))
+
 
 if __name__ == "__main__":
     unittest.main()
