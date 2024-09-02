@@ -1,5 +1,5 @@
 # Copyright (c) 2024, DeepLink.
-from op_tools.utils import is_opname_match
+from op_tools.utils import is_opname_match, is_inplace_op
 
 import unittest
 
@@ -27,6 +27,10 @@ class TestOpNameMatch(unittest.TestCase):
         self.assertEqual(is_opname_match("conv2d", op_list), False)
         for op_name in op_list.split(","):
             self.assertEqual(is_opname_match(op_name, op_list), True)
+
+    def test_inplace_op(self):
+        self.assertEqual(is_inplace_op("torch.Tensor.add_"), True)
+        self.assertEqual(is_inplace_op("torch.Tensadd"), False)
 
 
 if __name__ == "__main__":

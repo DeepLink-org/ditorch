@@ -4,7 +4,7 @@ import math
 import gc
 
 from .base_hook import BaseHook, DisableHookGuard
-from .utils import to_device, is_cpu_op, traverse_container
+from .utils import to_device, is_cpu_op, traverse_container, is_inplace_op
 from .op_fallback_hook import OpFallbackHook
 from .save_op_args import save_op_args, serialize_args_to_dict
 
@@ -163,7 +163,14 @@ class OpAutoCompareHook(BaseHook):
                     self.kwargs_cpu or {},
                     dtype_cast_dict=self.dtype_cast_dict,
                 )
-                self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
+                # RuntimeError: a leaf Variable that requires grad is being used in an in-place operation.
+                if is_inplace_op(self.name) and self.args[0].requires_grad:
+                    print(f"inplace op")
+                    args_cpu = [item for item in self.args_cpu]
+                    args_cpu[0] = args_cpu[0].clone()
+                    self.result_cpu = self.func(*args_cpu, **self.kwargs_cpu)
+                else:
+                    self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
 
                 self.result_device = to_device(
                     "cpu",
@@ -247,6 +254,8 @@ class OpAutoCompareHook(BaseHook):
                 )
                 if not allclose and max_diff > 1e-3:
                     print(f"{self.name} {i}th grad is not allclose ")
+
+        gc.collect()
 
     def set_input_grad(self, index, grad):
         if not hasattr(self, "args_grad"):

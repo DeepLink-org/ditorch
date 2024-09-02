@@ -81,6 +81,13 @@ class TestOpTools(unittest.TestCase):
             10 << 20
         ), f"Memory usage {int(host_memusage / run_time) >> 20}MB should not increase after running the test {host_memory1} , {host_memory2}"
 
+    def test_op_autocompare_inplace_op_and_requires_grad(self):
+        with op_tools.OpAutoCompare():
+            x = torch.randn(32, 1, 32, 32, requires_grad=True).to(device=device)
+            y = x * 2
+            z = y.div_(2)
+            z.backward(torch.ones_like(z))
+
 
 if __name__ == "__main__":
     unittest.main()
