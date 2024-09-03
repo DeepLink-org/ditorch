@@ -67,7 +67,8 @@ def is_opname_match(name, op_pattern=None):
 
 
 def is_inplace_op(name):
-    return (
+    INPLACES_OP = ["torch.Tensor.__setitem__"]
+    return name in INPLACES_OP or (
         name.endswith("_")
         and (not name.endswith("__"))
         and (name.startswith("torch.Tensor."))
