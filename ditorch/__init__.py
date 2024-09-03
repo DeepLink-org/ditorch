@@ -21,4 +21,11 @@ try:
 except:
     pass
 
+try:
+    from ditorch import torch_biren_adapter
+
+    framework = "torch_br:" + torch_biren_adapter.torch_br.__version__
+except:
+    pass
+
 print(f"ditorch.framework: {framework}")
