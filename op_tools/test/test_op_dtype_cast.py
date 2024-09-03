@@ -46,9 +46,22 @@ dtype_caster.stop()
 # usage4
 os.environ["OP_DTYPE_CAST_DISABLE_LIST"] = ""
 os.environ["OP_DTYPE_CAST_LIST"] = "torch.Tensor.sort"  # only cast this op
-os.environ["OP_DTYPE_CAST_DICT"] = (
-    "torch.half->torch.float32"  # camb 370 not support bfloat16
-)
+os.environ[
+    "OP_DTYPE_CAST_DICT"
+] = "torch.half->torch.float32"  # camb 370 not support bfloat16
 dtype_caster.start()
 f()
 dtype_caster.stop()
+
+
+os.environ["OP_DTYPE_CAST_DISABLE_LIST"] = ""
+os.environ["OP_DTYPE_CAST_DICT"] = "torch.float16->torch.float"
+a = torch.randn(3, 4, device="cuda", requires_grad=True, dtype=torch.float16)
+b = a.clone()
+with op_tools.OpDtypeCast():
+    c = torch.stack([a, b], dim=1)
+    d = c + c
+    d.backward(torch.ones_like(d))
+
+assert c.dtype == a.dtype and c.dtype == torch.float16
+assert a.grad is not None and a.grad.dtype == torch.float16

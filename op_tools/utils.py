@@ -27,12 +27,16 @@ def is_cpu_op(*args, **kwargs):
     return True, "cpu"
 
 
-def to_device(device, obj, dtype_cast_dict=dict()):
+def to_device(device, obj, dtype_cast_dict=dict(), detach=True):
     if isinstance(obj, torch.Tensor):
         if obj.dtype in list(dtype_cast_dict.keys()):
             obj = obj.to(dtype_cast_dict[obj.dtype], non_blocking=False)
-        new_obj = obj.detach().to(device, non_blocking=False)
-        new_obj.requires_grad = obj.requires_grad
+        if detach:
+            new_obj = obj.detach().to(device, non_blocking=False)
+            new_obj.requires_grad = obj.requires_grad
+        else:
+            new_obj = obj.to(device, non_blocking=False)
+
         return new_obj
     elif isinstance(obj, (tuple, list)):
         return type(obj)([to_device(device, v, dtype_cast_dict) for v in obj])
@@ -87,7 +91,7 @@ def get_dtype_cast_dict_form_str(config):
     dtype_cast_dict = dict()
     if config is not None:
         for item in config.split(","):
-            dtype_cast_dict[get_function_from_string(item.split("->")[0])] = (
-                get_function_from_string(item.split("->")[1])
-            )
+            dtype_cast_dict[
+                get_function_from_string(item.split("->")[0])
+            ] = get_function_from_string(item.split("->")[1])
     return dtype_cast_dict
