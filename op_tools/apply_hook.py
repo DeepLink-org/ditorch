@@ -8,6 +8,7 @@ from .op_fallback_hook import OpFallbackHook
 from .op_autocompare_hook import OpAutoCompareHook
 from .op_dispatch_watch_hook import OpDispatchWatcherHook
 from .op_time_measure_hook import OpTimeMeasureHook
+from .op_dtype_cast_hook import OpDtypeCastHook
 from .utils import is_cpu_op, is_opname_match
 import inspect
 
@@ -322,6 +323,53 @@ class OpDispatchWatcher(OpToolBase):
 
     def start(self):
         super().__enter__()
+
+    def stop(self):
+        super().__exit__(None, None, None)
+
+
+class OpDtypeCast(OpToolBase):
+    """
+    Set the OP_DTYPE_CAST_DISABLE_LIST environment variable to ignore specific operators
+    Set the OP_DTYPE_CAST_LIST environment variable to only take effect on these operators
+    Usage1:
+    with OpDtypeCast():
+        f()
+    Usage2:
+    dtypecaster = OpDtypeCast()
+    dtypecaster.start()
+    f()
+    dtypecaster.end()
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def is_should_cast(self, name, func, args, kwargs=None):
+        if not is_should_apply_hook(name, func, args, kwargs=None):
+            return False
+
+        if is_opname_match(name, os.getenv("OP_DTYPE_CAST_DISABLE_LIST", "")):
+            return False
+
+        return is_opname_match(name, os.getenv("OP_DTYPE_CAST_LIST", ".*"))
+
+    def __torch_function__(self, func, types, args, kwargs=None):
+        name = resolve_name(func)
+        if self.is_should_cast(name, func, args, kwargs):
+            print(f"apply OpDtypeCastHook on {name}")
+            new_func = OpDtypeCastHook(name)(func)
+            return new_func(*args, **(kwargs or {}))
+        else:
+            if name not in self.skiped_op:
+                print(f"skip OpDtypeCastHook on {name}")
+                self.skiped_op.add(name)
+
+            return func(*args, **(kwargs or {}))
+
+    def start(self):
+        super().__enter__()
+        self.skiped_op.clear()
 
     def stop(self):
         super().__exit__(None, None, None)

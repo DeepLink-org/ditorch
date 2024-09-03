@@ -1,5 +1,6 @@
 # Copyright (c) 2024, DeepLink.
-from op_tools.utils import is_opname_match, is_inplace_op
+from op_tools.utils import is_opname_match, is_inplace_op, get_dtype_cast_dict_form_str
+import torch
 
 import unittest
 
@@ -31,6 +32,19 @@ class TestOpNameMatch(unittest.TestCase):
     def test_inplace_op(self):
         self.assertEqual(is_inplace_op("torch.Tensor.add_"), True)
         self.assertEqual(is_inplace_op("torch.Tensadd"), False)
+
+    def test_get_dtype_cast_dict_from_config(self):
+        dtype_cast_dict = get_dtype_cast_dict_form_str(
+            "torch.float32->torch.float16,torch.float64->torch.float16,torch.int64->torch.int32"
+        )
+        self.assertEqual(
+            dtype_cast_dict,
+            {
+                torch.float32: torch.float16,
+                torch.float64: torch.float16,
+                torch.int64: torch.int32,
+            },
+        )
 
 
 if __name__ == "__main__":

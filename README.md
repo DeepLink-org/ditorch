@@ -24,6 +24,7 @@ import ditorch
 | 2 | [精度分析工具](#tool2) | 进行离线和实时的精度分析 |
 | 3 | [速度分析工具](#tool3) | 可进行离线和实时的耗时分析，协助性能优化 |
 | 4 | [算子 Fallback](#tool4) | 可将指定、全部算子在设备上运行的操作 fallback 到 CPU 计算 |
+| 5 | [算子数据类型转换工具](#tool5) | 可将指定、全部算子的特定数据类型转到给定数据类型去计算 |
 
 
 ### **算子参数抓取工具** <a id="tool1"></a>
@@ -343,4 +344,67 @@ OpFallbackHook: torch.Tensor.pow                                   output: ({'sh
 OpFallbackHook: torch.Tensor.mean                                  input: {'args': ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20076610715648}, ('-1',)), 'kwargs': {'keepdim': 'True'}}
 OpFallbackHook: torch.Tensor.mean                                  output: ({'shape': torch.Size([1, 16384, 1]), 'stride': (16384, 1, 1), 'numel': 16384, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067180141056},) cpu output: ({'shape': torch.Size([1, 16384, 1]), 'stride': (16384, 1, 1), 'numel': 16384, 'dtype': 'torch.float32', 'device': 'cpu', 'requires_grad': False, 'layout': 'torch.strided', 'data': 33561021952},) dtype_convert_back_dict:{}
 ...
+```
+
+
+### **算子数据类型转换工具** <a id="tool5"></a>
+
+```
+# usage1
+export OP_DTYPE_CAST_DICT="torch.float16->torch.float32,torch.bfloat16->torch.float32"
+with op_tools.OpDtypeCast():
+    f()
+
+# usage2
+dtype_caster = op_tools.OpDtypeCast()
+dtype_caster.start()
+for i in range(3):
+    f()
+dtype_caster.stop()
+```
+
+```
+# usage3
+os.environ["OP_DTYPE_CAST_DISABLE_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
+dtype_caster.start()
+f()
+dtype_caster.stop()
+```
+```
+# usage4
+os.environ["OP_DTYPE_CAST_DISABLE_LIST"] = ""
+os.environ["OP_DTYPE_CAST_LIST"] = "torch.Tensor.sort,torch.Tensor.add"  # only cast these op
+os.environ["OP_DTYPE_CAST_DICT"] = "torch.half->torch.bfloat16"
+dtype_caster.start()
+f()
+dtype_caster.stop()
+```
+
+```
+apply OpDtypeCastHook on torch.nn.functional.linear
+OpDtypeCastHook: torch.nn.functional.linear                         0th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
+OpDtypeCastHook: torch.nn.functional.linear                         1th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
+OpDtypeCastHook: torch.nn.functional.linear                         2th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
+OpDtypeCastHook: torch.nn.functional.linear                         0th out torch.float32 -> torch.float16  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
+apply OpDtypeCastHook on torch.Tensor.add
+OpDtypeCastHook: torch.Tensor.add                                   0th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
+OpDtypeCastHook: torch.Tensor.add                                   1th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
+OpDtypeCastHook: torch.Tensor.add                                   0th out torch.float32 -> torch.float16  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
+apply OpDtypeCastHook on torch.Tensor.sub
+OpDtypeCastHook: torch.Tensor.sub                                   0th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
+OpDtypeCastHook: torch.Tensor.sub                                   1th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
+OpDtypeCastHook: torch.Tensor.sub                                   0th out torch.float32 -> torch.float16  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
+apply OpDtypeCastHook on torch.Tensor.div
+OpDtypeCastHook: torch.Tensor.div                                   0th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
+OpDtypeCastHook: torch.Tensor.div                                   1th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
+OpDtypeCastHook: torch.Tensor.div                                   0th out torch.float32 -> torch.float16  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
+apply OpDtypeCastHook on torch.Tensor.sort
+OpDtypeCastHook: torch.Tensor.sort                                  0th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
+OpDtypeCastHook: torch.Tensor.sort                                  0th out torch.float32 -> torch.float16  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
+apply OpDtypeCastHook on torch.Tensor.__getitem__
+OpDtypeCastHook: torch.Tensor.__getitem__                           0th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
+OpDtypeCastHook: torch.Tensor.__getitem__                           0th out torch.float32 -> torch.float16  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
+apply OpDtypeCastHook on torch.Tensor.sum
+OpDtypeCastHook: torch.Tensor.sum                                   0th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
+OpDtypeCastHook: torch.Tensor.sum                                   0th out torch.float32 -> torch.float16  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
 ```

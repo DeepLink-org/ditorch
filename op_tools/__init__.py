@@ -5,4 +5,5 @@ from .apply_hook import (
     OpAutoCompare,
     OpDispatchWatcher,
     OpTimeMeasure,
+    OpDtypeCast,
 )
