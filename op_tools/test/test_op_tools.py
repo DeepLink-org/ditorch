@@ -36,7 +36,6 @@ class LeNet(nn.Module):
 
 
 class TestOpTools(unittest.TestCase):
-
     def test_func(self):
         model = LeNet().to(device=device)
         input = torch.randn(32, 1, 32, 32, requires_grad=True).to(device=device)
@@ -87,6 +86,15 @@ class TestOpTools(unittest.TestCase):
             y = x * 2
             z = y.div_(2)
             z.backward(torch.ones_like(z))
+
+    def test_op_autocompare_inplace_view_op_and_requires_grad(self):
+        with op_tools.OpAutoCompare():
+            x = torch.randn(32, 1, 32, 32, requires_grad=True).to(device=device)
+            y = x.view(-1)
+            z = y.div_(2)
+            n = z.view(32, 1, 32, 32)
+            n.mul_(4)
+            n.backward(torch.ones_like(n))
 
     def test_op_autocompare_mul_op(self):
         with op_tools.OpAutoCompare():

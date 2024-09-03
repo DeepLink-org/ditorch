@@ -95,3 +95,48 @@ def get_dtype_cast_dict_form_str(config):
                 get_function_from_string(item.split("->")[0])
             ] = get_function_from_string(item.split("->")[1])
     return dtype_cast_dict
+
+
+VIEW_OPS = [
+    "torch.Tensor.reshape",
+    "torch.Tensor.adjoint",
+    "torch.Tensor.as_strided",
+    "torch.Tensor.detach",
+    "torch.Tensor.diagonal",
+    "torch.Tensor.expand",
+    "torch.Tensor.expand_as",
+    "torch.Tensor.movedim",
+    "torch.Tensor.narrow",
+    "torch.Tensor.permute",
+    "torch.Tensor.select",
+    "torch.Tensor.squeeze",
+    "torch.Tensor.transpose",
+    "torch.Tensor.t",
+    "torch.Tensor.T",
+    "torch.Tensor.H",
+    "torch.Tensor.mT",
+    "torch.Tensor.mH",
+    "torch.Tensor.real",
+    "torch.Tensor.imag",
+    "torch.Tensor.view_as_real",
+    "torch.Tensor.unflatten",
+    "torch.Tensor.unfold",
+    "torch.Tensor.unsqueeze",
+    "torch.Tensor.view",
+    "torch.Tensor.view_as",
+    "torch.Tensor.unbind",
+    "torch.Tensor.split",
+    "torch.Tensor.hsplit",
+    "torch.Tensor.vsplit",
+    "torch.Tensor.tensor_split",
+    "torch.Tensor.split_with_sizes",
+    "torch.Tensor.swapaxes",
+    "torch.Tensor.swapdims",
+    "torch.Tensor.chunk",
+    "torch.Tensor.indices",
+    "torch.Tensor.values",
+]
+
+
+def is_view_op(name):
+    return name in VIEW_OPS
