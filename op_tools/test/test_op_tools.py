@@ -109,6 +109,20 @@ class TestOpTools(unittest.TestCase):
             e = z.cpu()
             assert e.is_cpu
 
+    def test_op_dtype_cast(self):
+        with op_tools.OpDtypeCast():
+            input = torch.ones(
+                (5, 5), dtype=torch.bfloat16, device="cuda"
+            ).requires_grad_()
+            weight = torch.ones(
+                (5, 5), dtype=torch.bfloat16, device="cuda"
+            ).requires_grad_()
+            output = torch.nn.functional.linear(input, weight)
+            label = torch.ones_like(output)
+            output.backward(label)
+            assert input.grad is not None and input.grad.dtype == torch.bfloat16
+            assert weight.grad is not None and weight.grad.dtype == torch.bfloat16
+
 
 if __name__ == "__main__":
     unittest.main()

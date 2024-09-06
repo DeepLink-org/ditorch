@@ -27,23 +27,36 @@ def is_cpu_op(*args, **kwargs):
     return True, "cpu"
 
 
-def to_device(device, obj, dtype_cast_dict=dict()):
+def transform_contrainer(obj, func):
     if isinstance(obj, torch.Tensor):
-        if obj.dtype in list(dtype_cast_dict.keys()):
-            obj = obj.to(dtype_cast_dict[obj.dtype], non_blocking=False)
-        new_obj = obj.detach().to(device, non_blocking=False)
-        new_obj.requires_grad = obj.requires_grad
-        return new_obj
+        return func(obj)
     elif isinstance(obj, (tuple, list)):
-        return type(obj)([to_device(device, v, dtype_cast_dict) for v in obj])
+        return type(obj)([transform_contrainer(v, func) for v in obj])
     elif isinstance(obj, dict):
-        return {k: to_device(device, v, dtype_cast_dict) for k, v in obj.items()}
+        return {k: func(v) for k, v in obj.items()}
     elif isinstance(obj, (float, int, complex, str, bool, type(None))):
         return obj
     elif type(obj).__module__.startswith("torch.return_types"):
-        return [to_device(device, v, dtype_cast_dict) for v in obj]
+        return [transform_contrainer(v) for v in obj]
     else:
         return obj
+
+
+def to_device(device, obj, dtype_cast_dict=dict(), detach=True):
+    def func(obj):
+        if isinstance(obj, torch.Tensor):
+            if obj.dtype in list(dtype_cast_dict.keys()):
+                obj = obj.to(dtype_cast_dict[obj.dtype])
+            if detach:
+                new_obj = obj.detach().to(device)
+                new_obj.requires_grad = obj.requires_grad
+            else:
+                new_obj = obj.to(device)
+            return new_obj
+        else:
+            return obj
+
+    return transform_contrainer(obj, func)
 
 
 def is_opname_match(name, op_pattern=None):
