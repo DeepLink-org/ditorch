@@ -44,3 +44,6 @@ class OpCaptureHook(BaseHook):
                         result.grad_fn.register_hook(
                             self.backward_hook_handle.grad_fun_hook()
                         )
+
+    def is_should_aply(self, *args, **kwargs):
+        return super().is_should_aply(*args, **kwargs) and self.is_should_capture
