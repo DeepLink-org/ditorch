@@ -76,6 +76,9 @@ class OpDtypeCastHook(BaseHook):
                     )
 
     def is_should_apply(self, *args, **kwargs):
+        BLACK_LIST = ["torch.Tensor.requires_grad_"]
+        if self.name in BLACK_LIST:
+            return False
         if is_opname_match(self.name, os.getenv("OP_DTYPE_CAST_DISABLE_LIST", "")):
             return False
 

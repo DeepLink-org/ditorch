@@ -10,6 +10,7 @@ from .utils import (
     is_cpu_op,
     traverse_container,
     is_inplace_op,
+    is_view_op,
     is_opname_match,
 )
 from .op_fallback_hook import OpFallbackHook
@@ -66,7 +67,13 @@ def compare_result(name, a, b, atol=1e-3):
     error_info = ""
     max_diff = float("nan")
     allclose = False
-    if isinstance(a, torch.Tensor) and isinstance(b, torch.Tensor):
+    if a is None and b is None:
+        allclose = True
+        max_diff = 0
+        print(
+            f"OpAutoCompareHook: {name:<50} allclose: {allclose}\tmax_diff: {f'{max_diff:20.9f}'} {error_info}"
+        )
+    elif isinstance(a, torch.Tensor) and isinstance(b, torch.Tensor):
         if a.shape == b.shape:
             max_diff = tensor_max_diff(a, b)
             allclose = tensor_allclose(a, b)
@@ -183,6 +190,7 @@ class OpAutoCompareHook(BaseHook):
                 self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
                 self.result_device = to_device("cpu", self.result)
                 self.dtype_cast_dict = dict()
+                args_cpu = self.args_cpu
             except Exception as e:
                 self.dtype_cast_dict = OpAutoCompareHook.AUTO_COMPARE_DTYPE_CAST_DICT
                 # some op on cpu backend not support half, bfloat16
@@ -197,11 +205,14 @@ class OpAutoCompareHook(BaseHook):
                     dtype_cast_dict=self.dtype_cast_dict,
                 )
                 # RuntimeError: a leaf Variable that requires grad is being used in an in-place operation.
-                if is_inplace_op(self.name) and self.args[0].requires_grad:
+                if (is_inplace_op(self.name) or is_view_op(self.name)) and self.args[
+                    0
+                ].requires_grad:
                     args_cpu = [item for item in self.args_cpu]
                     args_cpu[0] = args_cpu[0].clone()
                     self.result_cpu = self.func(*args_cpu, **self.kwargs_cpu)
                 else:
+                    args_cpu = self.args_cpu
                     self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
 
                 self.result_device = to_device(
@@ -209,6 +220,18 @@ class OpAutoCompareHook(BaseHook):
                     self.result,
                     dtype_cast_dict=self.dtype_cast_dict,
                 )
+
+            if is_inplace_op(self.name):
+                allclose, max_diff = compare_result(
+                    self.name, self.args[0], args_cpu[0]
+                )
+                if not allclose:
+                    self.save_forward_args()
+
+            if self.result is None:
+                print(f"{self.name} output is None, acc not checked")
+                return
+
             allclose, max_diff = compare_result(
                 self.name, self.result_device, self.result_cpu
             )

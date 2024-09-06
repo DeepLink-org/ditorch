@@ -7,6 +7,7 @@ import op_tools
 
 def f():
     a = torch.rand(10, requires_grad=True).cuda().half()
+    # assert not a.is_leaf
     a = torch.bernoulli(a) + a + torch.rand_like(a)
     b = a * 2
     c = b + a
