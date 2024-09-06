@@ -7,3 +7,5 @@ from .apply_hook import (
     OpTimeMeasure,
     OpDtypeCast,
 )
+
+from .apply_hook_on_ext import fallback_ops, dump_all_ops_args
