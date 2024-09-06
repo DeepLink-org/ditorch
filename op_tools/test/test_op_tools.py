@@ -94,6 +94,21 @@ class TestOpTools(unittest.TestCase):
             z = torch.mul(x, x)
             z.backward(torch.ones_like(z))
 
+    def test_op_autocompare_copy_op(self):
+        with op_tools.OpAutoCompare():
+            x = torch.randn(32, 1, 32, 32, requires_grad=True)
+            assert x.device == torch.device("cpu")
+            y = x.to(device=device)
+            assert y.is_cpu == (device.type == "cpu"), f"{y.device} {device}"
+            z = torch.add(x, x)
+            assert z.is_cpu == (device.type != "cpu"), f"{z.device} {device}"
+            z = torch.add(y, y)
+            assert z.is_cpu == (device.type == "cpu"), f"{z.device} {device}"
+            z.backward(torch.ones_like(z))
+
+            e = z.cpu()
+            assert e.is_cpu
+
 
 if __name__ == "__main__":
     unittest.main()

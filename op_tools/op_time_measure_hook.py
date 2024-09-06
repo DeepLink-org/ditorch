@@ -1,10 +1,12 @@
 # Copyright (c) 2024, DeepLink.
+import os
 import torch
 import ditorch
 import time
 from .base_hook import BaseHook, DisableHookGuard
 
 from .save_op_args import serialize_args_to_dict
+from .utils import is_opname_match
 
 
 class BackwardHookHandle:
@@ -32,8 +34,8 @@ class BackwardHookHandle:
 
 
 class OpTimeMeasureHook(BaseHook):
-    def __init__(self, name) -> None:
-        super().__init__(name)
+    def __init__(self, name, func) -> None:
+        super().__init__(name, func)
 
     def before_call_op(self, *args, **kwargs):
         torch.cuda.current_stream().synchronize()
@@ -74,3 +76,9 @@ class OpTimeMeasureHook(BaseHook):
             print(
                 f"OpTimeMeasureHook: {self.name:<30} forward elasped:  {(self.foward_elasped * 1000):>10.8f} ms     input: {serialize_args_to_dict(*self.args, **self.kwargs)} output: {serialize_args_to_dict(self.result)}"
             )
+
+    def is_should_apply(self, *args, **kwargs):
+        if is_opname_match(self.name, os.getenv("OP_TIME_MEASURE_DISABLE_LIST", "")):
+            return False
+
+        return is_opname_match(self.name, os.getenv("OP_TIME_MEASURE_LIST", ".*"))

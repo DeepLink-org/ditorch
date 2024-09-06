@@ -4,7 +4,7 @@ import inspect
 from .utils import is_cpu_op, is_opname_match
 
 
-def is_should_apply_hook(name, func, args, kwargs=None):
+def is_should_apply_hook(name, func, *args, **kwargs):
     if name is None:
         return False
     if inspect.isroutine(func) == False:
@@ -14,7 +14,7 @@ def is_should_apply_hook(name, func, args, kwargs=None):
     ):
         return False
     # Assuming that the torch provided by the manufacturer has not been compromised in terms of CPU functionality
-    args_on_cpu, device = is_cpu_op(args, kwargs)
+    args_on_cpu, device = is_cpu_op(*args, **kwargs)
     if args_on_cpu:
         return False
 
@@ -44,6 +44,8 @@ class BaseHook(ABC):
         self.exception = None
         self.func = func
         self.wrapper_func = self.construct_wrapper_func()
+        self.skiped_op = set()
+        self.applied_op = set()
 
     def before_call_op(self, *args, **kwargs):
         self.args = args
@@ -59,26 +61,40 @@ class BaseHook(ABC):
             self.kwargs = kwargs
             self.before_call_op(*args, **kwargs)
             try:
-                result = self.func(*self.args, **self.kwargs)
+                self.result = self.func(*self.args, **self.kwargs)
             except Exception as e:
-                result = None
+                self.result = None
                 self.exception = e
-            return result
+            self.after_call_op(self.result)
+            return self.result
 
         return wrapper
 
-    def is_should_aply(self, *args, **kwargs):
-        return True
+    @classmethod
+    def class_name(cls):
+        return cls.__name__
+
+    def is_should_apply(self, *args, **kwargs):
+        return False
 
     def __call__(self, *args, **kwargs):
+        args_on_cpu, self.device = is_cpu_op(*args, **kwargs)
+        # import pdb; pdb.set_trace()
         if (
             self.enable
-            and is_should_apply_hook(self.name, self.func, args, kwargs)
+            and not args_on_cpu
+            and is_should_apply_hook(self.name, self.func, *args, **kwargs)
             and self.is_should_apply(*args, **kwargs)
         ):
-            self.result = self.wrapper_func(*self.args, **self.kwargs)
+            print(f"apply {self.class_name()} on {self.name}")
+            if self.name not in self.applied_op:
+                self.applied_op.add(self.name)
+            self.result = self.wrapper_func(*args, **kwargs)
         else:
             self.result = self.func(*args, **kwargs)
+            if not args_on_cpu and self.name not in self.skiped_op:
+                self.skiped_op.add(self.name)
+                print(f"skip {self.class_name()} on {self.name}")
         return self.result
 
 

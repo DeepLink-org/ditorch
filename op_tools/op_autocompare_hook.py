@@ -2,11 +2,44 @@
 import torch
 import math
 import gc
+import os
 
 from .base_hook import BaseHook, DisableHookGuard
-from .utils import to_device, is_cpu_op, traverse_container, is_inplace_op
+from .utils import (
+    to_device,
+    is_cpu_op,
+    traverse_container,
+    is_inplace_op,
+    is_opname_match,
+)
 from .op_fallback_hook import OpFallbackHook
 from .save_op_args import save_op_args, serialize_args_to_dict
+
+RANDOM_NUMBER_GEN_OPS = [
+    "torch.Tensor.random_",
+    "torch.randperm",
+    "torch.bernoulli",
+    "torch.poisson",
+    "torch.randint_like",
+    "torch.randint",
+    "torch.randn",
+    "torch.randn_like",
+    "torch.multinomial",
+    "torch.nn.init.kaiming_uniform",
+    "torch.nn.init.kaiming_uniform_",
+    "torch.nn.init.trunc_normal_",
+    "torch.nn.init.uniform",
+    "torch.nn.init.normal",
+    "torch.nn.init.uniform_",
+    "torch.nn.init.normal_",
+    "torch.nn.init.warnings",
+    "torch.nn.init.xavier_normal",
+    "torch.nn.init.xavier_normal_",
+    "torch.nn.init.xavier_uniform",
+    "torch.nn.init.kaiming_normal",
+    "torch.nn.init.xavier_uniform_",
+    "torch.nn.init.kaiming_normal_",
+]
 
 
 def tensor_max_diff(a, b):
@@ -125,8 +158,8 @@ class OpAutoCompareHook(BaseHook):
         torch.bfloat16: torch.float32,
     }
 
-    def __init__(self, name) -> None:
-        super().__init__(name)
+    def __init__(self, name, func) -> None:
+        super().__init__(name, func)
 
     def before_call_op(self, *args, **kwargs):
         with DisableHookGuard():
@@ -314,3 +347,12 @@ class OpAutoCompareHook(BaseHook):
             f"{self.forward_op_id}/cpu/grad_outputs",
             *tuple(self.grad_outputs_cpu),
         )
+
+    def is_should_apply(self, *args, **kwargs):
+        if self.name in RANDOM_NUMBER_GEN_OPS:
+            return False
+
+        if is_opname_match(self.name, os.getenv("OP_AUTOCOMPARE_DISABLE_LIST", "")):
+            return False
+
+        return is_opname_match(self.name, os.getenv("OP_AUTOCOMPARE_LIST", ".*"))

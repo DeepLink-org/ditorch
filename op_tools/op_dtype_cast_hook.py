@@ -11,6 +11,7 @@ from .utils import (
     traverse_container,
     is_inplace_op,
     get_dtype_cast_dict_form_str,
+    is_opname_match,
 )
 from .op_fallback_hook import OpFallbackHook
 from .save_op_args import save_op_args, serialize_args_to_dict
@@ -18,8 +19,8 @@ from .save_op_args import save_op_args, serialize_args_to_dict
 
 class OpDtypeCastHook(BaseHook):
 
-    def __init__(self, name) -> None:
-        super().__init__(name)
+    def __init__(self, name, func) -> None:
+        super().__init__(name, func)
         self.dtype_cast_config_str = os.environ.get(
             "OP_DTYPE_CAST_DICT",
             "torch.float16->torch.float32,torch.bfloat16->torch.float32",
@@ -64,3 +65,9 @@ class OpDtypeCastHook(BaseHook):
                     print(
                         f"OpDtypeCastHook: {self.name:<50} {i}th out {out.dtype} -> {self.dtype_cast_back_dict[out.dtype]}  config:{self.dtype_cast_config_str}"
                     )
+
+    def is_should_apply(self, *args, **kwargs):
+        if is_opname_match(self.name, os.getenv("OP_DTYPE_CAST_DISABLE_LIST", "")):
+            return False
+
+        return is_opname_match(self.name, os.getenv("OP_DTYPE_CAST_LIST", ".*"))

@@ -1,8 +1,9 @@
 # Copyright (c) 2024, DeepLink.
-from .base_hook import BaseHook, DisableHookGuard
-from .utils import traverse_container
-from .save_op_args import save_op_args
+import os
 import torch
+from .base_hook import BaseHook, DisableHookGuard
+from .utils import traverse_container, is_cpu_op, is_opname_match
+from .save_op_args import save_op_args
 
 
 class BackwardHookHandle:
@@ -19,8 +20,8 @@ class BackwardHookHandle:
 
 
 class OpCaptureHook(BaseHook):
-    def __init__(self, name) -> None:
-        super().__init__(name)
+    def __init__(self, name, func) -> None:
+        super().__init__(name, func)
 
     def before_call_op(self, *args, **kwargs):
         with DisableHookGuard():
@@ -45,5 +46,11 @@ class OpCaptureHook(BaseHook):
                             self.backward_hook_handle.grad_fun_hook()
                         )
 
-    def is_should_aply(self, *args, **kwargs):
-        return super().is_should_aply(*args, **kwargs) and self.is_should_capture
+    def is_should_apply(self, *args, **kwargs):
+        if is_opname_match(self.name, os.getenv("OP_CAPTURE_DISABLE_LIST", "")):
+            return False
+
+        if not is_opname_match(self.name, os.getenv("OP_CAPTURE_LIST", ".*")):
+            return False
+
+        return True
