@@ -33,9 +33,17 @@ class OpDtypeCastHook(BaseHook):
             self.is_cpu_op, self.device = is_cpu_op(*args, **kwargs)
             if self.is_cpu_op:
                 return
-            self.args = to_device(self.device, self.args, self.dtype_cast_dict, False)
+            self.args = to_device(
+                self.device,
+                self.args,
+                dtype_cast_dict=self.dtype_cast_dict,
+                detach=False,
+            )
             self.kwargs = to_device(
-                self.device, self.kwargs or {}, self.dtype_cast_dict, False
+                self.device,
+                self.kwargs or {},
+                dtype_cast_dict=self.dtype_cast_dict,
+                detach=False,
             )
             self.dtype_cast_back_dict = {}
             self.ins_list = []
@@ -62,7 +70,10 @@ class OpDtypeCastHook(BaseHook):
         with DisableHookGuard():
             self.result_raw = result
             self.result = to_device(
-                self.device, self.result, self.dtype_cast_back_dict, False
+                self.device,
+                self.result,
+                dtype_cast_dict=self.dtype_cast_back_dict,
+                detach=False,
             )
             i = -1
             for out in traverse_container(self.result_raw):

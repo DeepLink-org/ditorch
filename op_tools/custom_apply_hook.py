@@ -64,7 +64,13 @@ def apply_hook_to_ops(ops, hook, condition_funcs=[]):
 
 def apply_feature(ops, feature, condition_func=lambda *args, **kwargs: True):
     assert isinstance(ops, (str, list))
-    feature_options = ["fallback", "autocompare", "op_time_measure", "dump_op_args"]
+    feature_options = [
+        "fallback",
+        "autocompare",
+        "measure_op_time",
+        "dump_op_args",
+        "cast_dtype",
+    ]
     assert (
         feature in feature_options
     ), f"feature must be one of {feature_options}, but got {feature}"
@@ -73,10 +79,12 @@ def apply_feature(ops, feature, condition_func=lambda *args, **kwargs: True):
         hook_cls = OpFallbackHook
     elif feature == "autocompare":
         hook_cls = OpAutoCompareHook
-    elif feature == "op_time_measure":
+    elif feature == "measure_op_time":
         hook_cls = OpTimeMeasureHook
     elif feature == "dump_op_args":
         hook_cls = OpDispatchWatcherHook
+    elif feature == "cast_dtype":
+        hook_cls = OpDtypeCastHook
 
     if isinstance(ops, str):
         apply_hook_to_ops(ops, hook_cls, condition_func)
