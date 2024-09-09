@@ -10,10 +10,10 @@ def _test_function(x, y):
     c = torch.mul(b, a) + 1
     d = torch.div(c, b) - 2
     d.backward(torch.ones_like(d))
-    a.is_cpu == x.is_cpu
-    b.is_cpu == x.is_cpu
-    c.is_cpu == x.is_cpu
-    d.is_cpu == x.is_cpu
+    a.device.type == x.device.type
+    b.device.type == x.device.type
+    c.device.type == x.device.type
+    d.device.type == x.device.type
 
     a.requires_grad == x.requires_grad
     b.requires_grad == x.requires_grad

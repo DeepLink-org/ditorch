@@ -21,7 +21,7 @@ def traverse_container(container):
 def is_cpu_op(*args, **kwargs):
     for obj in traverse_container(args):
         if isinstance(obj, torch.Tensor):
-            if not obj.is_cpu:
+            if not obj.device.type == "cpu":
                 return False, obj.device
 
     return True, "cpu"
