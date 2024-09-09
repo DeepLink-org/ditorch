@@ -8,4 +8,4 @@ from .apply_hook import (
     OpDtypeCast,
 )
 
-from .custom_apply_hook import fallback_ops, dump_all_ops_args
+from .custom_apply_hook import apply_feature

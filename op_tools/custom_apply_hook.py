@@ -25,8 +25,10 @@ def get_func_name(func):
     return name
 
 
-def apply_hook_to_ops(ops, hook):
+def apply_hook_to_ops(ops, hook, condition_funcs=[]):
+    index = -1
     for op in traverse_container(ops):
+        index += 1
         if isinstance(op, str):
             func = get_function_from_string(op)
             name = op
@@ -46,29 +48,40 @@ def apply_hook_to_ops(ops, hook):
             continue
         if not hasattr(func, "__name__"):
             func.__name__ = name.split(".")[-1]
+        if isinstance(condition_funcs, list):
+            if len(condition_funcs) > index:
+                condition_func = condition_funcs[index]
+            else:
+                condition_func = lambda *args, **kwargs: True
+        else:
+            condition_func = condition_funcs
+        assert callable(condition_func)
+
         hook_obj = hook(name, func)
+        hook_obj.add_condition_func(condition_func)
         setattr(module, func.__name__, hook_obj)
 
 
-def fallback_ops(ops):
-    apply_hook_to_ops(ops, OpFallbackHook)
+def apply_feature(ops, feature, condition_func=lambda *args, **kwargs: True):
+    assert isinstance(ops, (str, list))
+    feature_options = ["fallback", "autocompare", "op_time_measure", "dump_op_args"]
+    assert (
+        feature in feature_options
+    ), f"feature must be one of {feature_options}, but got {feature}"
+    assert callable(condition_func)
+    if feature == "fallback":
+        hook_cls = OpFallbackHook
+    elif feature == "autocompare":
+        hook_cls = OpAutoCompareHook
+    elif feature == "op_time_measure":
+        hook_cls = OpTimeMeasureHook
+    elif feature == "dump_op_args":
+        hook_cls = OpDispatchWatcherHook
 
-
-def fallback_op_if(op, condition=lambda *args, **kwargs: False):
-    apply_hook_to_ops(op, OpFallbackHook)
-
-
-def dump_ops_args(ops):
-    apply_hook_to_ops(ops, OpDispatchWatcherHook)
-
-
-def dump_all_ops_args():
-    apply_hook_to_ops(torch, OpDispatchWatcherHook)
-
-
-def autocompare_ops(ops):
-    apply_hook_to_ops(ops, OpAutoCompareHook)
-
-
-def measure_ops_elasped(ops):
-    apply_hook_to_ops(ops, OpTimeMeasureHook)
+    if isinstance(ops, str):
+        apply_hook_to_ops(ops, hook_cls, condition_func)
+    elif isinstance(ops, list):
+        for op in ops:
+            apply_hook_to_ops(op, hook_cls, condition_func)
+    else:
+        assert False, f"ops must be str or list, but got {type(ops)}"
