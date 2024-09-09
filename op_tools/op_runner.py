@@ -4,8 +4,7 @@ import os
 import torch
 import ditorch
 import time
-from .utils import to_device, is_cpu_op, get_function_from_string, traverse_container
-import argparse
+from .utils import to_device, get_function_from_string, traverse_container
 from .op_autocompare_hook import compare_result
 from .save_op_args import serialize_args_to_dict
 

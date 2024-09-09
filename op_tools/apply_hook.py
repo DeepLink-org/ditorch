@@ -1,22 +1,19 @@
 # Copyright (c) 2024, DeepLink.
-import os
-import torch
 from torch.overrides import TorchFunctionMode, resolve_name
-from torch.utils._python_dispatch import TorchDispatchMode
 from .op_capture_hook import OpCaptureHook
 from .op_fallback_hook import OpFallbackHook
 from .op_autocompare_hook import OpAutoCompareHook
 from .op_dispatch_watch_hook import OpDispatchWatcherHook
 from .op_time_measure_hook import OpTimeMeasureHook
 from .op_dtype_cast_hook import OpDtypeCastHook
-from .utils import is_cpu_op, is_opname_match
+from .utils import is_cpu_op
 import inspect
 
 
 def is_should_apply_hook(name, func, args, kwargs=None):
     if name is None:
         return False
-    if inspect.isroutine(func) == False:
+    if inspect.isroutine(func) is False:
         return False
     if name.startswith("torch.Tensor.") and (
         name.endswith("__get__") or name.endswith("__set__")

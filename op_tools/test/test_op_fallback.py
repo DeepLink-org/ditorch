@@ -38,7 +38,7 @@ with op_tools.OpFallback():
     f()
 
 
-##usage 2
+# usage 2
 fallback = op_tools.OpFallback()
 fallback.start()
 f()

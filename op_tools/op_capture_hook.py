@@ -2,7 +2,7 @@
 import os
 import torch
 from .base_hook import BaseHook, DisableHookGuard
-from .utils import traverse_container, is_cpu_op, is_opname_match
+from .utils import traverse_container, is_opname_match
 from .save_op_args import save_op_args
 
 

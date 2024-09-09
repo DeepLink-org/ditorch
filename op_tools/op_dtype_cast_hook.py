@@ -1,7 +1,5 @@
 # Copyright (c) 2024, DeepLink.
 import torch
-import math
-import gc
 import os
 
 from .base_hook import BaseHook, DisableHookGuard
@@ -9,12 +7,9 @@ from .utils import (
     to_device,
     is_cpu_op,
     traverse_container,
-    is_inplace_op,
     get_dtype_cast_dict_form_str,
     is_opname_match,
 )
-from .op_fallback_hook import OpFallbackHook
-from .save_op_args import save_op_args, serialize_args_to_dict
 
 
 class OpDtypeCastHook(BaseHook):

@@ -13,7 +13,6 @@ from .utils import (
     is_view_op,
     is_opname_match,
 )
-from .op_fallback_hook import OpFallbackHook
 from .save_op_args import save_op_args, serialize_args_to_dict
 
 RANDOM_NUMBER_GEN_OPS = [
@@ -86,7 +85,7 @@ def compare_result(name, a, b, atol=1e-3):
         print(
             f"OpAutoCompareHook: {name:<50} allclose: {allclose}\tmax_diff: {f'{max_diff:20.9f}'} {error_info}"
         )
-    elif type(a) != type(b):
+    elif type(a) != type(b):  # noqa: E721
         error_info = f"Inconsistent types: {a} {b}"
         print(
             f"OpAutoCompareHook: {name:<50} allclose: {allclose}\tmax_diff: {f'{max_diff:20.9f}'} {error_info}"

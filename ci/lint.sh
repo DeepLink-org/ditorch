@@ -1,0 +1,1 @@
+flake8 --extend-ignore E501,F401,F841

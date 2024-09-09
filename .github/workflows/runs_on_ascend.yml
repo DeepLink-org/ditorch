@@ -33,6 +33,7 @@ jobs:
           set -ex
           cd ${DEEPLINK_PATH}/${GITHUB_RUN_NUMBER} && rm -rf ${GITHUB_JOB} && cp -R source ${GITHUB_JOB}  && cd ${GITHUB_JOB}
           echo "start to build"
+          bash ci/lint.sh
 
   Test:
     name: test on ascend

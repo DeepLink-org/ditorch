@@ -97,16 +97,6 @@ class TestOpTools(unittest.TestCase):
             n.mul_(4)
             n.backward(torch.ones_like(n))
 
-    def test_op_autocompare_inplace_view_op_and_requires_grad(self):
-        with op_tools.OpAutoCompare():
-            x = torch.randn(32, 1, 32, 32, requires_grad=True).to(device=device)
-            y = x.view(-1)
-            z = y.div_(2)
-            n = z.view(32, 1, 32, 32)
-            n[2:4:1, :, :, :] = 0
-            n.mul_(4)
-            n.backward(torch.ones_like(n))
-
     def test_op_autocompare_mul_op(self):
         with op_tools.OpAutoCompare():
             x = torch.randn(32, 1, 32, 32, requires_grad=True).to(device=device)

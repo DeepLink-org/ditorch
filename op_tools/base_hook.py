@@ -1,13 +1,12 @@
 # Copyright (c) 2024, DeepLink.
-from abc import ABC, abstractmethod
-import inspect
-from .utils import is_cpu_op, is_opname_match
+from abc import ABC
+from .utils import is_cpu_op
 
 
 def is_should_apply_hook(name, func, *args, **kwargs):
     if name is None:
         return False
-    if callable(func) == False:
+    if callable(func) is False:
         return False
     if name.startswith("torch.Tensor.") and (
         name.endswith("__get__") or name.endswith("__set__")

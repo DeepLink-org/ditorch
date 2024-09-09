@@ -1,0 +1,37 @@
+name: Lint And Build Package
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10.9'
+
+      - name: Install dependencies
+        run: |
+          source /mnt/cache/share/platform/cienv/ditorch_env
+          pip install flake8
+
+      - name: Run flake8
+        run: |
+          source /mnt/cache/share/platform/cienv/ditorch_env
+          cd ${DEEPLINK_PATH}/${GITHUB_RUN_NUMBER} && rm -rf ${GITHUB_JOB} && cp -R Build ${GITHUB_JOB}  && cd ${GITHUB_JOB}
+          flake8 --extend-ignore E501,F401,F841
+
