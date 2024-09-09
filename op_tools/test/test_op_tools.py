@@ -88,11 +88,62 @@ class TestOpTools(unittest.TestCase):
             z = y.div_(2)
             z.backward(torch.ones_like(z))
 
+    def test_op_autocompare_inplace_view_op_and_requires_grad(self):
+        with op_tools.OpAutoCompare():
+            x = torch.randn(32, 1, 32, 32, requires_grad=True).to(device=device)
+            y = x.view(-1)
+            z = y.div_(2)
+            n = z.view(32, 1, 32, 32)
+            n.mul_(4)
+            n.backward(torch.ones_like(n))
+
+    def test_op_autocompare_inplace_view_op_and_requires_grad(self):
+        with op_tools.OpAutoCompare():
+            x = torch.randn(32, 1, 32, 32, requires_grad=True).to(device=device)
+            y = x.view(-1)
+            z = y.div_(2)
+            n = z.view(32, 1, 32, 32)
+            n[2:4:1, :, :, :] = 0
+            n.mul_(4)
+            n.backward(torch.ones_like(n))
+
     def test_op_autocompare_mul_op(self):
         with op_tools.OpAutoCompare():
             x = torch.randn(32, 1, 32, 32, requires_grad=True).to(device=device)
             z = torch.mul(x, x)
             z.backward(torch.ones_like(z))
+
+    def test_op_autocompare_copy_op(self):
+        with op_tools.OpAutoCompare():
+            x = torch.randn(32, 1, 32, 32, requires_grad=True)
+            assert x.device == torch.device("cpu")
+            y = x.to(device=device)
+            assert y.is_cpu == (device.type == "cpu"), f"{y.device} {device}"
+            z = torch.add(x, x)
+            assert z.is_cpu == (device.type != "cpu"), f"{z.device} {device}"
+            z = torch.add(y, y)
+            assert z.is_cpu == (device.type == "cpu"), f"{z.device} {device}"
+            z.backward(torch.ones_like(z))
+
+            e = z.cpu()
+            assert e.is_cpu
+
+    def test_op_dtype_cast(self):
+        input = torch.ones((5, 5), dtype=torch.float16, device="cuda").requires_grad_()
+        assert input.is_leaf
+        with op_tools.OpDtypeCast():
+            input = torch.ones(
+                (5, 5), dtype=torch.float16, device="cuda"
+            ).requires_grad_()
+            assert input.is_leaf
+            weight = torch.ones(
+                (5, 5), dtype=torch.float16, device="cuda"
+            ).requires_grad_()
+            output = torch.nn.functional.linear(input, weight)
+            label = torch.ones_like(output)
+            output.backward(label)
+            assert input.grad is not None and input.grad.dtype == torch.float16
+            assert weight.grad is not None and weight.grad.dtype == torch.float16
 
 
 if __name__ == "__main__":

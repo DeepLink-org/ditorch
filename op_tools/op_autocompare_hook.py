@@ -2,11 +2,45 @@
 import torch
 import math
 import gc
+import os
 
 from .base_hook import BaseHook, DisableHookGuard
-from .utils import to_device, is_cpu_op, traverse_container, is_inplace_op
+from .utils import (
+    to_device,
+    is_cpu_op,
+    traverse_container,
+    is_inplace_op,
+    is_view_op,
+    is_opname_match,
+)
 from .op_fallback_hook import OpFallbackHook
 from .save_op_args import save_op_args, serialize_args_to_dict
+
+RANDOM_NUMBER_GEN_OPS = [
+    "torch.Tensor.random_",
+    "torch.randperm",
+    "torch.bernoulli",
+    "torch.poisson",
+    "torch.randint_like",
+    "torch.randint",
+    "torch.randn",
+    "torch.randn_like",
+    "torch.multinomial",
+    "torch.nn.init.kaiming_uniform",
+    "torch.nn.init.kaiming_uniform_",
+    "torch.nn.init.trunc_normal_",
+    "torch.nn.init.uniform",
+    "torch.nn.init.normal",
+    "torch.nn.init.uniform_",
+    "torch.nn.init.normal_",
+    "torch.nn.init.warnings",
+    "torch.nn.init.xavier_normal",
+    "torch.nn.init.xavier_normal_",
+    "torch.nn.init.xavier_uniform",
+    "torch.nn.init.kaiming_normal",
+    "torch.nn.init.xavier_uniform_",
+    "torch.nn.init.kaiming_normal_",
+]
 
 
 def tensor_max_diff(a, b):
@@ -33,7 +67,13 @@ def compare_result(name, a, b, atol=1e-3):
     error_info = ""
     max_diff = float("nan")
     allclose = False
-    if isinstance(a, torch.Tensor) and isinstance(b, torch.Tensor):
+    if a is None and b is None:
+        allclose = True
+        max_diff = 0
+        print(
+            f"OpAutoCompareHook: {name:<50} allclose: {allclose}\tmax_diff: {f'{max_diff:20.9f}'} {error_info}"
+        )
+    elif isinstance(a, torch.Tensor) and isinstance(b, torch.Tensor):
         if a.shape == b.shape:
             max_diff = tensor_max_diff(a, b)
             allclose = tensor_allclose(a, b)
@@ -125,8 +165,8 @@ class OpAutoCompareHook(BaseHook):
         torch.bfloat16: torch.float32,
     }
 
-    def __init__(self, name) -> None:
-        super().__init__(name)
+    def __init__(self, name, func) -> None:
+        super().__init__(name, func)
 
     def before_call_op(self, *args, **kwargs):
         with DisableHookGuard():
@@ -146,10 +186,12 @@ class OpAutoCompareHook(BaseHook):
         if self.is_cpu_op:
             return
         with DisableHookGuard():
+            self.result = result
             try:
                 self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
                 self.result_device = to_device("cpu", self.result)
                 self.dtype_cast_dict = dict()
+                args_cpu = self.args_cpu
             except Exception as e:
                 self.dtype_cast_dict = OpAutoCompareHook.AUTO_COMPARE_DTYPE_CAST_DICT
                 # some op on cpu backend not support half, bfloat16
@@ -164,11 +206,14 @@ class OpAutoCompareHook(BaseHook):
                     dtype_cast_dict=self.dtype_cast_dict,
                 )
                 # RuntimeError: a leaf Variable that requires grad is being used in an in-place operation.
-                if is_inplace_op(self.name) and self.args[0].requires_grad:
+                if (is_inplace_op(self.name) or is_view_op(self.name)) and self.args[
+                    0
+                ].requires_grad:
                     args_cpu = [item for item in self.args_cpu]
                     args_cpu[0] = args_cpu[0].clone()
                     self.result_cpu = self.func(*args_cpu, **self.kwargs_cpu)
                 else:
+                    args_cpu = self.args_cpu
                     self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
 
                 self.result_device = to_device(
@@ -176,6 +221,18 @@ class OpAutoCompareHook(BaseHook):
                     self.result,
                     dtype_cast_dict=self.dtype_cast_dict,
                 )
+
+            if is_inplace_op(self.name):
+                allclose, max_diff = compare_result(
+                    self.name, self.args[0], args_cpu[0]
+                )
+                if not allclose:
+                    self.save_forward_args()
+
+            if self.result is None:
+                print(f"{self.name} output is None, acc not checked")
+                return
+
             allclose, max_diff = compare_result(
                 self.name, self.result_device, self.result_cpu
             )
@@ -202,9 +259,10 @@ class OpAutoCompareHook(BaseHook):
                 if isinstance(arg, torch.Tensor) and arg.requires_grad:
                     self.backward_hook_handle.register_tensor_hook(index, arg)
 
+            self.args = to_device("cpu", self.args)
+            self.kwargs = to_device("cpu", self.kwargs or {})
+
     def run_backward_on_cpu(self, grad_inputs, grad_output):
-        self.grad_inputs = grad_inputs
-        self.grad_output = grad_output
         self.grad_outputs_cpu = to_device("cpu", grad_output, self.dtype_cast_dict)
         self.grad_inputs_cpu = to_device("cpu", grad_inputs, self.dtype_cast_dict)
         for arg_cpu in traverse_container(self.args_cpu):
@@ -268,7 +326,6 @@ class OpAutoCompareHook(BaseHook):
             if self.forward_allclose:
                 self.save_forward_args()
             self.save_backward_args
-
         self = None
         gc.collect()
 
@@ -314,3 +371,12 @@ class OpAutoCompareHook(BaseHook):
             f"{self.forward_op_id}/cpu/grad_outputs",
             *tuple(self.grad_outputs_cpu),
         )
+
+    def is_should_apply(self, *args, **kwargs):
+        if self.name in RANDOM_NUMBER_GEN_OPS:
+            return False
+
+        if is_opname_match(self.name, os.getenv("OP_AUTOCOMPARE_DISABLE_LIST", "")):
+            return False
+
+        return is_opname_match(self.name, os.getenv("OP_AUTOCOMPARE_LIST", ".*"))

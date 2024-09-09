@@ -13,6 +13,10 @@ class TestFunctionFromString(unittest.TestCase):
             func = get_function_from_string(op_name)
             self.assertTrue(inspect.isroutine(func))
 
+    def test_string2class(self):
+        self.assertTrue(inspect.isclass(get_function_from_string("torch.nn.Conv2d")))
+        self.assertTrue(inspect.isclass(get_function_from_string("torch.Tensor")))
+
 
 if __name__ == "__main__":
     unittest.main()

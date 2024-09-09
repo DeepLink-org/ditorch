@@ -1,7 +1,9 @@
 # Copyright (c) 2024, DeepLink.
 import torch
+import os
+
 from .base_hook import BaseHook, DisableHookGuard
-from .utils import to_device, is_cpu_op
+from .utils import to_device, is_cpu_op, is_opname_match
 from .save_op_args import serialize_args_to_dict
 
 
@@ -11,8 +13,8 @@ class OpFallbackHook(BaseHook):
         torch.bfloat16: torch.float32,
     }
 
-    def __init__(self, name) -> None:
-        super().__init__(name)
+    def __init__(self, name, func) -> None:
+        super().__init__(name, func)
 
     def get_dtype_convert_back_dict(self):
         convert_dict = dict()
@@ -78,3 +80,15 @@ class OpFallbackHook(BaseHook):
             print(
                 f"OpFallbackHook: {self.name:<50} output: {serialize_args_to_dict(self.result)['args']} cpu output: {serialize_args_to_dict(self.result_cpu)['args']} dtype_convert_back_dict:{dtype_convert_back_dict}"
             )
+
+    def is_should_apply(self, *args, **kwargs):
+        BLACK_OP_LIST = ["torch.Tensor.cpu"]
+        if self.name in BLACK_OP_LIST:
+            return False
+
+        if is_opname_match(self.name, os.getenv("OP_FALLBACK_DISABLE_LIST", "")):
+            return False
+        # if name in VIEW_OPS:
+        #    return False
+
+        return is_opname_match(self.name, os.getenv("OP_FALLBACK_LIST", ".*"))

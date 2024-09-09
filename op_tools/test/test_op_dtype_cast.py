@@ -52,3 +52,13 @@ os.environ["OP_DTYPE_CAST_DICT"] = (
 dtype_caster.start()
 f()
 dtype_caster.stop()
+
+with op_tools.OpDtypeCast():
+    input = torch.ones((5, 5), dtype=torch.float16, device="cuda", requires_grad=True)
+    input = torch.ones((5, 5), dtype=torch.float16, device="cuda", requires_grad=True)
+    weight = torch.ones((5, 5), dtype=torch.float16, device="cuda", requires_grad=True)
+    output = torch.nn.functional.linear(input, weight)
+    label = torch.ones_like(output)
+    output.backward(label)
+    assert input.grad is not None and input.grad.dtype == torch.float16
+    assert weight.grad is not None and input.grad.dtype == torch.float16
