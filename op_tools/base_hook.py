@@ -28,6 +28,7 @@ def is_should_apply_hook(name, func, *args, **kwargs):
         "torch.Tensor.__format__",
         "torch.Tensor.type",
         "torch.Tensor.dim",
+        "torch.Tensor.requires_grad_",
     ]
     if name in EXCLUDE_OPS:
         return False
@@ -38,14 +39,14 @@ def is_should_apply_hook(name, func, *args, **kwargs):
 class BaseHook(ABC):
     enable = True
     id = 0
+    skiped_op = set()
+    applied_op = set()
 
     def __init__(self, name, func) -> None:
         self.name = name
         self.exception = None
         self.func = func
         self.wrapper_func = self.construct_wrapper_func()
-        self.skiped_op = set()
-        self.applied_op = set()
 
     def before_call_op(self, *args, **kwargs):
         self.args = args
@@ -78,23 +79,24 @@ class BaseHook(ABC):
         return False
 
     def __call__(self, *args, **kwargs):
-        args_on_cpu, self.device = is_cpu_op(*args, **kwargs)
+        self.args_on_cpu, self.device = is_cpu_op(*args, **kwargs)
         # import pdb; pdb.set_trace()
         if (
             self.enable
-            and not args_on_cpu
+            and not self.args_on_cpu
             and is_should_apply_hook(self.name, self.func, *args, **kwargs)
             and self.is_should_apply(*args, **kwargs)
         ):
-            print(f"apply {self.class_name()} on {self.name}")
             if self.name not in self.applied_op:
                 self.applied_op.add(self.name)
+                print(f"apply {self.class_name()} on {self.name}")
             self.result = self.wrapper_func(*args, **kwargs)
         else:
             self.result = self.func(*args, **kwargs)
-            if not args_on_cpu and self.name not in self.skiped_op:
-                self.skiped_op.add(self.name)
-                print(f"skip {self.class_name()} on {self.name}")
+            if not self.args_on_cpu:
+                if self.name not in self.skiped_op:
+                    self.skiped_op.add(self.name)
+                    print(f"skip {self.class_name()} on {self.name}")
         return self.result
 
 

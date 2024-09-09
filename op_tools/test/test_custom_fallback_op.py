@@ -4,11 +4,10 @@ import op_tools
 import unittest
 
 
-class TestFallbackOp(unittest.TestCase):
+class TestCustomFallbackOp(unittest.TestCase):
 
     def test_fallback_op(self):
-        return
-        op_tools.fallback_ops(ops=["torch.add", "torch.mul"])
+        op_tools.fallback_ops(ops=["torch.add", "torch.mul", "torch.Tensor.add"])
         op_tools.fallback_ops(torch.sub)
         x = torch.tensor([1, 2, 3], device="cuda")
         y = torch.tensor([4, 5, 6], device="cuda")
@@ -20,6 +19,9 @@ class TestFallbackOp(unittest.TestCase):
 
         m = torch.mul(x, y)
         assert m.is_cpu == False
+
+        p = x + y
+        assert p.is_cpu == False
 
     def test_dump_all_args(self):
         op_tools.dump_all_ops_args()

@@ -186,6 +186,7 @@ class OpAutoCompareHook(BaseHook):
         if self.is_cpu_op:
             return
         with DisableHookGuard():
+            self.result = result
             try:
                 self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
                 self.result_device = to_device("cpu", self.result)
@@ -258,9 +259,10 @@ class OpAutoCompareHook(BaseHook):
                 if isinstance(arg, torch.Tensor) and arg.requires_grad:
                     self.backward_hook_handle.register_tensor_hook(index, arg)
 
+            self.args = to_device("cpu", self.args)
+            self.kwargs = to_device("cpu", self.kwargs or {})
+
     def run_backward_on_cpu(self, grad_inputs, grad_output):
-        self.grad_inputs = grad_inputs
-        self.grad_output = grad_output
         self.grad_outputs_cpu = to_device("cpu", grad_output, self.dtype_cast_dict)
         self.grad_inputs_cpu = to_device("cpu", grad_inputs, self.dtype_cast_dict)
         for arg_cpu in traverse_container(self.args_cpu):
@@ -324,7 +326,6 @@ class OpAutoCompareHook(BaseHook):
             if self.forward_allclose:
                 self.save_forward_args()
             self.save_backward_args
-
         self = None
         gc.collect()
 
