@@ -42,7 +42,7 @@ def transform_contrainer(obj, func):
         return obj
 
 
-def to_device(device, obj, dtype_cast_dict=dict(), detach=True):
+def to_device(device, obj, detach=False, dtype_cast_dict=dict()):
     def func(obj):
         if isinstance(obj, torch.Tensor):
             if obj.dtype in list(dtype_cast_dict.keys()):

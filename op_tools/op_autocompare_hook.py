@@ -176,10 +176,12 @@ class OpAutoCompareHook(BaseHook):
             self.args_cpu = to_device(
                 "cpu",
                 self.args,
+                detach=True,
             )
             self.kwargs_cpu = to_device(
                 "cpu",
                 self.kwargs or {},
+                detach=True,
             )
 
     def after_call_op(self, result):
@@ -189,7 +191,7 @@ class OpAutoCompareHook(BaseHook):
             self.result = result
             try:
                 self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
-                self.result_device = to_device("cpu", self.result)
+                self.result_device = to_device("cpu", self.result, detach=True)
                 self.dtype_cast_dict = dict()
                 args_cpu = self.args_cpu
             except Exception as e:
@@ -199,11 +201,13 @@ class OpAutoCompareHook(BaseHook):
                     "cpu",
                     self.args_cpu,
                     dtype_cast_dict=self.dtype_cast_dict,
+                    detach=True,
                 )
                 self.kwargs_cpu = to_device(
                     "cpu",
                     self.kwargs_cpu or {},
                     dtype_cast_dict=self.dtype_cast_dict,
+                    detach=True,
                 )
                 # RuntimeError: a leaf Variable that requires grad is being used in an in-place operation.
                 if (is_inplace_op(self.name) or is_view_op(self.name)) and self.args[
@@ -220,6 +224,7 @@ class OpAutoCompareHook(BaseHook):
                     "cpu",
                     self.result,
                     dtype_cast_dict=self.dtype_cast_dict,
+                    detach=True,
                 )
 
             if is_inplace_op(self.name):
@@ -259,12 +264,16 @@ class OpAutoCompareHook(BaseHook):
                 if isinstance(arg, torch.Tensor) and arg.requires_grad:
                     self.backward_hook_handle.register_tensor_hook(index, arg)
 
-            self.args = to_device("cpu", self.args)
-            self.kwargs = to_device("cpu", self.kwargs or {})
+            self.args = to_device("cpu", self.args, detach=True)
+            self.kwargs = to_device("cpu", self.kwargs or {}, detach=True)
 
     def run_backward_on_cpu(self, grad_inputs, grad_output):
-        self.grad_outputs_cpu = to_device("cpu", grad_output, self.dtype_cast_dict)
-        self.grad_inputs_cpu = to_device("cpu", grad_inputs, self.dtype_cast_dict)
+        self.grad_outputs_cpu = to_device(
+            "cpu", grad_output, dtype_cast_dict=self.dtype_cast_dict, detach=True
+        )
+        self.grad_inputs_cpu = to_device(
+            "cpu", grad_inputs, dtype_cast_dict=self.dtype_cast_dict, detach=True
+        )
         for arg_cpu in traverse_container(self.args_cpu):
             if isinstance(arg_cpu, torch.Tensor) and arg_cpu.grad is not None:
                 arg_cpu.grad.zero_()
@@ -332,7 +341,9 @@ class OpAutoCompareHook(BaseHook):
     def set_input_grad(self, index, grad):
         if not hasattr(self, "args_grad"):
             self.args_grad = [None for i in range(len(self.args))]
-        self.args_grad[index] = to_device("cpu", grad, self.dtype_cast_dict)
+        self.args_grad[index] = to_device(
+            "cpu", grad, dtype_cast_dict=self.dtype_cast_dict, detach=True
+        )
 
     def save_forward_args(self):
         save_op_args(

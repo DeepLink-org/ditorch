@@ -7,7 +7,7 @@ from .utils import is_cpu_op, is_opname_match
 def is_should_apply_hook(name, func, *args, **kwargs):
     if name is None:
         return False
-    if inspect.isroutine(func) == False:
+    if callable(func) == False:
         return False
     if name.startswith("torch.Tensor.") and (
         name.endswith("__get__") or name.endswith("__set__")
@@ -47,6 +47,18 @@ class BaseHook(ABC):
         self.exception = None
         self.func = func
         self.wrapper_func = self.construct_wrapper_func()
+        self.condition_funcs = []
+
+    def add_condition_func(self, func):
+        if not callable(func):
+            raise ValueError("condition_func must be callable")
+        self.condition_funcs.append(func)
+
+    def conditions_met(self, *args, **kwargs):
+        for func in self.condition_funcs:
+            if not func(*args, **kwargs):
+                return False
+        return True
 
     def before_call_op(self, *args, **kwargs):
         self.args = args
@@ -80,9 +92,9 @@ class BaseHook(ABC):
 
     def __call__(self, *args, **kwargs):
         self.args_on_cpu, self.device = is_cpu_op(*args, **kwargs)
-        # import pdb; pdb.set_trace()
         if (
             self.enable
+            and self.conditions_met(*args, **kwargs)
             and not self.args_on_cpu
             and is_should_apply_hook(self.name, self.func, *args, **kwargs)
             and self.is_should_apply(*args, **kwargs)
