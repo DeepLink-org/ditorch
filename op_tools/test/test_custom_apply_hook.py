@@ -62,7 +62,21 @@ class TestCustomApplyHook(unittest.TestCase):
     def test_dump_all_args(self):
         op_tools.apply_feature(
             ops=["torch.add", "torch.sub", "torch.mul", "torch.div"],
-            feature="autocompare",
+            feature="dump_op_args",
+        )
+        x = torch.tensor(
+            [1, 2, 3], dtype=torch.float16, device="cuda", requires_grad=True
+        )
+        y = torch.tensor(
+            [4, 5, 6], dtype=torch.float16, device="cuda", requires_grad=True
+        )
+
+        _test_function(x, y)
+
+    def test_op_capture(self):
+        op_tools.apply_feature(
+            ops=["torch.add", "torch.sub", "torch.mul", "torch.div"],
+            feature="op_capture",
         )
         x = torch.tensor(
             [1, 2, 3], dtype=torch.float16, device="cuda", requires_grad=True

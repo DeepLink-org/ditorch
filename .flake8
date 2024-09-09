@@ -1,0 +1,8 @@
+[flake8]
+exclude = tests/legacy,venv
+per-file-ignores =
+    ./docs/add_docstrings.py: E402
+max-line-length = 121
+
+ignore = E501,F401,F841,W503,C901
+max-complexity = 12
