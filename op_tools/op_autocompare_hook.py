@@ -1,6 +1,5 @@
 # Copyright (c) 2024, DeepLink.
 import torch
-import math
 import gc
 import os
 
@@ -12,6 +11,7 @@ from .utils import (
     is_inplace_op,
     is_view_op,
     is_opname_match,
+    compare_result,
 )
 from .save_op_args import save_op_args, serialize_args_to_dict
 
@@ -40,84 +40,6 @@ RANDOM_NUMBER_GEN_OPS = [
     "torch.nn.init.xavier_uniform_",
     "torch.nn.init.kaiming_normal_",
 ]
-
-
-def tensor_max_diff(a, b):
-    a_cpu, b_cpu = a.cpu(), b.cpu()
-    if a_cpu.dtype == torch.bool:
-        a_cpu = a_cpu.int()
-    if b_cpu.dtype == torch.bool:
-        b_cpu = b_cpu.int()
-    diff = torch.abs(a_cpu - b_cpu)
-    max_diff = diff.max().item()
-    return max_diff
-
-
-def tensor_allclose(a, b, atol=1e-3, rtol=1e-3):
-    a_cpu, b_cpu = a.cpu(), b.cpu()
-    try:
-        return torch.allclose(a_cpu, b_cpu, atol=atol, rtol=rtol, equal_nan=True)
-    except Exception as e:  # noqa: F841
-        return False
-    return False
-
-
-def compare_result(name, a, b, atol=1e-3):
-    error_info = ""
-    max_diff = float("nan")
-    allclose = False
-    if a is None and b is None:
-        allclose = True
-        max_diff = 0
-        print(f"OpAutoCompareHook: {name:<50} allclose: {allclose}\tmax_diff: {f'{max_diff:20.9f}'} {error_info}")
-    elif isinstance(a, torch.Tensor) and isinstance(b, torch.Tensor):
-        if a.shape == b.shape:
-            max_diff = tensor_max_diff(a, b)
-            allclose = tensor_allclose(a, b)
-        else:
-            max_diff = float("nan")
-            allclose = False
-            error_info = f"Inconsistent shape: {a.shape} {b.shape}"
-        if a.dtype != b.dtype:
-            error_info = f"Inconsistent dtypes: {a.dtype} {b.dtype}"
-        print(f"OpAutoCompareHook: {name:<50} allclose: {allclose}\tmax_diff: {f'{max_diff:20.9f}'} {error_info}")
-    elif type(a) != type(b):  # noqa: E721
-        error_info = f"Inconsistent types: {a} {b}"
-        print(f"OpAutoCompareHook: {name:<50} allclose: {allclose}\tmax_diff: {f'{max_diff:20.9f}'} {error_info}")
-    elif isinstance(a, (bool, int, float)):
-        allclose = a == b or (math.isnan(a) and math.isnan(b))
-        max_diff = a - b
-        print(f"OpAutoCompareHook: {name:<50} allclose: {allclose}\tmax_diff: {f'{max_diff:20.9f}'}")
-    elif type(a).__module__.startswith("torch.return_types") or isinstance(a, (tuple, list)):
-        max_diff_list = []
-        allclose_list = []
-        error_info_i = ""
-        for i in range(len(a)):
-            if isinstance(a[i], torch.Tensor) and isinstance(a[i], torch.Tensor):
-                max_diff_i = tensor_max_diff(a[i], b[i])
-                allclose_i = tensor_allclose(a[i], b[i])
-                max_diff_list.append(max_diff_i)
-                allclose_list.append(allclose_i)
-                if a[0].dtype != b[0].dtype:
-                    error_info_i = f"Inconsistent dtypes: {a[i].dtype} {b[i].dtype}"
-                print(
-                    f"OpAutoCompareHook: {name:<46} {i}th allclose: {allclose_i}\tmax_diff: {f'{max_diff_i:20.9f}'} {error_info_i}"
-                )
-            else:
-                allclose_i = a[i] == b[i] or (math.isnan(a[i]) and math.isnan(b[i]))
-                max_diff_i = a[i] - b[i]
-                max_diff_list.append(max_diff_i)
-                allclose_list.append(allclose_i)
-                print(
-                    f"OpAutoCompareHook: {name:<46} {i}th allclose: {allclose_i}\tmax_diff: {f'{max_diff_i:20.9f}'} {error_info_i}"
-                )
-
-        allclose = all(allclose_list)
-        max_diff = max(max_diff_list)
-    else:
-        print(f"OpAutoCompareHook: {name:} {__file__} unhandle output type: {type(a)}")
-
-    return allclose, max_diff
 
 
 class BackwardHookHandle:
@@ -215,7 +137,7 @@ class OpAutoCompareHook(BaseHook):
                 )
 
             if is_inplace_op(self.name):
-                allclose, max_diff = compare_result(self.name, self.args[0], args_cpu[0])
+                allclose = compare_result(self.name, self.args[0], args_cpu[0])["allclose"]
                 if not allclose:
                     self.save_forward_args()
 
@@ -223,7 +145,7 @@ class OpAutoCompareHook(BaseHook):
                 print(f"{self.name} output is None, acc not checked")
                 return
 
-            allclose, max_diff = compare_result(self.name, self.result_device, self.result_cpu)
+            allclose = compare_result(self.name, self.result_device, self.result_cpu)["allclose"]
 
             self.forward_allclose = allclose
             self.forward_op_id = self.id
@@ -297,11 +219,11 @@ class OpAutoCompareHook(BaseHook):
 
             if isinstance(arg, torch.Tensor) and arg.requires_grad:
                 arg_cpu_grad = self.args_cpu_grad[i]
-                allclose, max_diff = compare_result(
+                allclose = compare_result(
                     self.name + f" (ins[{i}].grad)",
                     self.args_grad[i],
                     arg_cpu_grad,
-                )
+                )["allclose"]
 
                 if not allclose:
                     all_grad_allclose = False
