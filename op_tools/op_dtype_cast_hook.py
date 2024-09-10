@@ -1,7 +1,5 @@
 # Copyright (c) 2024, DeepLink.
 import torch
-import math
-import gc
 import os
 
 from .base_hook import BaseHook, DisableHookGuard
@@ -9,12 +7,9 @@ from .utils import (
     to_device,
     is_cpu_op,
     traverse_container,
-    is_inplace_op,
     get_dtype_cast_dict_form_str,
     is_opname_match,
 )
-from .op_fallback_hook import OpFallbackHook
-from .save_op_args import save_op_args, serialize_args_to_dict
 
 
 class OpDtypeCastHook(BaseHook):
@@ -57,12 +52,8 @@ class OpDtypeCastHook(BaseHook):
             for i in range(len(self.ins_list)):
                 if isinstance(self.ins_list[i], torch.Tensor):
                     if self.ins_list[i].dtype != self.raw_ins_list[i].dtype:
-                        print(
-                            f"OpDtypeCastHook: {self.name:<50} {i}th arg {self.raw_ins_list[i].dtype} -> {self.ins_list[i].dtype}  config:{self.dtype_cast_config_str}"
-                        )
-                        self.dtype_cast_back_dict[self.ins_list[i].dtype] = (
-                            self.raw_ins_list[i].dtype
-                        )
+                        print(f"OpDtypeCastHook: {self.name:<50} {i}th arg {self.raw_ins_list[i].dtype} -> {self.ins_list[i].dtype}  config:{self.dtype_cast_config_str}")  # noqa: E501
+                        self.dtype_cast_back_dict[self.ins_list[i].dtype] = self.raw_ins_list[i].dtype
 
     def after_call_op(self, result):
         if self.is_cpu_op:
@@ -78,13 +69,8 @@ class OpDtypeCastHook(BaseHook):
             i = -1
             for out in traverse_container(self.result_raw):
                 i += 1
-                if (
-                    isinstance(out, torch.Tensor)
-                    and out.dtype in self.dtype_cast_back_dict.keys()
-                ):
-                    print(
-                        f"OpDtypeCastHook: {self.name:<50} {i}th out {out.dtype} -> {self.dtype_cast_back_dict[out.dtype]}  config:{self.dtype_cast_config_str}"
-                    )
+                if isinstance(out, torch.Tensor) and out.dtype in self.dtype_cast_back_dict.keys():
+                    print(f"OpDtypeCastHook: {self.name:<50} {i}th out {out.dtype} -> {self.dtype_cast_back_dict[out.dtype]}  config:{self.dtype_cast_config_str}")  # noqa: E501
 
     def is_should_apply(self, *args, **kwargs):
         if is_opname_match(self.name, os.getenv("OP_DTYPE_CAST_DISABLE_LIST", "")):

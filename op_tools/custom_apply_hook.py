@@ -1,5 +1,4 @@
 import inspect
-import torch
 from torch.overrides import resolve_name
 from .utils import traverse_container, get_function_from_string
 from .op_capture_hook import OpCaptureHook
@@ -52,7 +51,10 @@ def apply_hook_to_ops(ops, hook, condition_funcs=[]):
             if len(condition_funcs) > index:
                 condition_func = condition_funcs[index]
             else:
-                condition_func = lambda *args, **kwargs: True
+
+                def condition_func(*args, **kwargs):
+                    return True
+
         else:
             condition_func = condition_funcs
         assert callable(condition_func)
@@ -70,10 +72,9 @@ def apply_feature(ops, feature, condition_func=lambda *args, **kwargs: True):
         "measure_op_time",
         "dump_op_args",
         "cast_dtype",
+        "op_capture",
     ]
-    assert (
-        feature in feature_options
-    ), f"feature must be one of {feature_options}, but got {feature}"
+    assert feature in feature_options, f"feature must be one of {feature_options}, but got {feature}"
     assert callable(condition_func)
     if feature == "fallback":
         hook_cls = OpFallbackHook
@@ -85,6 +86,8 @@ def apply_feature(ops, feature, condition_func=lambda *args, **kwargs: True):
         hook_cls = OpDispatchWatcherHook
     elif feature == "cast_dtype":
         hook_cls = OpDtypeCastHook
+    elif feature == "op_capture":
+        hook_cls = OpCaptureHook
 
     if isinstance(ops, str):
         apply_hook_to_ops(ops, hook_cls, condition_func)

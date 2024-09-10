@@ -9,7 +9,7 @@ def code_to_profile():
     c = b + a
     d = c - a
     e = d / c
-    sorted, indices = a.sort()  # return torch.return_type.sort
+    sorted, indices = e.sort()  # return torch.return_type.sort
     y = sorted[2:8:2, ::3]
     y.sum().backward()
 

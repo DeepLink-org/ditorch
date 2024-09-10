@@ -2,7 +2,7 @@
 import os
 import torch
 from .base_hook import BaseHook, DisableHookGuard
-from .utils import traverse_container, is_cpu_op, is_opname_match
+from .utils import traverse_container, is_opname_match
 from .save_op_args import save_op_args
 
 
@@ -42,9 +42,7 @@ class OpCaptureHook(BaseHook):
             for result in traverse_container(self.result):
                 if isinstance(result, torch.Tensor):
                     if result.grad_fn is not None:
-                        result.grad_fn.register_hook(
-                            self.backward_hook_handle.grad_fun_hook()
-                        )
+                        result.grad_fn.register_hook(self.backward_hook_handle.grad_fun_hook())
 
     def is_should_apply(self, *args, **kwargs):
         if is_opname_match(self.name, os.getenv("OP_CAPTURE_DISABLE_LIST", "")):

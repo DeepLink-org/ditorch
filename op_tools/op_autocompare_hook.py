@@ -13,7 +13,6 @@ from .utils import (
     is_view_op,
     is_opname_match,
 )
-from .op_fallback_hook import OpFallbackHook
 from .save_op_args import save_op_args, serialize_args_to_dict
 
 RANDOM_NUMBER_GEN_OPS = [
@@ -58,7 +57,7 @@ def tensor_allclose(a, b, atol=1e-3, rtol=1e-3):
     a_cpu, b_cpu = a.cpu(), b.cpu()
     try:
         return torch.allclose(a_cpu, b_cpu, atol=atol, rtol=rtol, equal_nan=True)
-    except Exception as e:
+    except Exception as e:  # noqa: F841
         return False
     return False
 
@@ -70,9 +69,7 @@ def compare_result(name, a, b, atol=1e-3):
     if a is None and b is None:
         allclose = True
         max_diff = 0
-        print(
-            f"OpAutoCompareHook: {name:<50} allclose: {allclose}\tmax_diff: {f'{max_diff:20.9f}'} {error_info}"
-        )
+        print(f"OpAutoCompareHook: {name:<50} allclose: {allclose}\tmax_diff: {f'{max_diff:20.9f}'} {error_info}")
     elif isinstance(a, torch.Tensor) and isinstance(b, torch.Tensor):
         if a.shape == b.shape:
             max_diff = tensor_max_diff(a, b)
@@ -83,23 +80,15 @@ def compare_result(name, a, b, atol=1e-3):
             error_info = f"Inconsistent shape: {a.shape} {b.shape}"
         if a.dtype != b.dtype:
             error_info = f"Inconsistent dtypes: {a.dtype} {b.dtype}"
-        print(
-            f"OpAutoCompareHook: {name:<50} allclose: {allclose}\tmax_diff: {f'{max_diff:20.9f}'} {error_info}"
-        )
-    elif type(a) != type(b):
+        print(f"OpAutoCompareHook: {name:<50} allclose: {allclose}\tmax_diff: {f'{max_diff:20.9f}'} {error_info}")
+    elif type(a) != type(b):  # noqa: E721
         error_info = f"Inconsistent types: {a} {b}"
-        print(
-            f"OpAutoCompareHook: {name:<50} allclose: {allclose}\tmax_diff: {f'{max_diff:20.9f}'} {error_info}"
-        )
+        print(f"OpAutoCompareHook: {name:<50} allclose: {allclose}\tmax_diff: {f'{max_diff:20.9f}'} {error_info}")
     elif isinstance(a, (bool, int, float)):
         allclose = a == b or (math.isnan(a) and math.isnan(b))
         max_diff = a - b
-        print(
-            f"OpAutoCompareHook: {name:<50} allclose: {allclose}\tmax_diff: {f'{max_diff:20.9f}'}"
-        )
-    elif type(a).__module__.startswith("torch.return_types") or isinstance(
-        a, (tuple, list)
-    ):
+        print(f"OpAutoCompareHook: {name:<50} allclose: {allclose}\tmax_diff: {f'{max_diff:20.9f}'}")
+    elif type(a).__module__.startswith("torch.return_types") or isinstance(a, (tuple, list)):
         max_diff_list = []
         allclose_list = []
         error_info_i = ""
@@ -184,7 +173,7 @@ class OpAutoCompareHook(BaseHook):
                 detach=True,
             )
 
-    def after_call_op(self, result):
+    def after_call_op(self, result):  # noqa:C901
         if self.is_cpu_op:
             return
         with DisableHookGuard():
@@ -194,7 +183,7 @@ class OpAutoCompareHook(BaseHook):
                 self.result_device = to_device("cpu", self.result, detach=True)
                 self.dtype_cast_dict = dict()
                 args_cpu = self.args_cpu
-            except Exception as e:
+            except Exception as e:  # noqa: F841
                 self.dtype_cast_dict = OpAutoCompareHook.AUTO_COMPARE_DTYPE_CAST_DICT
                 # some op on cpu backend not support half, bfloat16
                 self.args_cpu = to_device(
@@ -210,9 +199,7 @@ class OpAutoCompareHook(BaseHook):
                     detach=True,
                 )
                 # RuntimeError: a leaf Variable that requires grad is being used in an in-place operation.
-                if (is_inplace_op(self.name) or is_view_op(self.name)) and self.args[
-                    0
-                ].requires_grad:
+                if (is_inplace_op(self.name) or is_view_op(self.name)) and self.args[0].requires_grad:
                     args_cpu = [item for item in self.args_cpu]
                     args_cpu[0] = args_cpu[0].clone()
                     self.result_cpu = self.func(*args_cpu, **self.kwargs_cpu)
@@ -228,9 +215,7 @@ class OpAutoCompareHook(BaseHook):
                 )
 
             if is_inplace_op(self.name):
-                allclose, max_diff = compare_result(
-                    self.name, self.args[0], args_cpu[0]
-                )
+                allclose, max_diff = compare_result(self.name, self.args[0], args_cpu[0])
                 if not allclose:
                     self.save_forward_args()
 
@@ -238,19 +223,13 @@ class OpAutoCompareHook(BaseHook):
                 print(f"{self.name} output is None, acc not checked")
                 return
 
-            allclose, max_diff = compare_result(
-                self.name, self.result_device, self.result_cpu
-            )
+            allclose, max_diff = compare_result(self.name, self.result_device, self.result_cpu)
 
             self.forward_allclose = allclose
             self.forward_op_id = self.id
             if not allclose:
-                print(
-                    f"OpAutoCompareHook: {self.name:<60} input: {serialize_args_to_dict(*self.args, **self.kwargs)}"
-                )
-                print(
-                    f"OpAutoCompareHook: {self.name:<60} output: {serialize_args_to_dict(self.result)['args']}"
-                )
+                print(f"OpAutoCompareHook: {self.name:<60} input: {serialize_args_to_dict(*self.args, **self.kwargs)}")
+                print(f"OpAutoCompareHook: {self.name:<60} output: {serialize_args_to_dict(self.result)['args']}")
                 self.save_forward_args()
 
             self.backward_hook_handle = BackwardHookHandle(self)
@@ -268,12 +247,8 @@ class OpAutoCompareHook(BaseHook):
             self.kwargs = to_device("cpu", self.kwargs or {}, detach=True)
 
     def run_backward_on_cpu(self, grad_inputs, grad_output):
-        self.grad_outputs_cpu = to_device(
-            "cpu", grad_output, dtype_cast_dict=self.dtype_cast_dict, detach=True
-        )
-        self.grad_inputs_cpu = to_device(
-            "cpu", grad_inputs, dtype_cast_dict=self.dtype_cast_dict, detach=True
-        )
+        self.grad_outputs_cpu = to_device("cpu", grad_output, dtype_cast_dict=self.dtype_cast_dict, detach=True)
+        self.grad_inputs_cpu = to_device("cpu", grad_inputs, dtype_cast_dict=self.dtype_cast_dict, detach=True)
         for arg_cpu in traverse_container(self.args_cpu):
             if isinstance(arg_cpu, torch.Tensor) and arg_cpu.grad is not None:
                 arg_cpu.grad.zero_()
@@ -284,10 +259,7 @@ class OpAutoCompareHook(BaseHook):
 
         self.args_cpu_grad = []
         for i in range(len(self.args_cpu)):
-            if (
-                isinstance(self.args_cpu[i], torch.Tensor)
-                and self.args_cpu[i].grad is not None
-            ):
+            if isinstance(self.args_cpu[i], torch.Tensor) and self.args_cpu[i].grad is not None:
                 self.args_cpu_grad.append(self.args_cpu[i].grad)
             else:
                 self.args_cpu_grad.append(None)
@@ -301,7 +273,12 @@ class OpAutoCompareHook(BaseHook):
 
     def compare_all_grad(self):
         """
-        Since the order in which the two backward hooks registered by different operators are called is not exactly the same, and the gradient can only be calculated on the CPU after the grad_fn hook is called, there is a judgment here, because only when the gradient on the CPU is calculated and all the gradients of the device parameters are obtained, can the gradient information be compared.
+        Since the order in which the two backward hooks registered by different operators \
+        are called is not exactly the same, and the gradient can only be calculated on the CPU \
+        after the grad_fn hook is called, there is a judgment here, \
+        because only when the gradient on the CPU is calculated \
+        and all the gradients of the device parameters are obtained, \
+        can the gradient information be compared.
         """
         if not hasattr(self, "args_cpu_grad"):
             return
@@ -311,9 +288,7 @@ class OpAutoCompareHook(BaseHook):
         # Check if all gradients have been obtained
         for i in range(len(self.args)):
             arg = self.args[i]
-            if isinstance(arg, torch.Tensor) and (
-                arg.requires_grad and self.args_grad[i] is None
-            ):
+            if isinstance(arg, torch.Tensor) and (arg.requires_grad and self.args_grad[i] is None):
                 return
 
         all_grad_allclose = True
@@ -341,9 +316,7 @@ class OpAutoCompareHook(BaseHook):
     def set_input_grad(self, index, grad):
         if not hasattr(self, "args_grad"):
             self.args_grad = [None for i in range(len(self.args))]
-        self.args_grad[index] = to_device(
-            "cpu", grad, dtype_cast_dict=self.dtype_cast_dict, detach=True
-        )
+        self.args_grad[index] = to_device("cpu", grad, dtype_cast_dict=self.dtype_cast_dict, detach=True)
 
     def save_forward_args(self):
         save_op_args(

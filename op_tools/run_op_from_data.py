@@ -1,14 +1,12 @@
 # Copyright (c) 2024, DeepLink.
-import torch
-import ditorch
+import torch  # noqa: F401
+import ditorch  # noqa: F401
 import argparse
 from op_tools.op_runner import OpRunner, SyncExecuteTimer, OpAccyChecker
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Run the operator from the data captured by the OpCapture tool"
-    )
+    parser = argparse.ArgumentParser(description="Run the operator from the data captured by the OpCapture tool")
 
     parser.add_argument("dir", type=str, help="data dir")
 

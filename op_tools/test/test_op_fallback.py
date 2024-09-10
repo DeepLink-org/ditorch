@@ -14,16 +14,14 @@ def f():
     d = c - a
     e = d / c
     sorted, indices = e.sort()  # return torch.return_type.sort
-    assert not sorted.is_cpu
+    assert sorted.device.type != "cpu"
     sorted.sum().backward()
     y = torch.cat((a, a, a), dim=0)  # first input type is tuple
-    assert not y.is_cpu
+    assert y.device.type != "cpu"
 
     base = 10000
     dim = 1024
-    inv_freq = 1.0 / (
-        base ** (torch.arange(0, dim, 2, device="cuda", dtype=torch.float32) / dim)
-    )
+    inv_freq = 1.0 / (base ** (torch.arange(0, dim, 2, device="cuda", dtype=torch.float32) / dim))
 
     x = torch.randn(3, 4).cuda().to(torch.float16)  # camb_mlu370 not support bfloat16
     y = x.clone()
@@ -38,7 +36,7 @@ with op_tools.OpFallback():
     f()
 
 
-##usage 2
+# usage 2
 fallback = op_tools.OpFallback()
 fallback.start()
 f()

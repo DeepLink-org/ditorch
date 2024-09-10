@@ -1,5 +1,6 @@
 # Copyright (c) 2024, DeepLink.
 import torch
+from torch.utils._python_dispatch import TorchDispatchMode
 import ditorch
 
 import op_tools
@@ -12,9 +13,9 @@ def f():
     d = c * 2
     e = torch.sin(d)
     f = torch.cos(e)
-    g = e.abs()
-    f.sum()
-    f.backward(torch.ones_like(f))
+    g = f.abs()
+    g.sum()
+    g.backward(torch.ones_like(g))
 
     x = torch.randn(3, 4, requires_grad=True).cuda()
     assert x.requires_grad
@@ -54,9 +55,6 @@ print("dispatch process of the operator when autocompare is enabled:")
 with op_tools.OpDispatchWatcher():
     with op_tools.OpAutoCompare():
         f()
-
-
-from torch.utils._python_dispatch import TorchDispatchMode
 
 
 class TesTorchDispatchMode(TorchDispatchMode):
