@@ -9,12 +9,8 @@ class TestEvent(unittest.TestCase):
     def test_event_measure_device_time(self):
         x = torch.randn(3, 4).cuda()
 
-        start_event = torch.cuda.Event(
-            enable_timing=True, blocking=False, interprocess=False
-        )
-        end_event = torch.cuda.Event(
-            enable_timing=True, blocking=False, interprocess=False
-        )
+        start_event = torch.cuda.Event(enable_timing=True, blocking=False, interprocess=False)
+        end_event = torch.cuda.Event(enable_timing=True, blocking=False, interprocess=False)
 
         start_event.record(torch.cuda.current_stream())
 

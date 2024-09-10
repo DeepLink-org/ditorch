@@ -1,8 +1,13 @@
 [flake8]
-exclude = tests/legacy,venv
-per-file-ignores =
-    ./docs/add_docstrings.py: E402
-max-line-length = 121
+exclude =venv
 
-ignore = E501,F401,F841,W503,C901
+max-line-length = 140
+per-file-ignores =
+    op_tools/test/*.py: F401, F841, E501
+# F401 'torch_npu' imported but unused
+# F841 local variable 'e' is assigned to but never used
+#ignore = E501,F401,F841,W503,C901
 max-complexity = 12
+extend-ignore =
+    # See https://github.com/PyCQA/pycodestyle/issues/373
+    E203,

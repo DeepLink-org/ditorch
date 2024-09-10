@@ -74,9 +74,7 @@ def apply_feature(ops, feature, condition_func=lambda *args, **kwargs: True):
         "cast_dtype",
         "op_capture",
     ]
-    assert (
-        feature in feature_options
-    ), f"feature must be one of {feature_options}, but got {feature}"
+    assert feature in feature_options, f"feature must be one of {feature_options}, but got {feature}"
     assert callable(condition_func)
     if feature == "fallback":
         hook_cls = OpFallbackHook

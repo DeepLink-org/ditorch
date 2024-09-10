@@ -42,9 +42,7 @@ class OpCaptureHook(BaseHook):
             for result in traverse_container(self.result):
                 if isinstance(result, torch.Tensor):
                     if result.grad_fn is not None:
-                        result.grad_fn.register_hook(
-                            self.backward_hook_handle.grad_fun_hook()
-                        )
+                        result.grad_fn.register_hook(self.backward_hook_handle.grad_fun_hook())
 
     def is_should_apply(self, *args, **kwargs):
         if is_opname_match(self.name, os.getenv("OP_CAPTURE_DISABLE_LIST", "")):

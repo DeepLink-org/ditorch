@@ -78,9 +78,7 @@ def is_opname_match(name, op_pattern=None):
 def is_inplace_op(name):
     INPLACES_OP = ["torch.Tensor.__setitem__"]
     return name in INPLACES_OP or (
-        name.endswith("_")
-        and (not name.endswith("__"))
-        and (name.startswith("torch.Tensor."))
+        name.endswith("_") and (not name.endswith("__")) and (name.startswith("torch.Tensor."))
     )
 
 
@@ -101,8 +99,8 @@ def get_dtype_cast_dict_form_str(config):
     dtype_cast_dict = dict()
     if config is not None:
         for item in config.split(","):
-            dtype_cast_dict[get_function_from_string(item.split("->")[0])] = (
-                get_function_from_string(item.split("->")[1])
+            dtype_cast_dict[get_function_from_string(item.split("->")[0])] = get_function_from_string(
+                item.split("->")[1]
             )
     return dtype_cast_dict
 

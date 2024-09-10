@@ -15,9 +15,7 @@ def is_should_apply_hook(name, func, args, kwargs=None):
         return False
     if inspect.isroutine(func) is False:
         return False
-    if name.startswith("torch.Tensor.") and (
-        name.endswith("__get__") or name.endswith("__set__")
-    ):
+    if name.startswith("torch.Tensor.") and (name.endswith("__get__") or name.endswith("__set__")):
         return False
     # Assuming that the torch provided by the manufacturer has not been compromised in terms of CPU functionality
     args_on_cpu, device = is_cpu_op(args, kwargs)
@@ -129,7 +127,7 @@ class OpAutoCompare(OpToolBase):
 
 class OpTimeMeasure(OpToolBase):
     """
-    Set the OP_TIME_MEASURE_DISABLE_LIST environment variable to ignore specific operators or operators in a specific mode
+    Set the OP_TIME_MEASURE_DISABLE_LIST environment variable to ignore specific operators
     Set the OP_TIME_MEASURE_LIST environment variable to only take effect on these operators
     Usage1:
     with OpTimeMeasure():

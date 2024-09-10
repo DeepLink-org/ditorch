@@ -2,7 +2,6 @@
 from abc import ABC
 import os
 import torch
-import ditorch
 import time
 from .utils import to_device, get_function_from_string, traverse_container
 from .op_autocompare_hook import compare_result
@@ -26,19 +25,11 @@ class OpRunnerHook(ABC):
 class AsyncEventTimer(OpRunnerHook):
     def __init__(self) -> None:
         super().__init__()
-        self.forward_start_event = torch.cuda.Event(
-            enable_timing=True, blocking=False, interprocess=False
-        )
-        self.forward_end_event = torch.cuda.Event(
-            enable_timing=True, blocking=False, interprocess=False
-        )
+        self.forward_start_event = torch.cuda.Event(enable_timing=True, blocking=False, interprocess=False)
+        self.forward_end_event = torch.cuda.Event(enable_timing=True, blocking=False, interprocess=False)
 
-        self.backward_start_event = torch.cuda.Event(
-            enable_timing=True, blocking=False, interprocess=False
-        )
-        self.backward_end_event = torch.cuda.Event(
-            enable_timing=True, blocking=False, interprocess=False
-        )
+        self.backward_start_event = torch.cuda.Event(enable_timing=True, blocking=False, interprocess=False)
+        self.backward_end_event = torch.cuda.Event(enable_timing=True, blocking=False, interprocess=False)
 
     def before_forward(self):
         self.forward_start_event.record(torch.cuda.current_stream)
@@ -65,9 +56,7 @@ class SyncExecuteTimer(OpRunnerHook):
         torch.cuda.current_stream().synchronize()
         self.forward_end_time = time.time()
         self.forward_elasped_time = self.forward_end_time - self.forward_start_time
-        print(
-            f"SyncExecuteTimer: {self.runner.name} forward  elasped {self.forward_elasped_time * 1000:>.8f} ms "
-        )
+        print(f"SyncExecuteTimer: {self.runner.name} forward  elasped {self.forward_elasped_time * 1000:>.8f} ms ")
 
     def before_backward(self):
         torch.cuda.current_stream().synchronize()
@@ -77,9 +66,7 @@ class SyncExecuteTimer(OpRunnerHook):
         torch.cuda.current_stream().synchronize()
         self.backward_end_time = time.time()
         self.backward_elasped_time = self.backward_end_time - self.forward_start_time
-        print(
-            f"SyncExecuteTimer: {self.runner.name} backward elasped {self.backward_elasped_time * 1000:>.8f} ms"
-        )
+        print(f"SyncExecuteTimer: {self.runner.name} backward elasped {self.backward_elasped_time * 1000:>.8f} ms")
 
 
 class OpAccyChecker(OpRunnerHook):
@@ -90,19 +77,11 @@ class OpAccyChecker(OpRunnerHook):
         pass
 
     def after_forward(self):
-        self.runner.result_cpu = self.runner.fun(
-            *self.runner.args_cpu, **self.runner.kwargs_cpu
-        )
-        allclose, max_diff = compare_result(
-            self.runner.name, self.runner.result, self.runner.result_cpu
-        )
+        self.runner.result_cpu = self.runner.fun(*self.runner.args_cpu, **self.runner.kwargs_cpu)
+        allclose, max_diff = compare_result(self.runner.name, self.runner.result, self.runner.result_cpu)
         if not allclose and max_diff > 1e-3:
-            print(
-                f"OpAccyChecker: {self.name:<50} input: {serialize_args_to_dict(*self.args, **self.kwargs)}"
-            )
-            print(
-                f"OpAccyChecker: {self.name:<50} output: {serialize_args_to_dict(self.result)['args']}"
-            )
+            print(f"OpAccyChecker: {self.name:<50} input: {serialize_args_to_dict(*self.args, **self.kwargs)}")
+            print(f"OpAccyChecker: {self.name:<50} output: {serialize_args_to_dict(self.result)['args']}")
 
     def before_backward(self):
         pass
@@ -187,9 +166,7 @@ class OpRunner:
         for arg_cpu in traverse_container(self.args_cpu):
             if isinstance(arg_cpu, torch.Tensor) and arg_cpu.grad is not None:
                 arg_cpu.grad.zero_()
-        self.result_cpu.backward(
-            *self.grad_outputs_cpu["args"], **self.grad_outputs_cpu["kwargs"]
-        )
+        self.result_cpu.backward(*self.grad_outputs_cpu["args"], **self.grad_outputs_cpu["kwargs"])
 
     def run_forward(self):
         self.run_before_forward()
