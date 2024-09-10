@@ -3,6 +3,7 @@ import torch
 import re
 import importlib
 import math
+import os
 
 
 def traverse_container(container):
@@ -172,7 +173,30 @@ def tensor_allclose(a, b, atol=1e-3, rtol=1e-3):
     return False
 
 
-def compare_result(name, a, b, atol=1e-3, rtol=1e-3):
+def get_error_tolerance(dtype):
+    def get_error_tolerance_for_type(dtype_name, atol, rtol):
+        env_name = "AUTOCOMPARE_ERROR_TOLERANCE_" + dtype_name.upper()
+        if os.getenv(env_name) is not None:
+            atol, rtol = map(float, os.getenv(env_name).split(","))
+        elif os.getenv("AUTOCOMPARE_ERROR_TOLERANCE") is not None:
+            atol, rtol = map(float, os.getenv("AUTOCOMPARE_ERROR_TOLERANCE").split(","))
+        return atol, rtol
+    if dtype == torch.float16:
+        return get_error_tolerance_for_type("FLOAT16", 1e-4, 1e-4)
+    elif dtype == torch.bfloat16:
+        return get_error_tolerance_for_type("BFLOAT16", 1e-3, 1e-3)
+    elif dtype == torch.float32:
+        return get_error_tolerance_for_type("FLOAT32", 1e-5, 1e-5)
+    elif dtype == torch.float64:
+        return get_error_tolerance_for_type("FLOAT64", 1e-8, 1e-8)
+    else:
+        atol, rtol = 1e-3, 1e-3
+        if os.getenv("AUTOCOMPARE_ERROR_TOLERANCE") is not None:
+            atol, rtol = map(float, os.getenv("AUTOCOMPARE_ERROR_TOLERANCE").split(","))
+        return atol, rtol
+
+
+def compare_result(name, a, b):
     a_list = []
     b_list = []
     allclose, max_abs_diff, max_relative_diff, error_info = True, 0, 0, ""
@@ -197,6 +221,7 @@ def compare_result(name, a, b, atol=1e-3, rtol=1e-3):
             max_relative_diff_i = 0
         elif isinstance(a_item, torch.Tensor) and isinstance(b_item, torch.Tensor):
             if a_item.shape == b_item.shape:
+                atol, rtol = get_error_tolerance(a_item.dtype)
                 max_abs_diff_i, max_relative_diff_i = tensor_max_diff(a_item, b_item)
                 allclose_i = tensor_allclose(a_item, b_item, atol=atol, rtol=rtol)
             else:
