@@ -2,6 +2,7 @@
 import torch
 import re
 import importlib
+import math
 
 
 def traverse_container(container):
@@ -148,3 +149,81 @@ VIEW_OPS = [
 
 def is_view_op(name):
     return name in VIEW_OPS
+
+
+def tensor_max_diff(a, b):
+    a_cpu, b_cpu = a.cpu(), b.cpu()
+    if a_cpu.dtype == torch.bool:
+        a_cpu = a_cpu.int()
+    if b_cpu.dtype == torch.bool:
+        b_cpu = b_cpu.int()
+    diff = torch.abs(a_cpu - b_cpu)
+    max_abs_diff = diff.max().item()
+    max_relative_diff = (diff / (a_cpu.abs() + 1e-6)).max().item()
+    return max_abs_diff, max_relative_diff
+
+
+def tensor_allclose(a, b, atol=1e-3, rtol=1e-3):
+    a_cpu, b_cpu = a.cpu(), b.cpu()
+    try:
+        return torch.allclose(a_cpu, b_cpu, atol=atol, rtol=rtol, equal_nan=True)
+    except Exception as e:  # noqa: F841
+        return False
+    return False
+
+
+def compare_result(name, a, b, atol=1e-3, rtol=1e-3):
+    a_list = []
+    b_list = []
+    allclose, max_abs_diff, max_relative_diff, error_info = True, 0, 0, ""
+    for item in traverse_container(a):
+        a_list.append(item)
+    for item in traverse_container(b):
+        b_list.append(item)
+
+    if len(a_list) != len(b_list):
+        error_info += f"Inconsistent output length: {len(a_list)} {len(b_list)}, {a} {b}"
+        max_abs_diff = float("nan")
+        max_relative_diff = float("nan")
+        allclose = False
+        return {"allclose": allclose, "max_abs_diff": max_abs_diff, "max_relative_diff": max_relative_diff, "error_info": error_info}
+
+    for i in range(len(a_list)):
+        a_item = a_list[i]
+        b_item = b_list[i]
+        if a_item is None and b_item is None:
+            allclose_i = True
+            max_abs_diff_i = 0
+            max_relative_diff_i = 0
+        elif isinstance(a_item, torch.Tensor) and isinstance(b_item, torch.Tensor):
+            if a_item.shape == b_item.shape:
+                max_abs_diff_i, max_relative_diff_i = tensor_max_diff(a_item, b_item)
+                allclose_i = tensor_allclose(a_item, b_item, atol=atol, rtol=rtol)
+            else:
+                error_info += f"Inconsistent shape: {a_item.shape} {b_item.shape}"
+                max_abs_diff_i = float("nan")
+                max_relative_diff_i = float("nan")
+                allclose_i = False
+            if a_item.dtype != b_item.dtype:
+                error_info += f"Inconsistent dtypes: {a_item.dtype} {b_item.dtype}"
+
+        elif type(a) != type(b):  # noqa: E721
+            error_info += f"Inconsistent types: {type(a)} {type(b)}"
+            max_abs_diff_i = float("nan")
+            max_relative_diff_i = float("nan")
+            allclose_i = False
+        elif isinstance(a_item, (bool, int, float)):
+            allclose_i = a_item == b_item or (math.isnan(a_item) and math.isnan(b_item))
+            max_abs_diff_i = abs(a_item - b_item)
+            max_relative_diff_i = max_abs_diff_i / (abs(a_item) + 1e-6)
+            error_info += ""
+        if len(a_list) > 1:
+            prefex = f" {i}th "
+        else:
+            prefex = ""
+
+        print(f"compare_result: {name + prefex:<50}   allclose: {allclose_i}\tmax_abs_diff: {f'{max_abs_diff_i:20.9f}'} \tmax_relative_diff: {f'{max_relative_diff_i:20.9f}'} {error_info}")  # noqa: E501
+        allclose = allclose_i and allclose
+        max_abs_diff = max(max_abs_diff_i, max_abs_diff)
+        max_relative_diff = max(max_relative_diff_i, max_relative_diff)
+    return {"allclose": allclose, "max_abs_diff": max_abs_diff, "max_relative_diff": max_relative_diff, "error_info": error_info}
