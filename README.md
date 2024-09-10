@@ -135,6 +135,16 @@ autocompare.start()
 code_snippet_to_autocompare()
 autocompare.stop()
 ```
+可通过设置: AUTOCOMPARE_ERROR_TOLERANCE_FLOAT16,  AUTOCOMPARE_ERROR_TOLERANCE_FLOAT32,  AUTOCOMPARE_ERROR_TOLERANCE_FLOAT64,  AUTOCOMPARE_ERROR_TOLERANCE 这几个环境变量来自定义精度阈值。
+
+```
+# for float16
+export AUTOCOMPARE_ERROR_TOLERANCE_FLOAT16="1e-3,1e-4" # atol=1e-3, rtol=1e-4
+# for bfloat16
+export AUTOCOMPARE_ERROR_TOLERANCE_BFLOAT16="1e-2,1e-3" # atol=1e-2, rtol=1e-3
+# for other dtype
+export AUTOCOMPARE_ERROR_TOLERANCE="1e-4,1e-5" # atol=1e-4, rtol=1e-5
+```
 
 #### **基于InternEvo + ditorch + torch_npu 在华为910B上实时精度分析输出片段**
 
@@ -346,7 +356,6 @@ OpFallbackHook: torch.Tensor.mean                                  output: ({'sh
 ...
 ```
 
-
 ### **算子数据类型转换工具** <a id="tool5"></a>
 
 ```
@@ -407,4 +416,84 @@ OpDtypeCastHook: torch.Tensor.__getitem__                           0th out torc
 apply OpDtypeCastHook on torch.Tensor.sum
 OpDtypeCastHook: torch.Tensor.sum                                   0th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
 OpDtypeCastHook: torch.Tensor.sum                                   0th out torch.float32 -> torch.float16  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
+```
+
+### 自定义算子工具生效的条件
+```
+import torch
+import ditorch
+import op_tools
+import os
+
+def custom_condition(a, b):
+    if a.dtype == torch.float16:
+        print("hook enable because a.dtype is float16")
+        return True
+    elif a.dim() == 2:
+        print("hook enable because a.dim() is 2")
+        return True
+    else:
+        print("hook disable")
+        return False
+
+x = torch.randn(2, 3, 4, dtype=torch.float16).cuda()
+y = torch.randn(4, 2, dtype=torch.float).cuda()
+z = torch.randn(2, 3, 4, dtype=torch.float).cuda()
+```
+
+#### 1.按需fallback
+```
+op_tools.apply_feature("torch.add", feature="fallback", condition_func=custom_condition)
+torch.add(x, x)
+```
+outputs:
+```
+hook enable because a.dtype is float16
+apply OpFallbackHook on torch.add
+OpFallbackHook: torch.add                                          input: {'args': ({'shape': torch.Size([2, 3, 4]), 'stride': (12, 4, 1), 'numel': 24, 'dtype': 'torch.float16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179823104}, {'shape': torch.Size([2, 3, 4]), 'stride': (12, 4, 1), 'numel': 24, 'dtype': 'torch.float16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179823104})}
+OpFallbackHook: torch.add                                          output: ({'shape': torch.Size([2, 3, 4]), 'stride': (12, 4, 1), 'numel': 24, 'dtype': 'torch.float16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179824640},) cpu output: ({'shape': torch.Size([2, 3, 4]), 'stride': (12, 4, 1), 'numel': 24, 'dtype': 'torch.float16', 'device': 'cpu', 'requires_grad': False, 'layout': 'torch.strided', 'data': 544920640},) dtype_convert_back_dict:{}
+```
+
+#### 2.按需autocompare
+```
+op_tools.apply_feature("torch.sub", feature="autocompare", condition_func=custom_condition)
+torch.sub(y, y)
+torch.sub(z, z)
+```
+output:
+```
+hook enable because a.dim() is 2
+apply OpAutoCompareHook on torch.sub
+compare_result: torch.sub                                            allclose: True     max_abs_diff:          0.000000000      max_relative_diff:          0.000000000
+
+hook disable
+skip OpAutoCompareHook on torch.sub
+```
+
+#### 3.抓取特定输入情况下的算子输入输出
+```
+op_tools.apply_feature("torch.mul", feature="op_capture", condition_func=custom_condition)
+torch.mul(x, x)
+```
+output:
+```
+hook enable because a.dtype is float16
+apply OpCaptureHook on torch.mul
+op_capture_result/torch.mul/366650/3/input.pth saved
+op_capture_result/torch.mul/366650/3/output.pth saved
+```
+
+#### 4.将特定算子的输入数据类型转成特定数据类型计算
+```
+op_tools.apply_feature("torch.div", feature="cast_dtype", condition_func=custom_condition)
+os.environ["OP_DTYPE_CAST_DICT"] = "float32->float16"
+torch.div(y, y)
+```
+output:
+```
+hook enable because a.dim() is 2
+apply OpDtypeCastHook on torch.div
+OpDtypeCastHook: torch.div                                          0th arg torch.float32 -> torch.float16  config:torch.float32->torch.float16
+OpDtypeCastHook: torch.div                                          1th arg torch.float32 -> torch.float16  config:torch.float32->torch.float16
+OpDtypeCastHook: torch.div                                          0th out torch.float16 -> torch.float32  config:torch.float32->torch.float16
 ```
