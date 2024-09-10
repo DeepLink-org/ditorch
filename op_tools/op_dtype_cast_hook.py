@@ -23,6 +23,11 @@ class OpDtypeCastHook(BaseHook):
         self.dtype_cast_dict = get_dtype_cast_dict_form_str(self.dtype_cast_config_str)
 
     def before_call_op(self, *args, **kwargs):
+        self.dtype_cast_config_str = os.environ.get(
+            "OP_DTYPE_CAST_DICT",
+            "torch.float16->torch.float32,torch.bfloat16->torch.float32",
+        )
+        self.dtype_cast_dict = get_dtype_cast_dict_form_str(self.dtype_cast_config_str)
         with DisableHookGuard():
             self.args_raw = self.args
             self.is_cpu_op, self.device = is_cpu_op(*args, **kwargs)
@@ -53,7 +58,9 @@ class OpDtypeCastHook(BaseHook):
                 if isinstance(self.ins_list[i], torch.Tensor):
                     if self.ins_list[i].dtype != self.raw_ins_list[i].dtype:
                         print(f"OpDtypeCastHook: {self.name:<50} {i}th arg {self.raw_ins_list[i].dtype} -> {self.ins_list[i].dtype}  config:{self.dtype_cast_config_str}")  # noqa: E501
-                        self.dtype_cast_back_dict[self.ins_list[i].dtype] = self.raw_ins_list[i].dtype
+                        self.dtype_cast_back_dict[self.ins_list[i].dtype] = (
+                            self.raw_ins_list[i].dtype
+                        )
 
     def after_call_op(self, result):
         if self.is_cpu_op:
@@ -69,7 +76,10 @@ class OpDtypeCastHook(BaseHook):
             i = -1
             for out in traverse_container(self.result_raw):
                 i += 1
-                if isinstance(out, torch.Tensor) and out.dtype in self.dtype_cast_back_dict.keys():
+                if (
+                    isinstance(out, torch.Tensor)
+                    and out.dtype in self.dtype_cast_back_dict.keys()
+                ):
                     print(f"OpDtypeCastHook: {self.name:<50} {i}th out {out.dtype} -> {self.dtype_cast_back_dict[out.dtype]}  config:{self.dtype_cast_config_str}")  # noqa: E501
 
     def is_should_apply(self, *args, **kwargs):
