@@ -173,10 +173,16 @@ def tensor_allclose(a, b, atol=1e-3, rtol=1e-3):
     return False
 
 
-def get_error_tolerance(dtype):
+def get_error_tolerance(dtype, op_name):
     def get_error_tolerance_for_type(dtype_name, atol, rtol):
+        # env priority:
+        # OP_NAME_AUTOCOMPARE_ERROR_TOLERANCE_BFLOAT16 > AUTOCOMPARE_ERROR_TOLERANCE_BFLOAT16 > AUTOCOMPARE_ERROR_TOLERANCE
+        op_name_processed = op_name.split(".")[-1].upper() + "_"
         env_name = "AUTOCOMPARE_ERROR_TOLERANCE_" + dtype_name.upper()
-        if os.getenv(env_name) is not None:
+        high_priority_env_name = op_name_processed + env_name
+        if os.getenv(high_priority_env_name) is not None:
+            atol, rtol = map(float, os.getenv(high_priority_env_name).split(","))
+        elif os.getenv(env_name) is not None:
             atol, rtol = map(float, os.getenv(env_name).split(","))
         elif os.getenv("AUTOCOMPARE_ERROR_TOLERANCE") is not None:
             atol, rtol = map(float, os.getenv("AUTOCOMPARE_ERROR_TOLERANCE").split(","))
@@ -215,13 +221,14 @@ def compare_result(name, a, b):
     for i in range(len(a_list)):
         a_item = a_list[i]
         b_item = b_list[i]
+        atol, rtol = 0, 0
         if a_item is None and b_item is None:
             allclose_i = True
             max_abs_diff_i = 0
             max_relative_diff_i = 0
         elif isinstance(a_item, torch.Tensor) and isinstance(b_item, torch.Tensor):
             if a_item.shape == b_item.shape:
-                atol, rtol = get_error_tolerance(a_item.dtype)
+                atol, rtol = get_error_tolerance(a_item.dtype, name)
                 max_abs_diff_i, max_relative_diff_i = tensor_max_diff(a_item, b_item)
                 allclose_i = tensor_allclose(a_item, b_item, atol=atol, rtol=rtol)
             else:
@@ -238,7 +245,7 @@ def compare_result(name, a, b):
             max_relative_diff_i = float("nan")
             allclose_i = False
         elif isinstance(a_item, (bool, int, float)):
-            allclose_i = a_item == b_item or (math.isnan(a_item) and math.isnan(b_item))
+            allclose_i = (a_item == b_item) or (math.isnan(a_item) and math.isnan(b_item))
             max_abs_diff_i = abs(a_item - b_item)
             max_relative_diff_i = max_abs_diff_i / (abs(a_item) + 1e-6)
             error_info += ""
@@ -247,7 +254,7 @@ def compare_result(name, a, b):
         else:
             prefex = ""
 
-        print(f"compare_result: {name + prefex:<50}   allclose: {allclose_i}\tmax_abs_diff: {f'{max_abs_diff_i:20.9f}'} \tmax_relative_diff: {f'{max_relative_diff_i:20.9f}'} {error_info}")  # noqa: E501
+        print(f"compare_result: {name + prefex:<50}   allclose: {allclose_i}\tmax_abs_diff: {f'{max_abs_diff_i:10.9f}'}  max_relative_diff: {f'{max_relative_diff_i:10.9f}'} atol:{atol:10.9f} rtol:{rtol:10.9f} {error_info}")  # noqa: E501
         allclose = allclose_i and allclose
         max_abs_diff = max(max_abs_diff_i, max_abs_diff)
         max_relative_diff = max(max_relative_diff_i, max_relative_diff)
