@@ -6,8 +6,8 @@ import torch
 
 
 class TestCustomErrorTolerance(unittest.TestCase):
-    def _test_get_error_tolerance(self, dtype, atol, rtol):
-        atol_, rtol_ = get_error_tolerance(dtype)
+    def _test_get_error_tolerance(self, dtype, atol, rtol, op_name="test.op_name"):
+        atol_, rtol_ = get_error_tolerance(dtype, op_name)
         self.assertEqual(atol, atol_)
         self.assertEqual(rtol, rtol_)
         self.assertTrue(atol > 0)
@@ -26,6 +26,8 @@ class TestCustomErrorTolerance(unittest.TestCase):
         os.environ["AUTOCOMPARE_ERROR_TOLERANCE_FLOAT64"] = "3e-8,4e-9"
         self._test_get_error_tolerance(torch.float64, 3e-8, 4e-9)
         self._test_get_error_tolerance(torch.int32, 2, 3)
+        os.environ["OP_NAME_AUTOCOMPARE_ERROR_TOLERANCE_FLOAT32"] = "30,40"
+        self._test_get_error_tolerance(torch.float32, 30, 40, op_name="test.op_name")
 
 
 if __name__ == "__main__":
