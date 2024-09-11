@@ -17,6 +17,18 @@ from .save_op_args import save_op_args, serialize_args_to_dict
 
 RANDOM_NUMBER_GEN_OPS = [
     "torch.Tensor.random_",
+    "torch.Tensor.uniform_",
+    "torch.Tensor.normal_",
+    "torch.Tensor.bernoulli_",
+    "torch.Tensor.poisson_",
+    "torch.Tensor.multinomial_",
+    "torch.Tensor.random",
+    "torch.Tensor.uniform",
+    "torch.Tensor.normal",
+    "torch.Tensor.bernoulli",
+    "torch.Tensor.poisson",
+    "torch.Tensor.multinomial",
+    "torch.rand",
     "torch.randperm",
     "torch.bernoulli",
     "torch.poisson",
@@ -40,6 +52,8 @@ RANDOM_NUMBER_GEN_OPS = [
     "torch.nn.init.xavier_uniform_",
     "torch.nn.init.kaiming_normal_",
 ]
+
+SKIP_LIST_OPS = []
 
 
 class BackwardHookHandle:
@@ -80,6 +94,7 @@ class OpAutoCompareHook(BaseHook):
         super().__init__(name, func)
 
     def before_call_op(self, *args, **kwargs):
+        self.forward_op_id = self.id
         with DisableHookGuard():
             self.is_cpu_op, self.device = is_cpu_op(*args, **kwargs)
             if self.is_cpu_op:
@@ -148,7 +163,6 @@ class OpAutoCompareHook(BaseHook):
             allclose = compare_result(self.name, self.result_device, self.result_cpu)["allclose"]
 
             self.forward_allclose = allclose
-            self.forward_op_id = self.id
             if not allclose:
                 print(f"OpAutoCompareHook: {self.name:<60} input: {serialize_args_to_dict(*self.args, **self.kwargs)}")
                 print(f"OpAutoCompareHook: {self.name:<60} output: {serialize_args_to_dict(self.result)['args']}")
@@ -280,6 +294,12 @@ class OpAutoCompareHook(BaseHook):
 
     def is_should_apply(self, *args, **kwargs):
         if self.name in RANDOM_NUMBER_GEN_OPS:
+            return False
+
+        if self.name in SKIP_LIST_OPS:
+            return False
+
+        if self.name.startswith("torch.empty"):
             return False
 
         if is_opname_match(self.name, os.getenv("OP_AUTOCOMPARE_DISABLE_LIST", "")):
