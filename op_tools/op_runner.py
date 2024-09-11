@@ -78,8 +78,8 @@ class OpAccyChecker(OpRunnerHook):
 
     def after_forward(self):
         self.runner.result_cpu = self.runner.fun(*self.runner.args_cpu, **self.runner.kwargs_cpu)
-        allclose, max_diff = compare_result(self.runner.name, self.runner.result, self.runner.result_cpu)
-        if not allclose and max_diff > 1e-3:
+        compare_info = compare_result(self.runner.name, self.runner.result, self.runner.result_cpu)
+        if not compare_info["allclose"]:
             print(f"OpAccyChecker: {self.name:<50} input: {serialize_args_to_dict(*self.args, **self.kwargs)}")
             print(f"OpAccyChecker: {self.name:<50} output: {serialize_args_to_dict(self.result)['args']}")
 
@@ -92,12 +92,13 @@ class OpAccyChecker(OpRunnerHook):
             arg = self.runner.args[i]
             arg_cpu = self.runner.args_cpu[i]
             if isinstance(arg, torch.Tensor) and arg.requires_grad:
-                allclose, max_diff = compare_result(
+                compare_info = compare_result(
                     self.runner.name + f" {i}th input grad ",
                     self.runner.grad_inputs["args"][i],
                     arg_cpu.grad,
                 )
-                if not allclose and max_diff > 1e-3:
+                allclose = compare_info["allclose"]
+                if not allclose:
                     print(f"{i}th grad is not allclose ")
 
 

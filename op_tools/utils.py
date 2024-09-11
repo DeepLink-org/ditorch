@@ -30,18 +30,14 @@ def is_cpu_op(*args, **kwargs):
 
 
 def transform_contrainer(obj, func):
-    if isinstance(obj, torch.Tensor):
-        return func(obj)
-    elif isinstance(obj, (tuple, list)):
+    if isinstance(obj, (tuple, list, set)):
         return type(obj)([transform_contrainer(v, func) for v in obj])
     elif isinstance(obj, dict):
-        return {k: func(v) for k, v in obj.items()}
-    elif isinstance(obj, (float, int, complex, str, bool, type(None))):
-        return obj
+        return {transform_contrainer(k, func): transform_contrainer(v, func) for k, v in obj.items()}
     elif type(obj).__module__.startswith("torch.return_types"):
         return [transform_contrainer(v) for v in obj]
     else:
-        return obj
+        return func(obj)
 
 
 def to_device(device, obj, detach=False, dtype_cast_dict=dict()):
