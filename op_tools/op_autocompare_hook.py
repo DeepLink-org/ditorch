@@ -41,6 +41,9 @@ RANDOM_NUMBER_GEN_OPS = [
     "torch.nn.init.kaiming_normal_",
 ]
 
+SKIP_LIST_OPS = [
+    "torch.empty_like",
+]
 
 class BackwardHookHandle:
     def __init__(self, compare_hook) -> None:
@@ -280,6 +283,9 @@ class OpAutoCompareHook(BaseHook):
 
     def is_should_apply(self, *args, **kwargs):
         if self.name in RANDOM_NUMBER_GEN_OPS:
+            return False
+        
+        if self.name in SKIP_LIST_OPS:
             return False
 
         if is_opname_match(self.name, os.getenv("OP_AUTOCOMPARE_DISABLE_LIST", "")):
