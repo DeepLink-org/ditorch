@@ -3,7 +3,7 @@ from abc import ABC
 import os
 import torch
 import time
-from .utils import to_device, get_function_from_string
+from .utils import to_device, get_function_from_string, traverse_container
 from .op_autocompare_hook import OpAutoCompareHook
 
 
@@ -155,5 +155,7 @@ class OpRunner:
         if self.grad_outputs is None:
             return
         self.run_before_backward()
-        self.result.backward(*self.grad_outputs["args"], **self.grad_outputs["kwargs"])
+        for result in traverse_container(self.result):
+            if isinstance(result, torch.Tensor) and result.requires_grad:
+                result.backward(*self.grad_outputs["args"], **self.grad_outputs["kwargs"])
         self.run_after_backward()

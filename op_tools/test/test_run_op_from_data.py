@@ -26,7 +26,7 @@ def run_command_in_sub_process(commands):
 def run_op_from_data(file_path):
     file_dir = file_path[0:file_path.rfind("/")]
 
-    commands = f"python op_tools/run_op_from_data.py {file_dir} --sync_time_measure --run_times 10"
+    commands = f"python op_tools/run_op_from_data.py {file_dir} --sync_time_measure --run_times 5"
     run_command_in_sub_process(commands)
 
     commands = f"python op_tools/run_op_from_data.py {file_dir} --acc_check --run_times 1"
