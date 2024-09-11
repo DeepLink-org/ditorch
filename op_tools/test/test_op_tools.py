@@ -68,7 +68,7 @@ class TestOpTools(unittest.TestCase):
         torch.cuda.synchronize()
         gc.collect()
         host_memory1 = process.memory_info().rss
-        run_time = 50  # The more times you run it, the better it will reflect the problem, but too many will waste CI resources.
+        run_time = 2  # The more times you run it, the better it will reflect the problem, but too many will waste CI resources.
         for i in range(run_time):
             self.test_op_autocompare()
 

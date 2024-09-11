@@ -43,7 +43,6 @@ def save_op_args(name, identifier, *args, **kwargs):
     obj["args"] = args
     obj["kwargs"] = kwargs
     obj["identifier"] = identifier
-    # {datetime.now().strftime('%Y-%m-%d')}
     filename = f"op_capture_result/{name}/{os.getpid()}/{identifier}.pth"
     path = filename[: filename.rfind("/")]
     os.makedirs(path, exist_ok=True)

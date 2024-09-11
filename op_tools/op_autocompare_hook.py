@@ -2,6 +2,7 @@
 import torch
 import gc
 import os
+import time
 
 from .base_hook import BaseHook, DisableHookGuard
 from .utils import (
@@ -80,6 +81,7 @@ class OpAutoCompareHook(BaseHook):
         super().__init__(name, func)
 
     def before_call_op(self, *args, **kwargs):
+        self.forward_op_id = f"autocompare/{self.id}/{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}"
         with DisableHookGuard():
             self.is_cpu_op, self.device = is_cpu_op(*args, **kwargs)
             if self.is_cpu_op:
@@ -148,7 +150,6 @@ class OpAutoCompareHook(BaseHook):
             allclose = compare_result(self.name, self.result_device, self.result_cpu)["allclose"]
 
             self.forward_allclose = allclose
-            self.forward_op_id = self.id
             if not allclose:
                 print(f"OpAutoCompareHook: {self.name:<60} input: {serialize_args_to_dict(*self.args, **self.kwargs)}")
                 print(f"OpAutoCompareHook: {self.name:<60} output: {serialize_args_to_dict(self.result)['args']}")

@@ -1,6 +1,7 @@
 # Copyright (c) 2024, DeepLink.
 import os
 import torch
+import time
 from .base_hook import BaseHook, DisableHookGuard
 from .utils import traverse_container, is_opname_match
 from .save_op_args import save_op_args
@@ -24,20 +25,21 @@ class OpCaptureHook(BaseHook):
         super().__init__(name, func)
 
     def before_call_op(self, *args, **kwargs):
+        self.forward_op_id = f"{self.id}/{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}"
         with DisableHookGuard():
             name = self.name
 
-            id = f"{self.id}/input"
+            id = f"{self.forward_op_id}/input"
 
             save_op_args(name, id, *args, **kwargs)
 
     def after_call_op(self, result):
 
         with DisableHookGuard():
-            id = f"{self.id}/output"
+            id = f"{self.forward_op_id}/output"
             save_op_args(self.name, id, self.result)
 
-            self.backward_hook_handle = BackwardHookHandle(self.name, self.id)
+            self.backward_hook_handle = BackwardHookHandle(self.name, self.forward_op_id)
 
             for result in traverse_container(self.result):
                 if isinstance(result, torch.Tensor):
