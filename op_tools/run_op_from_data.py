@@ -2,7 +2,16 @@
 import torch  # noqa: F401
 import ditorch  # noqa: F401
 import argparse
+import os
 from op_tools.op_runner import OpRunner, SyncExecuteTimer, OpAccyChecker
+
+
+def find_files(base_dir, target_filename):
+    matches = []
+    for root, dirs, files in os.walk(base_dir):
+        if target_filename in files:
+            matches.append(os.path.join(root, target_filename))
+    return matches
 
 
 def parse_args():
@@ -39,19 +48,22 @@ def parse_args():
 def main():
     args = parse_args()
 
-    runner = OpRunner(args.dir)
-    if args.sync_time_measure:
-        timer = SyncExecuteTimer()
-        runner.add_hook(timer)
+    found_files = find_files(args.dir, "input.pth")
 
-    if args.acc_check:
-        acc_checker = OpAccyChecker()
-        runner.add_hook(acc_checker)
+    for file_path in found_files:
+        runner = OpRunner(file_path[0:file_path.rfind("/")])
+        if args.sync_time_measure:
+            timer = SyncExecuteTimer()
+            runner.add_hook(timer)
 
-    for i in range(args.run_times):
-        runner.run_forward()
-        if not args.only_run_forward:
-            runner.run_backward()
+        if args.acc_check:
+            acc_checker = OpAccyChecker()
+            runner.add_hook(acc_checker)
+
+        for i in range(args.run_times):
+            runner.run_forward()
+            if not args.only_run_forward:
+                runner.run_backward()
 
 
 if __name__ == "__main__":
