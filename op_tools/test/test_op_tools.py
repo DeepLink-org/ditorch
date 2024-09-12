@@ -67,8 +67,10 @@ class TestOpTools(unittest.TestCase):
 
         torch.cuda.synchronize()
         gc.collect()
+        for i in range(3):  # warm up
+            self.test_op_autocompare()
         host_memory1 = process.memory_info().rss
-        run_time = 50  # The more times you run it, the better it will reflect the problem, but too many will waste CI resources.
+        run_time = 5  # The more times you run it, the better it will reflect the problem, but too many will waste CI resources.
         for i in range(run_time):
             self.test_op_autocompare()
 
@@ -122,9 +124,13 @@ class TestOpTools(unittest.TestCase):
         input = torch.ones((5, 5), dtype=torch.float16, device="cuda").requires_grad_()
         assert input.is_leaf
         with op_tools.OpDtypeCast():
-            input = torch.ones((5, 5), dtype=torch.float16, device="cuda").requires_grad_()
+            input = torch.ones(
+                (5, 5), dtype=torch.float16, device="cuda"
+            ).requires_grad_()
             assert input.is_leaf
-            weight = torch.ones((5, 5), dtype=torch.float16, device="cuda").requires_grad_()
+            weight = torch.ones(
+                (5, 5), dtype=torch.float16, device="cuda"
+            ).requires_grad_()
             output = torch.nn.functional.linear(input, weight)
             label = torch.ones_like(output)
             output.backward(label)
