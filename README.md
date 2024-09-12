@@ -420,6 +420,21 @@ OpDtypeCastHook: torch.Tensor.sum                                   0th out torc
 
 ### 自定义算子工具生效的条件
 ```
+def apply_feature(ops, feature, condition_func=lambda *args, **kwargs: True):
+    ...
+```
+
+op_tools.apply_feature接口可以作用在torch接口和其他第三方接口上，通过condition_func参数可以自定义生效条件，当condition_func返回True时，工具生效，否则不生效。condition_func的输入形参和算子输入形参相同。
+feature参数为功能特性，目前支持以下类型：
+- fallback: 算子fallback
+- cast_dtype: 算子数据类型转换
+- op_capture: 算子参数抓取
+- autocompare: 算子精度对比  (做精度对比时，需要设备实现和cpu实现的调用接口一致)
+- dump_op_args: 算子参数打印
+- measure_op_time: 算子执行时间测量
+
+
+```
 import torch
 import ditorch
 import op_tools
@@ -497,3 +512,21 @@ OpDtypeCastHook: torch.div                                          0th arg torc
 OpDtypeCastHook: torch.div                                          1th arg torch.float32 -> torch.float16  config:torch.float32->torch.float16
 OpDtypeCastHook: torch.div                                          0th out torch.float16 -> torch.float32  config:torch.float32->torch.float16
 ```
+
+### 相关环境变量
+|               工具               |                 环境变量名                    |                        值                                  |          说明             |    备注                      |
+|---------------------------------|----------------------------------------------|-----------------------------------------------------------|---------------------------|-----------------------------|
+|  [算子参数抓取工具](#tool1)        | OP_CAPTURE_DISABLE_LIST                      | torch.add,torch.nn.functional.linear,torch.Tensor.relu_   | 不抓取这些算子的参数         | 算子名全称，多个算子时以逗号隔开  |
+|  [算子参数抓取工具](#tool1)        | OP_CAPTURE_LIST                              |                       同上                                 | 只抓取这些算子的参数         |           同上               |
+|  [精度分析工具](#tool2)           | OP_AUTOCOMPARE_LIST                          |                       同上                                 | 只对指定的算子做精度对比      |           同上               |
+|  [精度分析工具](#tool2)           | OP_AUTOCOMPARE_DISABLE_LIST                  |                       同上                                 | 精度对比时忽略指定的这些算子   |           同上               |
+|  [算子数据类型转换工具](#tool5)    | OP_DTYPE_CAST_DISABLE_LIST                   |                       同上                                 | 做类型转换时忽略指定的这些算子 |           同上               |
+|  [算子数据类型转换工具](#tool5)    | OP_DTYPE_CAST_LIST                           |                       同上                                 | 只对指定的算子做类型转换      |           同上               |
+|  [精度分析工具](#tool2)           | AUTOCOMPARE_ERROR_TOLERANCE                  |                      atol,rtol                             | allclose 参数             | 如设置，则使用给定的误差阈阈值覆盖默认值    |
+|  [精度分析工具](#tool2)           | AUTOCOMPARE_ERROR_TOLERANCE_FLOAT16          |                      atol,rtol                             | allclose 参数             | 如设置且数据类型满足，则使用给定的误差阈值          |
+|  [精度分析工具](#tool2)           | AUTOCOMPARE_ERROR_TOLERANCE_BFLOAT16         |                      atol,rtol                             | allclose 参数             |           同上                |
+|  [精度分析工具](#tool2)           | AUTOCOMPARE_ERROR_TOLERANCE_FLOAT32          |                      atol,rtol                             | allclose 参数             |           同上                |
+|  [精度分析工具](#tool2)           | AUTOCOMPARE_ERROR_TOLERANCE_FLOAT64          |                      atol,rtol                             | allclose 参数             |           同上                |
+|  [精度分析工具](#tool2)           | LINEAR_AUTOCOMPARE_ERROR_TOLERANCE_FLOAT16   |                      atol,rtol                             | allclose 参数             |如设置且算子名和数据类型满足，则使用给定的误差阈值。算子名取算子全称最后一个'.'右边的部分，如torch.add,则算子名为ADD_,torch.nn.functional.linear的算子名为LINEAR_                 |
+|  [算子数据类型转换工具](#tool5)    | OP_DTYPE_CAST_DICT                           |torch.float16->torch.float32,torch.bfloat16->torch.float32     | 给定要转换的数据类型和目标数据类型    |          有多组时以逗号隔开     |
+
