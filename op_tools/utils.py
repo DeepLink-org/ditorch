@@ -198,7 +198,7 @@ def get_error_tolerance(dtype, op_name):
         return atol, rtol
 
 
-def compare_result(name, a, b):
+def compare_result(name, a, b):  # noqa: C901
     a_list = []
     b_list = []
     allclose, max_abs_diff, max_relative_diff, error_info = True, 0, 0, ""
@@ -240,11 +240,20 @@ def compare_result(name, a, b):
             max_abs_diff_i = float("nan")
             max_relative_diff_i = float("nan")
             allclose_i = False
-        elif isinstance(a_item, (bool, int, float)):
-            allclose_i = (a_item == b_item) or (math.isnan(a_item) and math.isnan(b_item))
+        elif isinstance(a_item, bool):
+            allclose_i = (a_item == b_item)
+            max_abs_diff_i = 0.0 if allclose_i else float("nan")
+            max_relative_diff_i = 0.0 if allclose_i else float("nan")
+            if not allclose_i:
+                error_info += f" value: {a_item} {b_item} "
+        elif isinstance(a_item, (float, int)):
+            atol = 1e-6
+            rtol = 1e-6
+            allclose_i = (math.isnan(a_item) and math.isnan(b_item)) or (abs(a_item - b_item) <= atol + rtol * abs(a_item))
             max_abs_diff_i = abs(a_item - b_item)
             max_relative_diff_i = max_abs_diff_i / (abs(a_item) + 1e-6)
-            error_info += ""
+            if not allclose_i:
+                error_info += f" value: {a_item} {b_item} "
         if len(a_list) > 1:
             prefex = f" {i}th "
         else:

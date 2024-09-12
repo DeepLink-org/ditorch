@@ -25,7 +25,7 @@ def run_command_in_sub_process(commands):
 
 def run_op_from_data(file_path):
     file_dir = file_path[0:file_path.rfind("/")]
-    if not os.path.exists(file_path) or not os.path.exists(file_dir + "/output.pth"):
+    if not os.path.exists(file_dir + "/input.pth") or not os.path.exists(file_dir + "/output.pth"):
         print(F"{file_path} not exists")
         return
 
@@ -39,7 +39,10 @@ def run_op_from_data(file_path):
 if __name__ == "__main__":
     shutil.copytree("op_capture_result", "op_capture_result_raw", dirs_exist_ok=True)
 
-    found_files = find_files("op_capture_result_raw", "input.pth")
-
+    found_files = find_files("op_capture_result_raw", "grad_outputs.pth")
+    print(found_files)
     for file_path in found_files:
         run_op_from_data(file_path)
+
+    shutil.rmtree("op_capture_result")
+    shutil.move("op_capture_result_raw", "op_capture_result")
