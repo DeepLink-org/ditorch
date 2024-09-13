@@ -7,10 +7,10 @@ import json
 def serialize_args_to_dict(*args, **kwargs):
     def tensor_to_dict(tensor):
         return {
-            "shape": tensor.shape,
+            "shape": str(tuple(tensor.shape)),
             "stride": tensor.stride(),
             "numel": tensor.numel(),
-            "dtype": str(tensor.dtype),
+            "dtype": str(tensor.dtype).split(".")[-1],
             "device": str(tensor.device),
             "requires_grad": tensor.requires_grad,
             "layout": str(tensor.layout),

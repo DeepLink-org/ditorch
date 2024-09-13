@@ -10,6 +10,7 @@ from .utils import (
     get_dtype_cast_dict_form_str,
     is_opname_match,
 )
+from .pretty_print import dict_data_list_to_table
 
 
 class OpDtypeCastHook(BaseHook):
@@ -54,13 +55,19 @@ class OpDtypeCastHook(BaseHook):
             for arg in traverse_container(self.args_raw):
                 self.raw_ins_list.append(arg)
 
+            self.data_dict_list = []
             for i in range(len(self.ins_list)):
                 if isinstance(self.ins_list[i], torch.Tensor):
                     if self.ins_list[i].dtype != self.raw_ins_list[i].dtype:
-                        print(f"OpDtypeCastHook: {self.name:<50} {i}th arg {self.raw_ins_list[i].dtype} -> {self.ins_list[i].dtype}  config:{self.dtype_cast_config_str}")  # noqa: E501
-                        self.dtype_cast_back_dict[self.ins_list[i].dtype] = (
-                            self.raw_ins_list[i].dtype
-                        )
+                        # print(f"OpDtypeCastHook: {self.name:<50} {i}th arg {self.raw_ins_list[i].dtype} -> {self.ins_list[i].dtype}  config:{self.dtype_cast_config_str}")  # noqa: E501
+                        self.dtype_cast_back_dict[self.ins_list[i].dtype] = self.raw_ins_list[i].dtype
+                        data_dict = {
+                            "name": self.name,
+                            "target": f"input[{i}]",
+                            "action": f"{self.raw_ins_list[i].dtype} -> {self.ins_list[i].dtype}",
+                            "config": self.dtype_cast_config_str,
+                        }
+                        self.data_dict_list.append(data_dict)
 
     def after_call_op(self, result):
         if self.is_cpu_op:
@@ -76,11 +83,16 @@ class OpDtypeCastHook(BaseHook):
             i = -1
             for out in traverse_container(self.result_raw):
                 i += 1
-                if (
-                    isinstance(out, torch.Tensor)
-                    and out.dtype in self.dtype_cast_back_dict.keys()
-                ):
-                    print(f"OpDtypeCastHook: {self.name:<50} {i}th out {out.dtype} -> {self.dtype_cast_back_dict[out.dtype]}  config:{self.dtype_cast_config_str}")  # noqa: E501
+                if isinstance(out, torch.Tensor) and out.dtype in self.dtype_cast_back_dict.keys():
+                    data_dict = {
+                        "name": self.name,
+                        "target": f"output[{i}]",
+                        "action": f"{out.dtype} -> {self.dtype_cast_back_dict[out.dtype]}",
+                        "config": self.dtype_cast_config_str,
+                    }
+                    self.data_dict_list.append(data_dict)
+        if len(self.data_dict_list) > 0:
+            print(dict_data_list_to_table(self.data_dict_list))
 
     def is_should_apply(self, *args, **kwargs):
         if is_opname_match(self.name, os.getenv("OP_DTYPE_CAST_DISABLE_LIST", "")):

@@ -16,6 +16,8 @@ from .utils import (
 )
 from .save_op_args import save_op_args, serialize_args_to_dict
 
+from .pretty_print import pretty_print_op_args
+
 RANDOM_NUMBER_GEN_OPS = [
     "torch.Tensor.random_",
     "torch.Tensor.uniform_",
@@ -153,20 +155,25 @@ class OpAutoCompareHook(BaseHook):
                 )
 
             if is_inplace_op(self.name):
-                allclose = compare_result(self.name, self.args[0], args_cpu[0])["allclose"]
+                compare_info = compare_result(self.name, self.args[0], args_cpu[0])
+                allclose = compare_info["allclose"]
                 if not allclose:
                     self.save_forward_args()
+
+            compare_info = compare_result(self.name, self.result_device, self.result_cpu)
+            allclose = compare_info["allclose"]
 
             if self.result is None:
                 print(f"{self.name} output is None, acc not checked")
                 return
 
-            allclose = compare_result(self.name, self.result_device, self.result_cpu)["allclose"]
-
             self.forward_allclose = allclose
             if not allclose:
-                print(f"OpAutoCompareHook: {self.name:<60} input: {serialize_args_to_dict(*self.args, **self.kwargs)}")
-                print(f"OpAutoCompareHook: {self.name:<60} output: {serialize_args_to_dict(self.result)['args']}")
+                pretty_print_op_args(
+                    self.name,
+                    serialize_args_to_dict(*self.args, **self.kwargs),
+                    serialize_args_to_dict(self.result),
+                )
                 self.save_forward_args()
 
             self.backward_hook_handle = BackwardHookHandle(self)
@@ -228,21 +235,8 @@ class OpAutoCompareHook(BaseHook):
             if isinstance(arg, torch.Tensor) and (arg.requires_grad and self.args_grad[i] is None):
                 return
 
-        all_grad_allclose = True
-        for i in range(len(self.args)):
-            arg = self.args[i]
-
-            if isinstance(arg, torch.Tensor) and arg.requires_grad:
-                arg_cpu_grad = self.args_cpu_grad[i]
-                allclose = compare_result(
-                    self.name + f" (ins[{i}].grad)",
-                    self.args_grad[i],
-                    arg_cpu_grad,
-                )["allclose"]
-
-                if not allclose:
-                    all_grad_allclose = False
-        if not all_grad_allclose:
+        compare_info = compare_result(self.name + " grad", self.args_cpu_grad, self.args_grad)
+        if not compare_info["allclose"]:
             # Parameters are not saved when forward accuracy is normal
             if self.forward_allclose:
                 self.save_forward_args()

@@ -51,7 +51,7 @@ def main():
     found_files = find_files(args.dir, "input.pth")
 
     for file_path in found_files:
-        runner = OpRunner(file_path[0:file_path.rfind("/")])
+        runner = OpRunner(file_path[0 : file_path.rfind("/")])
         if args.sync_time_measure:
             timer = SyncExecuteTimer()
             runner.add_hook(timer)

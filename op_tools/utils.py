@@ -4,6 +4,7 @@ import re
 import importlib
 import math
 import os
+from .pretty_print import dict_data_list_to_table
 
 
 def traverse_container(container):
@@ -75,9 +76,7 @@ def is_opname_match(name, op_pattern=None):
 
 def is_inplace_op(name):
     INPLACES_OP = ["torch.Tensor.__setitem__"]
-    return name in INPLACES_OP or (
-        name.endswith("_") and (not name.endswith("__")) and (name.startswith("torch.Tensor."))
-    )
+    return name in INPLACES_OP or (name.endswith("_") and (not name.endswith("__")) and (name.startswith("torch.Tensor.")))
 
 
 def get_function_from_string(func_str):
@@ -97,9 +96,7 @@ def get_dtype_cast_dict_form_str(config):
     dtype_cast_dict = dict()
     if config is not None:
         for item in config.split(","):
-            dtype_cast_dict[get_function_from_string(item.split("->")[0])] = get_function_from_string(
-                item.split("->")[1]
-            )
+            dtype_cast_dict[get_function_from_string(item.split("->")[0])] = get_function_from_string(item.split("->")[1])
     return dtype_cast_dict
 
 
@@ -183,6 +180,7 @@ def get_error_tolerance(dtype, op_name):
         elif os.getenv("AUTOCOMPARE_ERROR_TOLERANCE") is not None:
             atol, rtol = map(float, os.getenv("AUTOCOMPARE_ERROR_TOLERANCE").split(","))
         return atol, rtol
+
     if dtype == torch.float16:
         return get_error_tolerance_for_type("FLOAT16", 1e-4, 1e-4)
     elif dtype == torch.bfloat16:
@@ -212,12 +210,20 @@ def compare_result(name, a, b):  # noqa: C901
         max_abs_diff = float("nan")
         max_relative_diff = float("nan")
         allclose = False
-        return {"allclose": allclose, "max_abs_diff": max_abs_diff, "max_relative_diff": max_relative_diff, "error_info": error_info}
-
+        return {
+            "allclose": allclose,
+            "max_abs_diff": max_abs_diff,
+            "max_relative_diff": max_relative_diff,
+            "error_info": error_info,
+            "atol": float("nan"),
+            "rtol": float("nan"),
+        }
+    result_list = []
     for i in range(len(a_list)):
         a_item = a_list[i]
         b_item = b_list[i]
         atol, rtol = 0, 0
+        error_info_i = ""
         if a_item is None and b_item is None:
             allclose_i = True
             max_abs_diff_i = 0
@@ -228,24 +234,24 @@ def compare_result(name, a, b):  # noqa: C901
                 max_abs_diff_i, max_relative_diff_i = tensor_max_diff(a_item, b_item)
                 allclose_i = tensor_allclose(a_item, b_item, atol=atol, rtol=rtol)
             else:
-                error_info += f"Inconsistent shape: {a_item.shape} {b_item.shape}"
+                error_info_i = f"Inconsistent shape: {a_item.shape} {b_item.shape}"
                 max_abs_diff_i = float("nan")
                 max_relative_diff_i = float("nan")
                 allclose_i = False
             if a_item.dtype != b_item.dtype:
-                error_info += f"Inconsistent dtypes: {a_item.dtype} {b_item.dtype}"
+                error_info_i += f"Inconsistent dtypes: {a_item.dtype} {b_item.dtype}"
 
         elif type(a) != type(b):  # noqa: E721
-            error_info += f"Inconsistent types: {type(a)} {type(b)}"
+            error_info_i = f"Inconsistent types: {type(a)} {type(b)}"
             max_abs_diff_i = float("nan")
             max_relative_diff_i = float("nan")
             allclose_i = False
         elif isinstance(a_item, bool):
-            allclose_i = (a_item == b_item)
+            allclose_i = a_item == b_item
             max_abs_diff_i = 0.0 if allclose_i else float("nan")
             max_relative_diff_i = 0.0 if allclose_i else float("nan")
             if not allclose_i:
-                error_info += f" value: {a_item} {b_item} "
+                error_info_i = f" value: {a_item} {b_item} "
         elif isinstance(a_item, (float, int)):
             atol = 1e-6
             rtol = 1e-6
@@ -253,14 +259,36 @@ def compare_result(name, a, b):  # noqa: C901
             max_abs_diff_i = abs(a_item - b_item)
             max_relative_diff_i = max_abs_diff_i / (abs(a_item) + 1e-6)
             if not allclose_i:
-                error_info += f" value: {a_item} {b_item} "
+                error_info_i = f" value: {a_item} {b_item} "
         if len(a_list) > 1:
             prefex = f" {i}th "
         else:
             prefex = ""
 
-        print(f"compare_result: {name + prefex:<50}   allclose: {allclose_i}\tmax_abs_diff: {f'{max_abs_diff_i:10.9f}'}  max_relative_diff: {f'{max_relative_diff_i:10.9f}'} atol:{atol:10.9f} rtol:{rtol:10.9f} {error_info}")  # noqa: E501
+        error_info += error_info_i
         allclose = allclose_i and allclose
         max_abs_diff = max(max_abs_diff_i, max_abs_diff)
         max_relative_diff = max(max_relative_diff_i, max_relative_diff)
-    return {"allclose": allclose, "max_abs_diff": max_abs_diff, "max_relative_diff": max_relative_diff, "error_info": error_info}
+        result_list.append(
+            {
+                "name": f"{name + prefex:<50}",
+                "allclose": allclose_i,
+                "max_abs_diff": f"{max_abs_diff_i:10.9f}",
+                "max_relative_diff": f"{max_relative_diff_i:10.9f}",
+                "atol": f"{atol:10.9f}",
+                "rtol": f"{rtol:10.9f}",
+                "error_info": error_info_i,
+            }
+        )
+    print(dict_data_list_to_table(result_list))
+
+    return {
+        "allclose": allclose,
+        "max_abs_diff": max_abs_diff,
+        "max_relative_diff": max_relative_diff,
+        "error_info": error_info,
+        "atol": atol,
+        "rtol": rtol,
+        "name": name,
+        "result_list": result_list,
+    }

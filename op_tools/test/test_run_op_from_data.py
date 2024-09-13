@@ -9,9 +9,9 @@ def run_command_in_sub_process(commands):
     print(result.stdout)
     print(result.stderr)
     if result.returncode != 0:
-        print(F"Test {commands} FAILED")
+        print(f"Test {commands} FAILED")
     else:
-        print(F"Test {commands} PASSED")
+        print(f"Test {commands} PASSED")
     print("\n\n\n")
 
 

@@ -6,6 +6,11 @@ from .base_hook import BaseHook, DisableHookGuard
 
 from .save_op_args import serialize_args_to_dict
 from .utils import is_opname_match
+from .pretty_print import (
+    pretty_print_op_args,
+    dict_data_list_to_table,
+    packect_data_to_dict_list,
+)
 
 
 class BackwardHookHandle:
@@ -25,7 +30,17 @@ class BackwardHookHandle:
             torch.cuda.current_stream().synchronize()
             self.end_time = time.time()
             self.backward_elasped = self.end_time - self.start_time
-            print(f"OpTimeMeasureHook: {self.name:<30} backward elasped: {(self.backward_elasped * 1000):>10.8f} ms     grad_inputs: {serialize_args_to_dict(grad_inputs)} output: {serialize_args_to_dict(grad_outputs)}")  # noqa: E501
+            data_dict_list = []
+            data_dict_list += packect_data_to_dict_list(self.name, serialize_args_to_dict(grad_outputs), prefix="grad_outputs ")
+            data_dict_list += packect_data_to_dict_list(self.name, serialize_args_to_dict(grad_inputs), prefix="grad_inputs  ")
+            table = dict_data_list_to_table(data_dict_list)
+            print(table)
+            elasped_info_dict = {
+                "backward_elasped": f"{(self.backward_elasped * 1000):>10.8f}",
+                "unit": "ms",
+                "forward_id": self.id,
+            }
+            print(dict_data_list_to_table([elasped_info_dict]))
 
         return grad_fun
 
@@ -57,7 +72,17 @@ class OpTimeMeasureHook(BaseHook):
                     self.result[i].grad_fn.register_prehook(self.backward_hook_handle.grad_fun_prehook())
 
         with DisableHookGuard():
-            print(f"OpTimeMeasureHook: {self.name:<30} forward elasped:  {(self.foward_elasped * 1000):>10.8f} ms     input: {serialize_args_to_dict(*self.args, **self.kwargs)} output: {serialize_args_to_dict(self.result)}")  # noqa: E501
+            pretty_print_op_args(
+                self.name,
+                serialize_args_to_dict(*self.args, **self.kwargs),
+                serialize_args_to_dict(self.result),
+            )
+            elasped_info_dict = {
+                "forward_elasped": f"{(self.foward_elasped * 1000):>10.8f}",
+                "unit": "ms",
+                "forward_id": self.id,
+            }
+            print(dict_data_list_to_table([elasped_info_dict]))
 
     def is_should_apply(self, *args, **kwargs):
         if is_opname_match(self.name, os.getenv("OP_TIME_MEASURE_DISABLE_LIST", "")):
