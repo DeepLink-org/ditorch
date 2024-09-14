@@ -34,6 +34,7 @@ RANDOM_NUMBER_GEN_OPS = [
     "torch.Tensor.multinomial",
     "torch.rand",
     "torch.randperm",
+    "torch.rand_like",
     "torch.bernoulli",
     "torch.poisson",
     "torch.randint_like",
