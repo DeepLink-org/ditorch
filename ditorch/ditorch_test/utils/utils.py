@@ -1,6 +1,7 @@
 import subprocess
 import os
 
+
 def sparse_checkout(repo_url, destination, paths, branch="main", depth=1):
     destination = os.path.abspath(
         destination
@@ -65,5 +66,3 @@ def sparse_checkout(repo_url, destination, paths, branch="main", depth=1):
         raise RuntimeError(f"Sparse checkout failed: {e}")
 
     print("Sparse checkout 完成!")
-
-

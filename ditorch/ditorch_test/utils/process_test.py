@@ -89,7 +89,6 @@ class CustomTextTestResult(unittest.TextTestResult):
 
     def addError(self, test, err):
         super().addError(test, err)
-        
         self.all_EF_infos.append((test, err))
 
 
@@ -105,7 +104,8 @@ class CustomTextTestResult(unittest.TextTestResult):
         if self.all_EF_infos:
             current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             device_torch = ditorch.framework.split(":")[0]
-            test_failed_json = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + f"/failed_tests_record/{device_torch}_{current_time}.json"
+            test_failed_json = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + \
+                f"/failed_tests_record/{device_torch}_{current_time}.json"
             if not os.path.exists(test_failed_json) or os.path.getsize(test_failed_json) == 0:
                 with open(test_failed_json, 'w') as f:
                     json.dump({}, f)
@@ -117,7 +117,6 @@ class CustomTextTestResult(unittest.TextTestResult):
                 except (json.JSONDecodeError, FileNotFoundError):
                     # 如果文件为空或解析失败，则初始化为空字典
                     content = {}
-                
                 # 更新内容
                 for test, err in self.all_EF_infos:
                     exctype, value, tb = err
@@ -203,7 +202,9 @@ def run_with_timeout(self, result=None):
 # 替换原始的 TestCase.run 方法
 TestCase.run = run_with_timeout
 """
-    imports_text = import_patch + mock_code + imports_text + custom_test_code + over_time_test_code
+    imports_text = (
+        import_patch + mock_code + imports_text + custom_test_code + over_time_test_code
+    )
 
     functions_text = re.sub(
         r"run\_tests\(\)",

@@ -11,7 +11,3 @@ for filename in os.listdir(os.path.join(dirtorch_test_dir, "failed_tests_record"
     file_path = os.path.join(dirtorch_test_dir, "failed_tests_record", filename)
     if os.path.isfile(file_path):
         os.remove(file_path)
-
-
-
-
