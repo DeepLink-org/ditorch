@@ -51,7 +51,7 @@ jobs:
   Test_Torch:
     name: test torch_npu
     runs-on: tps-ascend-ci-910b
-    needs: [Build]
+    needs: [Test]
     steps:
       - name: test_torch
         run:  |
