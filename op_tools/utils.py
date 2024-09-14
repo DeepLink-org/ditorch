@@ -205,6 +205,7 @@ def compare_result(name, a, b):  # noqa: C901
     for item in traverse_container(b):
         b_list.append(item)
 
+    result_list = []
     if len(a_list) != len(b_list):
         error_info += f"Inconsistent output length: {len(a_list)} {len(b_list)}, {a} {b}"
         max_abs_diff = float("nan")
@@ -217,8 +218,8 @@ def compare_result(name, a, b):  # noqa: C901
             "error_info": error_info,
             "atol": float("nan"),
             "rtol": float("nan"),
+            "result_list": result_list,
         }
-    result_list = []
     for i in range(len(a_list)):
         a_item = a_list[i]
         b_item = b_list[i]

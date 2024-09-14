@@ -102,7 +102,9 @@ class OpTimeMeasureHook(BaseHook):
         return is_opname_match(self.name, os.getenv("OP_TIME_MEASURE_LIST", ".*"))
 
 
-def print_all_elasped_info():
+def dump_all_op_elasped_info():
+    if len(global_elasped_info_dict) == 0:
+        return
     ordered_keys = ["name", "forward_id", "forward_elasped", "backward_elasped", "unit", "input", "output", "grad_inputs", "grad_outputs"]
     simple_data_list = []
     for key, value in global_elasped_info_dict.items():
@@ -125,4 +127,4 @@ def print_all_elasped_info():
     print(f"op elasped info saved to {file_name}")
 
 
-atexit.register(print_all_elasped_info)
+atexit.register(dump_all_op_elasped_info)
