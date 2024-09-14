@@ -1,5 +1,5 @@
 [flake8]
-exclude =venv
+exclude =venv, ditorch/ditorch_test/processed_tests/*
 
 max-line-length = 140
 per-file-ignores =
