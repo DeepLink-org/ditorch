@@ -2,6 +2,7 @@
 import os
 import torch
 import time
+import atexit
 from .base_hook import BaseHook, DisableHookGuard
 
 from .save_op_args import serialize_args_to_dict
@@ -11,6 +12,8 @@ from .pretty_print import (
     dict_data_list_to_table,
     packect_data_to_dict_list,
 )
+
+global_elasped_info_dict = dict()
 
 
 class BackwardHookHandle:
@@ -36,11 +39,15 @@ class BackwardHookHandle:
             table = dict_data_list_to_table(data_dict_list)
             print(table)
             elasped_info_dict = {
+                "name": self.name,
+                "forward_id": self.id,
                 "backward_elasped": f"{(self.backward_elasped * 1000):>10.8f}",
                 "unit": "ms",
-                "forward_id": self.id,
             }
             print(dict_data_list_to_table([elasped_info_dict]))
+            elasped_info_dict["grad_inputs"] = serialize_args_to_dict(grad_inputs),
+            elasped_info_dict["grad_outputs"] = serialize_args_to_dict(grad_outputs)
+            global_elasped_info_dict[self.id].update(elasped_info_dict)
 
         return grad_fun
 
@@ -78,14 +85,44 @@ class OpTimeMeasureHook(BaseHook):
                 serialize_args_to_dict(self.result),
             )
             elasped_info_dict = {
+                "name": self.name,
+                "forward_id": self.id,
                 "forward_elasped": f"{(self.foward_elasped * 1000):>10.8f}",
                 "unit": "ms",
-                "forward_id": self.id,
             }
             print(dict_data_list_to_table([elasped_info_dict]))
+            elasped_info_dict["input"] = serialize_args_to_dict(*self.args, **self.kwargs)
+            elasped_info_dict["output"] = serialize_args_to_dict(self.result)
+            global_elasped_info_dict[self.id] = elasped_info_dict
 
     def is_should_apply(self, *args, **kwargs):
         if is_opname_match(self.name, os.getenv("OP_TIME_MEASURE_DISABLE_LIST", "")):
             return False
 
         return is_opname_match(self.name, os.getenv("OP_TIME_MEASURE_LIST", ".*"))
+
+
+def print_all_elasped_info():
+    ordered_keys = ["name", "forward_id", "forward_elasped", "backward_elasped", "unit", "input", "output", "grad_inputs", "grad_outputs"]
+    simple_data_list = []
+    for key, value in global_elasped_info_dict.items():
+        new_value = {k : value[k] for k in ordered_keys}
+        simple_value = {k : value[k] for k in ordered_keys[0:5]}
+        simple_data_list.append(simple_value)
+        global_elasped_info_dict[key] = new_value
+
+    print(dict_data_list_to_table(simple_data_list))
+
+    table = dict_data_list_to_table(list(global_elasped_info_dict.values()))
+    data_string = table.get_csv_string()
+    file_name = f"op_time_measure_result/op_elasped_info_pid{os.getpid()}_{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}.csv"
+    dir = file_name[0 : file_name.rfind("/")]
+    os.makedirs(dir, exist_ok=True)
+
+    with open(file_name, "w") as f:
+        f.write(data_string)
+        f.close
+    print(f"op elasped info saved to {file_name}")
+
+
+atexit.register(print_all_elasped_info)

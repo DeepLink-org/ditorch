@@ -271,7 +271,7 @@ def compare_result(name, a, b):  # noqa: C901
         max_relative_diff = max(max_relative_diff_i, max_relative_diff)
         result_list.append(
             {
-                "name": f"{name + prefex:<50}",
+                "name": f"{name + prefex:<30}",
                 "allclose": allclose_i,
                 "max_abs_diff": f"{max_abs_diff_i:10.9f}",
                 "max_relative_diff": f"{max_relative_diff_i:10.9f}",
