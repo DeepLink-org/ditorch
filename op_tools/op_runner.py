@@ -3,7 +3,7 @@ from abc import ABC
 import os
 import torch
 import time
-from .utils import to_device, get_function_from_string, traverse_container
+from .utils import to_device, get_function_from_string, traverse_container, is_inplace_op
 from .op_autocompare_hook import OpAutoCompareHook
 
 
@@ -147,6 +147,9 @@ class OpRunner:
             self.grad_outputs_cpu = None
 
     def run_forward(self):
+        if is_inplace_op(self.name):
+            self.args = to_device("cuda", self.args_cpu)
+            self.kwargs = to_device("cuda", self.kwargs_cpu)
         self.run_before_forward()
         self.result = self.func(*self.args, **self.kwargs)
         self.run_after_forward()

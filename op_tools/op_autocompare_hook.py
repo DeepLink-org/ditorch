@@ -68,9 +68,9 @@ class BackwardHookHandle:
         hook_handle = None
 
         def grad_fun(grad_inputs, grad_outputs):
-            hook_handle.remove()
             self.compare_hook.run_backward_on_cpu(grad_inputs, grad_outputs)
             self.compare_hook.compare_all_grad()
+            hook_handle.remove()
 
         hook_handle = tensor.grad_fn.register_hook(grad_fun)
         return grad_fun
@@ -79,9 +79,9 @@ class BackwardHookHandle:
         hook_handle = None
 
         def grad_fun(grad):
-            hook_handle.remove()
             self.compare_hook.set_input_grad(index, grad)
             self.compare_hook.compare_all_grad()
+            hook_handle.remove()
 
         hook_handle = tensor.register_hook(grad_fun)
 
@@ -334,7 +334,7 @@ def dump_all_autocompare_info():
     with open(file_name, "w") as f:
         f.write(data_string)
         f.close
-    print(f"op elasped info saved to {file_name}")
+    print(f"op autocompare info saved to {file_name}")
 
 
 atexit.register(dump_all_autocompare_info)
