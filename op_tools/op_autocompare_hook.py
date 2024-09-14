@@ -68,9 +68,9 @@ class BackwardHookHandle:
         hook_handle = None
 
         def grad_fun(grad_inputs, grad_outputs):
+            hook_handle.remove()
             self.compare_hook.run_backward_on_cpu(grad_inputs, grad_outputs)
             self.compare_hook.compare_all_grad()
-            hook_handle.remove()
 
         hook_handle = tensor.grad_fn.register_hook(grad_fun)
         return grad_fun
@@ -79,9 +79,9 @@ class BackwardHookHandle:
         hook_handle = None
 
         def grad_fun(grad):
+            hook_handle.remove()
             self.compare_hook.set_input_grad(index, grad)
             self.compare_hook.compare_all_grad()
-            hook_handle.remove()
 
         hook_handle = tensor.register_hook(grad_fun)
 
@@ -251,7 +251,7 @@ class OpAutoCompareHook(BaseHook):
             # Parameters are not saved when forward accuracy is normal
             if self.forward_allclose:
                 self.save_forward_args()
-            self.save_backward_args
+            self.save_backward_args()
         self = None
         gc.collect()
 
@@ -280,7 +280,7 @@ class OpAutoCompareHook(BaseHook):
         save_op_args(
             self.name,
             f"{self.identifier}/device/grad_outputs",
-            *tuple(self.grad_output),
+            *tuple(self.grad_outputs_cpu),
         )
         save_op_args(
             self.name,
@@ -317,8 +317,6 @@ class OpAutoCompareHook(BaseHook):
 def dump_all_autocompare_info():
     if len(global_autocompare_result) == 0:
         return
-    ordered_keys = ["name", "forward_id", "allclose"]
-    index = -1
     all_compare_info_list = []
     while len(global_autocompare_result) > 0:
         compare_info = global_autocompare_result.pop(0)
@@ -329,7 +327,7 @@ def dump_all_autocompare_info():
     table = dict_data_list_to_table(all_compare_info_list)
     print(table)
     data_string = table.get_csv_string()
-    file_name = f"op_autocompare_result/op_autocompare_info_pid{os.getpid()}_{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}.csv"
+    file_name = f"op_tools_results/op_autocompare_result/op_autocompare_info_pid{os.getpid()}_{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}.csv"  # noqa: E501
     dir = file_name[0 : file_name.rfind("/")]
     os.makedirs(dir, exist_ok=True)
 

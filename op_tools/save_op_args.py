@@ -43,7 +43,7 @@ def save_op_args(name, identifier, *args, **kwargs):
     obj["args"] = args
     obj["kwargs"] = kwargs
     obj["identifier"] = identifier
-    filename = f"op_capture_result/{name}/{os.getpid()}/{identifier}.pth"
+    filename = f"op_tools_results/op_capture_results/{name}/{os.getpid()}/{identifier}.pth"
     path = filename[: filename.rfind("/")]
     os.makedirs(path, exist_ok=True)
     try:

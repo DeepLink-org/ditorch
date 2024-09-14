@@ -60,7 +60,9 @@ def apply_hook_to_ops(ops, hook, condition_funcs=[]):
             condition_func = condition_funcs
         assert callable(condition_func)
         if issubclass(type(func), BaseHook):
-            print(f"The {name} is applying multiple hooks, and the previous hook {func.class_name()} will be replaced by the {hook.class_name()}.")
+            print(
+                f"The {name} is applying multiple hooks, and the previous hook {func.class_name()} will be replaced by the {hook.class_name()}."  # noqa: E501
+            )
             func = func.func
 
         hook_obj = hook(name, func)

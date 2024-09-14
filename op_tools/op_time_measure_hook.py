@@ -45,7 +45,7 @@ class BackwardHookHandle:
                 "unit": "ms",
             }
             print(dict_data_list_to_table([elasped_info_dict]))
-            elasped_info_dict["grad_inputs"] = serialize_args_to_dict(grad_inputs),
+            elasped_info_dict["grad_inputs"] = serialize_args_to_dict(grad_inputs)
             elasped_info_dict["grad_outputs"] = serialize_args_to_dict(grad_outputs)
             global_elasped_info_dict[self.id].update(elasped_info_dict)
 
@@ -108,8 +108,8 @@ def dump_all_op_elasped_info():
     ordered_keys = ["name", "forward_id", "forward_elasped", "backward_elasped", "unit", "input", "output", "grad_inputs", "grad_outputs"]
     simple_data_list = []
     for key, value in global_elasped_info_dict.items():
-        new_value = {k : value[k] for k in ordered_keys}
-        simple_value = {k : value[k] for k in ordered_keys[0:5]}
+        new_value = {k: value[k] for k in ordered_keys}
+        simple_value = {k: value[k] for k in ordered_keys[0:5]}
         simple_data_list.append(simple_value)
         global_elasped_info_dict[key] = new_value
 
@@ -117,7 +117,7 @@ def dump_all_op_elasped_info():
 
     table = dict_data_list_to_table(list(global_elasped_info_dict.values()))
     data_string = table.get_csv_string()
-    file_name = f"op_time_measure_result/op_elasped_info_pid{os.getpid()}_{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}.csv"
+    file_name = f"op_tools_results/op_time_measure_result/op_elasped_info_pid{os.getpid()}_{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}.csv"  # noqa: E501
     dir = file_name[0 : file_name.rfind("/")]
     os.makedirs(dir, exist_ok=True)
 
