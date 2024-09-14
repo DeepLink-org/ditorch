@@ -3,6 +3,7 @@ import torch
 import gc
 import os
 import time
+import atexit
 
 from .base_hook import BaseHook, DisableHookGuard
 from .utils import (
@@ -15,6 +16,8 @@ from .utils import (
     compare_result,
 )
 from .save_op_args import save_op_args, serialize_args_to_dict
+
+from .pretty_print import pretty_print_op_args, dict_data_list_to_table
 
 RANDOM_NUMBER_GEN_OPS = [
     "torch.Tensor.random_",
@@ -85,6 +88,9 @@ class BackwardHookHandle:
         return grad_fun
 
 
+global_autocompare_result = []
+
+
 class OpAutoCompareHook(BaseHook):
     AUTO_COMPARE_DTYPE_CAST_DICT = {
         torch.half: torch.float32,
@@ -95,7 +101,8 @@ class OpAutoCompareHook(BaseHook):
         super().__init__(name, func)
 
     def before_call_op(self, *args, **kwargs):
-        self.forward_op_id = f"autocompare/{self.id}/{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}"
+        self.forward_op_id = self.id
+        self.identifier = f"autocompare/{self.id}/{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}"
         with DisableHookGuard():
             self.is_cpu_op, self.device = is_cpu_op(*args, **kwargs)
             if self.is_cpu_op:
@@ -153,20 +160,29 @@ class OpAutoCompareHook(BaseHook):
                 )
 
             if is_inplace_op(self.name):
-                allclose = compare_result(self.name, self.args[0], args_cpu[0])["allclose"]
+                compare_info = compare_result(self.name, self.args[0], args_cpu[0])
+                allclose = compare_info["allclose"]
                 if not allclose:
                     self.save_forward_args()
+                compare_info.update({"forward_id": self.forward_op_id})
+                global_autocompare_result.append(compare_info)
+
+            compare_info = compare_result(self.name, self.result_device, self.result_cpu)
+            compare_info.update({"forward_id": self.forward_op_id})
+            global_autocompare_result.append(compare_info)
+            allclose = compare_info["allclose"]
 
             if self.result is None:
                 print(f"{self.name} output is None, acc not checked")
                 return
 
-            allclose = compare_result(self.name, self.result_device, self.result_cpu)["allclose"]
-
             self.forward_allclose = allclose
             if not allclose:
-                print(f"OpAutoCompareHook: {self.name:<60} input: {serialize_args_to_dict(*self.args, **self.kwargs)}")
-                print(f"OpAutoCompareHook: {self.name:<60} output: {serialize_args_to_dict(self.result)['args']}")
+                pretty_print_op_args(
+                    self.name,
+                    serialize_args_to_dict(*self.args, **self.kwargs),
+                    serialize_args_to_dict(self.result),
+                )
                 self.save_forward_args()
 
             self.backward_hook_handle = BackwardHookHandle(self)
@@ -228,25 +244,14 @@ class OpAutoCompareHook(BaseHook):
             if isinstance(arg, torch.Tensor) and (arg.requires_grad and self.args_grad[i] is None):
                 return
 
-        all_grad_allclose = True
-        for i in range(len(self.args)):
-            arg = self.args[i]
-
-            if isinstance(arg, torch.Tensor) and arg.requires_grad:
-                arg_cpu_grad = self.args_cpu_grad[i]
-                allclose = compare_result(
-                    self.name + f" (ins[{i}].grad)",
-                    self.args_grad[i],
-                    arg_cpu_grad,
-                )["allclose"]
-
-                if not allclose:
-                    all_grad_allclose = False
-        if not all_grad_allclose:
+        compare_info = compare_result(self.name + " grad", self.args_cpu_grad, self.args_grad)
+        compare_info.update({"forward_id": self.forward_op_id})
+        global_autocompare_result.append(compare_info)
+        if not compare_info["allclose"]:
             # Parameters are not saved when forward accuracy is normal
             if self.forward_allclose:
                 self.save_forward_args()
-            self.save_backward_args
+            self.save_backward_args()
         self = None
         gc.collect()
 
@@ -258,38 +263,38 @@ class OpAutoCompareHook(BaseHook):
     def save_forward_args(self):
         save_op_args(
             self.name,
-            f"{self.forward_op_id}/device/input",
+            f"{self.identifier}/device/input",
             *self.args,
             **self.kwargs,
         )
-        save_op_args(self.name, f"{self.forward_op_id}/device/output", self.result)
+        save_op_args(self.name, f"{self.identifier}/device/output", self.result)
         save_op_args(
             self.name,
-            f"{self.forward_op_id}/cpu/input",
+            f"{self.identifier}/cpu/input",
             *self.args_cpu,
             **self.kwargs_cpu,
         )
-        save_op_args(self.name, f"{self.forward_op_id}/cpu/output", self.result_cpu)
+        save_op_args(self.name, f"{self.identifier}/cpu/output", self.result_cpu)
 
     def save_backward_args(self):
         save_op_args(
             self.name,
-            f"{self.forward_op_id}/device/grad_outputs",
-            *tuple(self.grad_output),
+            f"{self.identifier}/device/grad_outputs",
+            *tuple(self.grad_outputs_cpu),
         )
         save_op_args(
             self.name,
-            f"{self.forward_op_id}/device/grad_inputs",
+            f"{self.identifier}/device/grad_inputs",
             *tuple(self.args_grad),
         )
         save_op_args(
             self.name,
-            f"{self.forward_op_id}/cpu/grad_inputs",
+            f"{self.identifier}/cpu/grad_inputs",
             *tuple(self.args_cpu_grad),
         )
         save_op_args(
             self.name,
-            f"{self.forward_op_id}/cpu/grad_outputs",
+            f"{self.identifier}/cpu/grad_outputs",
             *tuple(self.grad_outputs_cpu),
         )
 
@@ -307,3 +312,29 @@ class OpAutoCompareHook(BaseHook):
             return False
 
         return is_opname_match(self.name, os.getenv("OP_AUTOCOMPARE_LIST", ".*"))
+
+
+def dump_all_autocompare_info():
+    if len(global_autocompare_result) == 0:
+        return
+    all_compare_info_list = []
+    while len(global_autocompare_result) > 0:
+        compare_info = global_autocompare_result.pop(0)
+        while len(compare_info["result_list"]) > 0:
+            compare_result = compare_info["result_list"].pop(0)
+            all_compare_info_list.append({"forward_id": compare_info["forward_id"], **compare_result})
+
+    table = dict_data_list_to_table(all_compare_info_list)
+    print(table)
+    data_string = table.get_csv_string()
+    file_name = f"op_tools_results/op_autocompare_result/op_autocompare_info_pid{os.getpid()}_{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}.csv"  # noqa: E501
+    dir = file_name[0 : file_name.rfind("/")]
+    os.makedirs(dir, exist_ok=True)
+
+    with open(file_name, "w") as f:
+        f.write(data_string)
+        f.close
+    print(f"op autocompare info saved to {file_name}")
+
+
+atexit.register(dump_all_autocompare_info)

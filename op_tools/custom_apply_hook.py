@@ -7,6 +7,7 @@ from .op_autocompare_hook import OpAutoCompareHook
 from .op_dispatch_watch_hook import OpDispatchWatcherHook
 from .op_time_measure_hook import OpTimeMeasureHook
 from .op_dtype_cast_hook import OpDtypeCastHook
+from .base_hook import BaseHook
 
 
 def get_func_name(func):
@@ -58,6 +59,11 @@ def apply_hook_to_ops(ops, hook, condition_funcs=[]):
         else:
             condition_func = condition_funcs
         assert callable(condition_func)
+        if issubclass(type(func), BaseHook):
+            print(
+                f"The {name} is applying multiple hooks, and the previous hook {func.class_name()} will be replaced by the {hook.class_name()}."  # noqa: E501
+            )
+            func = func.func
 
         hook_obj = hook(name, func)
         hook_obj.add_condition_func(condition_func)

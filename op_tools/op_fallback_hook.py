@@ -5,6 +5,7 @@ import os
 from .base_hook import BaseHook, DisableHookGuard
 from .utils import to_device, is_cpu_op, is_opname_match
 from .save_op_args import serialize_args_to_dict
+from .pretty_print import packect_data_to_dict_list, dict_data_list_to_table
 
 
 class OpFallbackHook(BaseHook):
@@ -38,7 +39,6 @@ class OpFallbackHook(BaseHook):
             self.is_cpu_op, self.device = is_cpu_op(*args, **kwargs)
             if self.is_cpu_op:
                 return
-            print(f"OpFallbackHook: {self.name:<50} input: {serialize_args_to_dict(*self.args, **self.kwargs)}")
             self.args_device = self.args
             self.kwargs_device = self.kwargs
             self.args = to_device(
@@ -73,7 +73,25 @@ class OpFallbackHook(BaseHook):
                 dtype_convert_back_dict = self.get_dtype_convert_back_dict()
 
             self.result = to_device(self.device, self.result_cpu, dtype_convert_back_dict)
-            print(f"OpFallbackHook: {self.name:<50} output: {serialize_args_to_dict(self.result)['args']} cpu output: {serialize_args_to_dict(self.result_cpu)['args']} dtype_convert_back_dict:{dtype_convert_back_dict}")  # noqa: E501
+            self.dump_op_args()
+
+    def dump_op_args(self):
+        data_dict_list = []
+        data_dict_list += packect_data_to_dict_list(
+            self.name,
+            serialize_args_to_dict(*self.args_device, **self.kwargs_device),
+            prefix="device_input ",
+        )
+        data_dict_list += packect_data_to_dict_list(
+            self.name,
+            serialize_args_to_dict(*self.args, **self.kwargs),
+            prefix="cpu_input    ",
+        )
+        data_dict_list += packect_data_to_dict_list(self.name, serialize_args_to_dict(self.result), prefix="device_output")
+        data_dict_list += packect_data_to_dict_list(self.name, serialize_args_to_dict(self.result_cpu), prefix="cpu_output   ")
+
+        table = dict_data_list_to_table(data_dict_list)
+        print(table)
 
     def is_should_apply(self, *args, **kwargs):
         BLACK_OP_LIST = ["torch.Tensor.cpu"]

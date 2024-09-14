@@ -144,4 +144,5 @@ CMakeUserPresets.json
 # Autogened on ascend
 fusion_result.json
 
-op_capture_result/
+op_tools_results/
+export_only_prof_dir/
