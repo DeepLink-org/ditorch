@@ -82,6 +82,8 @@ jobs:
           elif [ "$ARCH" == "x86_64" ]; then
               export CPLUS_INCLUDE_PATH=/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux/include/:$CPLUS_INCLUDE_PATH
           fi
+
+          pip install hypothesis
           cd ${DEEPLINK_PATH}/${GITHUB_RUN_NUMBER} && rm -rf ${GITHUB_JOB} && cp -R Build ${GITHUB_JOB}  && cd ${GITHUB_JOB}
           echo "start to test"
           bash ci/test_torch.sh
