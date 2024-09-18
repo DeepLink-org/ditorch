@@ -102,9 +102,7 @@ class TestCompareResult(unittest.TestCase):
             compare_info = compare_result("different_int", result1, result2)
             self.assertTrue(compare_info["allclose"] is False)
             self.assertTrue(compare_info["max_abs_diff"] == i + 10)
-            self.assertTrue(
-                abs(compare_info["max_relative_diff"] - ((i + 10) / i)) < 1e-3
-            )
+            self.assertTrue(abs(compare_info["max_relative_diff"] - ((i + 10) / i)) < 1e-3)
             self.assertTrue(isinstance(compare_info["result_list"], list))
 
     def test_compare_same_float(self):
@@ -124,9 +122,7 @@ class TestCompareResult(unittest.TestCase):
             compare_info = compare_result("different_float", result1, result2)
             self.assertTrue(compare_info["allclose"] is False)
             self.assertTrue(compare_info["max_abs_diff"] == i + 10)
-            self.assertTrue(
-                abs(compare_info["max_relative_diff"] - ((i + 10) / i)) < 1e-3
-            )
+            self.assertTrue(abs(compare_info["max_relative_diff"] - ((i + 10) / i)) < 1e-3)
             self.assertTrue(isinstance(compare_info["result_list"], list))
 
     def test_compare_same_bool(self):

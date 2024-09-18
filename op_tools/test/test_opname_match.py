@@ -17,12 +17,8 @@ class TestOpNameMatch(unittest.TestCase):
         self.assertEqual(is_opname_match("torch.addc", "torch.addc,torch.sub"), True)
         self.assertEqual(is_opname_match("torch.addc", "torch.add,torch.sub"), False)
         self.assertEqual(is_opname_match("torch.sub", "torch.addc,torch.sub"), True)
-        self.assertEqual(
-            is_opname_match("torch.sub", "torch.addc,torch.subc,torch.mul"), False
-        )
-        self.assertEqual(
-            is_opname_match("torch.subc", "torch.addc,torch.sub,torch.mul"), False
-        )
+        self.assertEqual(is_opname_match("torch.sub", "torch.addc,torch.subc,torch.mul"), False)
+        self.assertEqual(is_opname_match("torch.subc", "torch.addc,torch.sub,torch.mul"), False)
         self.assertEqual(is_opname_match("torch.subc", ".*"), True)
         self.assertEqual(is_opname_match("torch.subc", "torch.add,.*"), True)
         self.assertEqual(is_opname_match("torch.subc", None), True)
@@ -44,9 +40,7 @@ class TestOpNameMatch(unittest.TestCase):
         self.assertEqual(is_view_op("torch.Tensor.view"), True)
 
     def test_get_dtype_cast_dict_from_config(self):
-        dtype_cast_dict = get_dtype_cast_dict_form_str(
-            "torch.float32->torch.float16,torch.float64->torch.float16,torch.int64->torch.int32"
-        )
+        dtype_cast_dict = get_dtype_cast_dict_form_str("torch.float32->torch.float16,torch.float64->torch.float16,torch.int64->torch.int32")
         self.assertEqual(
             dtype_cast_dict,
             {

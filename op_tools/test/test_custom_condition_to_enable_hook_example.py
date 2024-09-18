@@ -23,19 +23,13 @@ z = torch.randn(2, 3, 4, dtype=torch.float).cuda()
 op_tools.apply_feature("torch.add", feature="fallback", condition_func=custom_condition)
 torch.add(x, x)
 
-op_tools.apply_feature(
-    "torch.sub", feature="autocompare", condition_func=custom_condition
-)
+op_tools.apply_feature("torch.sub", feature="autocompare", condition_func=custom_condition)
 torch.sub(y, y)
 torch.sub(z, z)
 
-op_tools.apply_feature(
-    "torch.mul", feature="op_capture", condition_func=custom_condition
-)
+op_tools.apply_feature("torch.mul", feature="op_capture", condition_func=custom_condition)
 torch.mul(x, x)
 
-op_tools.apply_feature(
-    "torch.div", feature="cast_dtype", condition_func=custom_condition
-)
+op_tools.apply_feature("torch.div", feature="cast_dtype", condition_func=custom_condition)
 os.environ["OP_DTYPE_CAST_DICT"] = "torch.float32->torch.float16"
 torch.div(y, y)

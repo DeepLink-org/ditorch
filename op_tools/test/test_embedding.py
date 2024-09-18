@@ -15,9 +15,7 @@ class TestEmbedding(unittest.TestCase):
             embedding = nn.Embedding(n, d, max_norm=True, device="cuda")
             W = torch.randn((m, d), requires_grad=True, device="cuda")
             idx = torch.tensor([1, 2]).cuda()
-            a = (
-                embedding.weight.clone() @ W.t()
-            )  # weight must be cloned for this to be differentiable
+            a = embedding.weight.clone() @ W.t()  # weight must be cloned for this to be differentiable
             b = embedding(idx) @ W.t()  # modifies weight in-place
             out = a.unsqueeze(0) + b.unsqueeze(1)
             loss = out.sigmoid().prod()

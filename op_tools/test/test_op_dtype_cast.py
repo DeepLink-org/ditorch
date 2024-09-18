@@ -46,9 +46,7 @@ dtype_caster.stop()
 # usage4
 os.environ["OP_DTYPE_CAST_DISABLE_LIST"] = ""
 os.environ["OP_DTYPE_CAST_LIST"] = "torch.Tensor.sort"  # only cast this op
-os.environ["OP_DTYPE_CAST_DICT"] = (
-    "torch.half->torch.float32"  # camb 370 not support bfloat16
-)
+os.environ["OP_DTYPE_CAST_DICT"] = "torch.half->torch.float32"  # camb 370 not support bfloat16
 dtype_caster.start()
 f()
 dtype_caster.stop()

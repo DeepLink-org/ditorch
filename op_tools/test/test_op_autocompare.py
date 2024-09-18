@@ -7,13 +7,7 @@ import op_tools
 
 def f():
     a = torch.rand(10, requires_grad=True, device="cuda").half()
-    a = (
-        torch.bernoulli(a)
-        + a
-        + torch.rand_like(a)
-        + torch.empty_like(a).uniform_()
-        + torch.empty_like(a).normal_()
-    )
+    a = torch.bernoulli(a) + a + torch.rand_like(a) + torch.empty_like(a).uniform_() + torch.empty_like(a).normal_()
     b = a * 2 + torch.randperm(a.numel(), dtype=a.dtype, device=a.device).view(a.shape)
     c = b + a
     d = c - a

@@ -140,9 +140,52 @@ VIEW_OPS = [
     "torch.Tensor.values",
 ]
 
+RANDOM_NUMBER_GEN_OPS = [
+    "torch.Tensor.random_",
+    "torch.Tensor.uniform_",
+    "torch.Tensor.normal_",
+    "torch.Tensor.bernoulli_",
+    "torch.Tensor.poisson_",
+    "torch.Tensor.multinomial_",
+    "torch.Tensor.random",
+    "torch.Tensor.uniform",
+    "torch.Tensor.normal",
+    "torch.Tensor.bernoulli",
+    "torch.Tensor.poisson",
+    "torch.Tensor.multinomial",
+    "torch.rand",
+    "torch.rand_like",
+    "torch.randperm",
+    "torch.bernoulli",
+    "torch.poisson",
+    "torch.randint_like",
+    "torch.randint",
+    "torch.randn",
+    "torch.randn_like",
+    "torch.multinomial",
+    "torch.nn.init.kaiming_uniform",
+    "torch.nn.init.kaiming_uniform_",
+    "torch.nn.init.trunc_normal_",
+    "torch.nn.init.uniform",
+    "torch.nn.init.normal",
+    "torch.nn.init.uniform_",
+    "torch.nn.init.normal_",
+    "torch.nn.init.warnings",
+    "torch.nn.init.xavier_normal",
+    "torch.nn.init.xavier_normal_",
+    "torch.nn.init.xavier_uniform",
+    "torch.nn.init.kaiming_normal",
+    "torch.nn.init.xavier_uniform_",
+    "torch.nn.init.kaiming_normal_",
+]
+
 
 def is_view_op(name):
     return name in VIEW_OPS
+
+
+def is_random_number_gen_op(name):
+    return name in RANDOM_NUMBER_GEN_OPS
 
 
 def tensor_max_diff(a, b):

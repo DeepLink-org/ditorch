@@ -14,48 +14,12 @@ from .utils import (
     is_view_op,
     is_opname_match,
     compare_result,
+    is_random_number_gen_op,
 )
 from .save_op_args import save_op_args, serialize_args_to_dict
 
 from .pretty_print import pretty_print_op_args, dict_data_list_to_table
 
-RANDOM_NUMBER_GEN_OPS = [
-    "torch.Tensor.random_",
-    "torch.Tensor.uniform_",
-    "torch.Tensor.normal_",
-    "torch.Tensor.bernoulli_",
-    "torch.Tensor.poisson_",
-    "torch.Tensor.multinomial_",
-    "torch.Tensor.random",
-    "torch.Tensor.uniform",
-    "torch.Tensor.normal",
-    "torch.Tensor.bernoulli",
-    "torch.Tensor.poisson",
-    "torch.Tensor.multinomial",
-    "torch.rand",
-    "torch.randperm",
-    "torch.bernoulli",
-    "torch.poisson",
-    "torch.randint_like",
-    "torch.randint",
-    "torch.randn",
-    "torch.randn_like",
-    "torch.multinomial",
-    "torch.nn.init.kaiming_uniform",
-    "torch.nn.init.kaiming_uniform_",
-    "torch.nn.init.trunc_normal_",
-    "torch.nn.init.uniform",
-    "torch.nn.init.normal",
-    "torch.nn.init.uniform_",
-    "torch.nn.init.normal_",
-    "torch.nn.init.warnings",
-    "torch.nn.init.xavier_normal",
-    "torch.nn.init.xavier_normal_",
-    "torch.nn.init.xavier_uniform",
-    "torch.nn.init.kaiming_normal",
-    "torch.nn.init.xavier_uniform_",
-    "torch.nn.init.kaiming_normal_",
-]
 
 SKIP_LIST_OPS = []
 
@@ -75,18 +39,6 @@ class BackwardHookHandle:
         hook_handle = tensor.grad_fn.register_hook(grad_fun)
         return grad_fun
 
-    def register_tensor_hook(self, index, tensor):
-        hook_handle = None
-
-        def grad_fun(grad):
-            self.compare_hook.set_input_grad(index, grad)
-            self.compare_hook.compare_all_grad()
-            hook_handle.remove()
-
-        hook_handle = tensor.register_hook(grad_fun)
-
-        return grad_fun
-
 
 global_autocompare_result = []
 
@@ -100,104 +52,54 @@ class OpAutoCompareHook(BaseHook):
     def __init__(self, name, func) -> None:
         super().__init__(name, func)
 
-    def before_call_op(self, *args, **kwargs):
-        self.forward_op_id = self.id
-        self.identifier = f"autocompare/{self.id}/{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}"
-        with DisableHookGuard():
-            self.is_cpu_op, self.device = is_cpu_op(*args, **kwargs)
-            if self.is_cpu_op:
-                return
+    def copy_input_to_cpu(self):
+        self.args_cpu = to_device(
+            "cpu",
+            self.args,
+            detach=True,
+        )
+        self.kwargs_cpu = to_device(
+            "cpu",
+            self.kwargs or {},
+            detach=True,
+        )
+
+    def run_forward_on_cpu(self):
+        try:
+            self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
+            self.result_device = to_device("cpu", self.result, detach=True)
+            self.dtype_cast_dict = dict()
+            args_cpu = self.args_cpu
+        except Exception as e:  # noqa: F841
+            self.dtype_cast_dict = OpAutoCompareHook.AUTO_COMPARE_DTYPE_CAST_DICT
+            # some op on cpu backend not support half, bfloat16
             self.args_cpu = to_device(
                 "cpu",
-                self.args,
+                self.args_cpu,
+                dtype_cast_dict=self.dtype_cast_dict,
                 detach=True,
             )
             self.kwargs_cpu = to_device(
                 "cpu",
-                self.kwargs or {},
+                self.kwargs_cpu or {},
+                dtype_cast_dict=self.dtype_cast_dict,
                 detach=True,
             )
-
-    def after_call_op(self, result):  # noqa:C901
-        if self.is_cpu_op:
-            return
-        with DisableHookGuard():
-            self.result = result
-            try:
-                self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
-                self.result_device = to_device("cpu", self.result, detach=True)
-                self.dtype_cast_dict = dict()
+            # RuntimeError: a leaf Variable that requires grad is being used in an in-place operation.
+            if (is_inplace_op(self.name) or is_view_op(self.name)) and self.args[0].requires_grad:
+                args_cpu = [item for item in self.args_cpu]
+                args_cpu[0] = args_cpu[0].clone()
+                self.result_cpu = self.func(*args_cpu, **self.kwargs_cpu)
+            else:
                 args_cpu = self.args_cpu
-            except Exception as e:  # noqa: F841
-                self.dtype_cast_dict = OpAutoCompareHook.AUTO_COMPARE_DTYPE_CAST_DICT
-                # some op on cpu backend not support half, bfloat16
-                self.args_cpu = to_device(
-                    "cpu",
-                    self.args_cpu,
-                    dtype_cast_dict=self.dtype_cast_dict,
-                    detach=True,
-                )
-                self.kwargs_cpu = to_device(
-                    "cpu",
-                    self.kwargs_cpu or {},
-                    dtype_cast_dict=self.dtype_cast_dict,
-                    detach=True,
-                )
-                # RuntimeError: a leaf Variable that requires grad is being used in an in-place operation.
-                if (is_inplace_op(self.name) or is_view_op(self.name)) and self.args[0].requires_grad:
-                    args_cpu = [item for item in self.args_cpu]
-                    args_cpu[0] = args_cpu[0].clone()
-                    self.result_cpu = self.func(*args_cpu, **self.kwargs_cpu)
-                else:
-                    args_cpu = self.args_cpu
-                    self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
+                self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
 
-                self.result_device = to_device(
-                    "cpu",
-                    self.result,
-                    dtype_cast_dict=self.dtype_cast_dict,
-                    detach=True,
-                )
-
-            if is_inplace_op(self.name):
-                compare_info = compare_result(self.name, self.args[0], args_cpu[0])
-                allclose = compare_info["allclose"]
-                if not allclose:
-                    self.save_forward_args()
-                compare_info.update({"forward_id": self.forward_op_id})
-                global_autocompare_result.append(compare_info)
-
-            compare_info = compare_result(self.name, self.result_device, self.result_cpu)
-            compare_info.update({"forward_id": self.forward_op_id})
-            global_autocompare_result.append(compare_info)
-            allclose = compare_info["allclose"]
-
-            if self.result is None:
-                print(f"{self.name} output is None, acc not checked")
-                return
-
-            self.forward_allclose = allclose
-            if not allclose:
-                pretty_print_op_args(
-                    self.name,
-                    serialize_args_to_dict(*self.args, **self.kwargs),
-                    serialize_args_to_dict(self.result),
-                )
-                self.save_forward_args()
-
-            self.backward_hook_handle = BackwardHookHandle(self)
-            for result in traverse_container(self.result):
-                if isinstance(result, torch.Tensor):
-                    if result.grad_fn is not None:
-                        self.backward_hook_handle.register_grad_fn_hook(result)
-            index = -1
-            for arg in traverse_container(self.args):
-                index += 1
-                if isinstance(arg, torch.Tensor) and arg.requires_grad:
-                    self.backward_hook_handle.register_tensor_hook(index, arg)
-
-            self.args = to_device("cpu", self.args, detach=True)
-            self.kwargs = to_device("cpu", self.kwargs or {}, detach=True)
+            self.result_device = to_device(
+                "cpu",
+                self.result,
+                dtype_cast_dict=self.dtype_cast_dict,
+                detach=True,
+            )
 
     def run_backward_on_cpu(self, grad_inputs, grad_output):
         self.grad_outputs_cpu = to_device("cpu", grad_output, dtype_cast_dict=self.dtype_cast_dict, detach=True)
@@ -206,16 +108,37 @@ class OpAutoCompareHook(BaseHook):
             if isinstance(arg_cpu, torch.Tensor) and arg_cpu.grad is not None:
                 arg_cpu.grad.zero_()
 
+        self.args_cpu_grad = []
+
+        def post_hook(grad_inputs, grad_outputs):
+            self.args_cpu_grad = [grad_input for grad_input in grad_inputs]
+
         for result_cpu in traverse_container(self.result_cpu):
             if isinstance(result_cpu, torch.Tensor) and result_cpu.requires_grad:
+                handle = result_cpu.grad_fn.register_hook(post_hook)
                 result_cpu.backward(*self.grad_outputs_cpu)
+                handle.remove()
 
-        self.args_cpu_grad = []
-        for i in range(len(self.args_cpu)):
-            if isinstance(self.args_cpu[i], torch.Tensor) and self.args_cpu[i].grad is not None:
-                self.args_cpu_grad.append(self.args_cpu[i].grad)
-            else:
-                self.args_cpu_grad.append(None)
+    def register_backward_hook_for_grads(self):
+        self.backward_hook_handle = BackwardHookHandle(self)
+        for result in traverse_container(self.result):
+            if isinstance(result, torch.Tensor):
+                if result.grad_fn is not None:
+                    self.backward_hook_handle.register_grad_fn_hook(result)
+
+    def compare_forward_result(self):
+        compare_info = compare_result(self.name, self.result_device, self.result_cpu)
+        compare_info.update({"forward_id": self.forward_op_id})
+        global_autocompare_result.append(compare_info)
+        allclose = compare_info["allclose"]
+        self.forward_allclose = allclose
+        if not allclose:
+            pretty_print_op_args(
+                self.name,
+                serialize_args_to_dict(*self.args, **self.kwargs),
+                serialize_args_to_dict(self.result),
+            )
+            self.save_forward_args()
 
     def count_params_with_requires_grad(self):
         count = 0
@@ -225,26 +148,9 @@ class OpAutoCompareHook(BaseHook):
         return count
 
     def compare_all_grad(self):
-        """
-        Since the order in which the two backward hooks registered by different operators \
-        are called is not exactly the same, and the gradient can only be calculated on the CPU \
-        after the grad_fn hook is called, there is a judgment here, \
-        because only when the gradient on the CPU is calculated \
-        and all the gradients of the device parameters are obtained, \
-        can the gradient information be compared.
-        """
-        if not hasattr(self, "args_cpu_grad"):
-            return
-        if not hasattr(self, "args_grad"):
-            return
-
-        # Check if all gradients have been obtained
-        for i in range(len(self.args)):
-            arg = self.args[i]
-            if isinstance(arg, torch.Tensor) and (arg.requires_grad and self.args_grad[i] is None):
-                return
-
+        self.args_grad = self.grad_inputs_cpu
         compare_info = compare_result(self.name + " grad", self.args_cpu_grad, self.args_grad)
+
         compare_info.update({"forward_id": self.forward_op_id})
         global_autocompare_result.append(compare_info)
         if not compare_info["allclose"]:
@@ -254,11 +160,6 @@ class OpAutoCompareHook(BaseHook):
             self.save_backward_args()
         self = None
         gc.collect()
-
-    def set_input_grad(self, index, grad):
-        if not hasattr(self, "args_grad"):
-            self.args_grad = [None for i in range(len(self.args))]
-        self.args_grad[index] = to_device("cpu", grad, dtype_cast_dict=self.dtype_cast_dict, detach=True)
 
     def save_forward_args(self):
         save_op_args(
@@ -298,8 +199,34 @@ class OpAutoCompareHook(BaseHook):
             *tuple(self.grad_outputs_cpu),
         )
 
+    def before_call_op(self, *args, **kwargs):
+        self.forward_op_id = self.id
+        self.identifier = f"autocompare/{self.id}/{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}"
+        with DisableHookGuard():
+            self.is_cpu_op, self.device = is_cpu_op(*args, **kwargs)
+            if self.is_cpu_op:
+                return
+            self.copy_input_to_cpu()
+
+    def after_call_op(self, result):  # noqa:C901
+        if self.is_cpu_op:
+            return
+        with DisableHookGuard():
+            self.run_forward_on_cpu()
+
+            if self.result is None and self.result_cpu is None:
+                print(f"{self.name} output is None, no check for accuracy")
+                return
+
+            self.compare_forward_result()
+
+            self.register_backward_hook_for_grads()
+
+            self.args = to_device("cpu", self.args, detach=True)
+            self.kwargs = to_device("cpu", self.kwargs or {}, detach=True)
+
     def is_should_apply(self, *args, **kwargs):
-        if self.name in RANDOM_NUMBER_GEN_OPS:
+        if is_random_number_gen_op(self.name):
             return False
 
         if self.name in SKIP_LIST_OPS:

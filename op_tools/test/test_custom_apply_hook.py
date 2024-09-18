@@ -49,15 +49,9 @@ def _test_function(x, y):
 
 class TestCustomApplyHook(unittest.TestCase):
     def test_fallback_op(self):
-        op_tools.apply_feature(
-            ops=["torch.add", "torch.sub", "torch.mul", "torch.div"], feature="fallback"
-        )
-        x = torch.tensor(
-            [1, 2, 3], dtype=torch.float16, device="cuda", requires_grad=True
-        )
-        y = torch.tensor(
-            [4, 5, 6], dtype=torch.float16, device="cuda", requires_grad=True
-        )
+        op_tools.apply_feature(ops=["torch.add", "torch.sub", "torch.mul", "torch.div"], feature="fallback")
+        x = torch.tensor([1, 2, 3], dtype=torch.float16, device="cuda", requires_grad=True)
+        y = torch.tensor([4, 5, 6], dtype=torch.float16, device="cuda", requires_grad=True)
         _test_function(x, y)
 
     def test_dump_all_args(self):
@@ -65,12 +59,8 @@ class TestCustomApplyHook(unittest.TestCase):
             ops=["torch.add", "torch.sub", "torch.mul", "torch.div"],
             feature="dump_op_args",
         )
-        x = torch.tensor(
-            [1, 2, 3], dtype=torch.float16, device="cuda", requires_grad=True
-        )
-        y = torch.tensor(
-            [4, 5, 6], dtype=torch.float16, device="cuda", requires_grad=True
-        )
+        x = torch.tensor([1, 2, 3], dtype=torch.float16, device="cuda", requires_grad=True)
+        y = torch.tensor([4, 5, 6], dtype=torch.float16, device="cuda", requires_grad=True)
 
         _test_function(x, y)
 
@@ -79,12 +69,8 @@ class TestCustomApplyHook(unittest.TestCase):
             ops=["torch.add", "torch.sub", "torch.mul", "torch.div"],
             feature="op_capture",
         )
-        x = torch.tensor(
-            [1, 2, 3], dtype=torch.float16, device="cuda", requires_grad=True
-        )
-        y = torch.tensor(
-            [4, 5, 6], dtype=torch.float16, device="cuda", requires_grad=True
-        )
+        x = torch.tensor([1, 2, 3], dtype=torch.float16, device="cuda", requires_grad=True)
+        y = torch.tensor([4, 5, 6], dtype=torch.float16, device="cuda", requires_grad=True)
 
         _test_function(x, y)
 
@@ -93,12 +79,8 @@ class TestCustomApplyHook(unittest.TestCase):
             ops=["torch.add", "torch.sub", "torch.mul", "torch.div"],
             feature="measure_op_time",
         )
-        x = torch.tensor(
-            [1, 2, 3], device="cuda", dtype=torch.float16, requires_grad=True
-        )
-        y = torch.tensor(
-            [4, 5, 6], device="cuda", dtype=torch.float16, requires_grad=True
-        )
+        x = torch.tensor([1, 2, 3], device="cuda", dtype=torch.float16, requires_grad=True)
+        y = torch.tensor([4, 5, 6], device="cuda", dtype=torch.float16, requires_grad=True)
         _test_function(x, y)
 
     def test_cast_dtype(self):
@@ -124,20 +106,12 @@ class TestCustomApplyHook(unittest.TestCase):
             feature="dump_op_args",
             condition_func=condition_func,
         )
-        x = torch.tensor(
-            [1, 2, 3], dtype=torch.float16, device="cuda", requires_grad=True
-        )
-        y = torch.tensor(
-            [4, 5, 6], dtype=torch.float16, device="cuda", requires_grad=True
-        )
+        x = torch.tensor([1, 2, 3], dtype=torch.float16, device="cuda", requires_grad=True)
+        y = torch.tensor([4, 5, 6], dtype=torch.float16, device="cuda", requires_grad=True)
         _test_function(x, y)
 
-        x = torch.tensor(
-            [1, 2, 3], dtype=torch.float32, device="cuda", requires_grad=True
-        )
-        y = torch.tensor(
-            [4, 5, 6], dtype=torch.float32, device="cuda", requires_grad=True
-        )
+        x = torch.tensor([1, 2, 3], dtype=torch.float32, device="cuda", requires_grad=True)
+        y = torch.tensor([4, 5, 6], dtype=torch.float32, device="cuda", requires_grad=True)
         _test_function(x, y)
 
     def test_condition_autocompare(self):
@@ -157,18 +131,10 @@ class TestCustomApplyHook(unittest.TestCase):
                 print(f"not autocompare beacuse input dim is {a.dim()}")
                 return False
 
-        op_tools.apply_feature(
-            "torch.add", feature="autocompare", condition_func=condition_func1
-        )
-        op_tools.apply_feature(
-            "torch.sub", feature="autocompare", condition_func=condition_func2
-        )
-        op_tools.apply_feature(
-            "torch.mul", feature="autocompare", condition_func=condition_func1
-        )
-        op_tools.apply_feature(
-            "torch.div", feature="autocompare", condition_func=condition_func2
-        )
+        op_tools.apply_feature("torch.add", feature="autocompare", condition_func=condition_func1)
+        op_tools.apply_feature("torch.sub", feature="autocompare", condition_func=condition_func2)
+        op_tools.apply_feature("torch.mul", feature="autocompare", condition_func=condition_func1)
+        op_tools.apply_feature("torch.div", feature="autocompare", condition_func=condition_func2)
 
         x = torch.randn(3, 4, dtype=torch.float16, device="cuda", requires_grad=True)
         y = torch.randn(3, 4, dtype=torch.float16, device="cuda", requires_grad=True)
@@ -177,6 +143,17 @@ class TestCustomApplyHook(unittest.TestCase):
         x = torch.randn(3, 4, dtype=torch.float32, device="cuda", requires_grad=True)
         y = torch.randn(3, 4, dtype=torch.float32, device="cuda", requires_grad=True)
         _test_function(x, y)
+
+    def test_condition_autocompare_linear(self):
+        device = torch.device("cuda")
+        input = torch.randn(20, 30, requires_grad=True).to(device)
+        weight = torch.randn(40, 30, requires_grad=True, device=device)
+        bias = torch.randn(40, requires_grad=True, device=device)
+
+        op_tools.apply_feature("torch.nn.functional.linear", feature="autocompare")
+        func = torch.nn.functional.linear
+        out = func(input, weight, bias)
+        out.sum().backward()
 
 
 if __name__ == "__main__":
