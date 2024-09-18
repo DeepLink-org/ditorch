@@ -154,6 +154,7 @@ RANDOM_NUMBER_GEN_OPS = [
     "torch.Tensor.poisson",
     "torch.Tensor.multinomial",
     "torch.rand",
+    "torch.rand_like",
     "torch.randperm",
     "torch.bernoulli",
     "torch.poisson",
