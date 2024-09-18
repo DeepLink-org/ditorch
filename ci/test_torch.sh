@@ -5,7 +5,7 @@ export DISABLED_TESTS_FILE=ditorch/ditorch_test/unsupported_test_cases/torch_npu
 # python ditorch/ditorch_test/main.py
 # python ditorch/ditorch_test/processed_tests/test_nn.py
 
-python ci/test_deivce.py
+python ci/test_device.py
 
 if [ "$(ls -A ditorch/ditorch_test/failed_tests_record)" ]; then
     echo "Test torch failed! You can check failed_tests_record for more info!"
