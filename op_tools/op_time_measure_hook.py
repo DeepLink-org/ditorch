@@ -16,6 +16,63 @@ from .pretty_print import (
 global_elasped_info_dict = dict()
 
 
+class TimeMeasureResultCache:
+    global_elasped_info_dict = dict()
+
+    def __init__(self) -> None:
+        self.file_name = f"op_tools_results/op_time_measure_result/op_elasped_info_pid{os.getpid()}_{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}.csv"  # noqa: E501
+        self.dir = self.file_name[0 : self.file_name.rfind("/")]
+        self.ordered_keys = [
+            "name",
+            "forward_id",
+            "forward_elasped",
+            "backward_elasped",
+            "unit",
+            "input",
+            "output",
+            "grad_inputs",
+            "grad_outputs",
+        ]
+
+    def append(self, forward_id, elasped_info):
+        if forward_id not in self.global_elasped_info_dict:
+            self.global_elasped_info_dict[forward_id] = elasped_info
+        else:
+            self.global_elasped_info_dict[forward_id].update(elasped_info)
+
+        if len(self.global_elasped_info_dict) > 1000:
+            self.write_to_file()
+
+    def write_to_file(self):
+        if len(self.global_elasped_info_dict) == 0:
+            return
+        simple_data_list = []
+        for key, value in self.global_elasped_info_dict.items():
+            new_value = {k: value[k] for k in self.ordered_keys}
+            simple_value = {k: value[k] for k in self.ordered_keys[0:5]}
+            simple_data_list.append(simple_value)
+            self.global_elasped_info_dict[key] = new_value
+
+        print(dict_data_list_to_table(simple_data_list))
+
+        table = dict_data_list_to_table(list(self.global_elasped_info_dict.values()))
+        self.global_elasped_info_dict.clear()
+        data_string = table.get_csv_string()
+        os.makedirs(self.dir, exist_ok=True)
+
+        with open(self.file_name, "a+") as f:
+            f.write(data_string)
+            f.close
+        print(f"op elasped info saved to {self.file_name}")
+
+
+time_measure_result_cache = TimeMeasureResultCache()
+
+
+def dump_all_op_elasped_info():
+    time_measure_result_cache.write_to_file()
+
+
 class BackwardHookHandle:
     def __init__(self, name, id) -> None:
         self.name = name
@@ -47,7 +104,7 @@ class BackwardHookHandle:
             print(dict_data_list_to_table([elasped_info_dict]))
             elasped_info_dict["grad_inputs"] = serialize_args_to_dict(grad_inputs)
             elasped_info_dict["grad_outputs"] = serialize_args_to_dict(grad_outputs)
-            global_elasped_info_dict[self.id].update(elasped_info_dict)
+            time_measure_result_cache.append(self.id, elasped_info_dict)
 
         return grad_fun
 
@@ -93,38 +150,13 @@ class OpTimeMeasureHook(BaseHook):
             print(dict_data_list_to_table([elasped_info_dict]))
             elasped_info_dict["input"] = serialize_args_to_dict(*self.args, **self.kwargs)
             elasped_info_dict["output"] = serialize_args_to_dict(self.result)
-            global_elasped_info_dict[self.id] = elasped_info_dict
+            time_measure_result_cache.append(self.id, elasped_info_dict)
 
     def is_should_apply(self, *args, **kwargs):
         if is_opname_match(self.name, os.getenv("OP_TIME_MEASURE_DISABLE_LIST", "")):
             return False
 
         return is_opname_match(self.name, os.getenv("OP_TIME_MEASURE_LIST", ".*"))
-
-
-def dump_all_op_elasped_info():
-    if len(global_elasped_info_dict) == 0:
-        return
-    ordered_keys = ["name", "forward_id", "forward_elasped", "backward_elasped", "unit", "input", "output", "grad_inputs", "grad_outputs"]
-    simple_data_list = []
-    for key, value in global_elasped_info_dict.items():
-        new_value = {k: value[k] for k in ordered_keys}
-        simple_value = {k: value[k] for k in ordered_keys[0:5]}
-        simple_data_list.append(simple_value)
-        global_elasped_info_dict[key] = new_value
-
-    print(dict_data_list_to_table(simple_data_list))
-
-    table = dict_data_list_to_table(list(global_elasped_info_dict.values()))
-    data_string = table.get_csv_string()
-    file_name = f"op_tools_results/op_time_measure_result/op_elasped_info_pid{os.getpid()}_{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}.csv"  # noqa: E501
-    dir = file_name[0 : file_name.rfind("/")]
-    os.makedirs(dir, exist_ok=True)
-
-    with open(file_name, "w") as f:
-        f.write(data_string)
-        f.close
-    print(f"op elasped info saved to {file_name}")
 
 
 atexit.register(dump_all_op_elasped_info)

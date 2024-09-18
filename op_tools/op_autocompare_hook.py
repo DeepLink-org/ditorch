@@ -24,6 +24,42 @@ from .pretty_print import pretty_print_op_args, dict_data_list_to_table
 SKIP_LIST_OPS = []
 
 
+class AutoCompareResultCache:
+    global_autocompare_result = []
+
+    def __init__(self) -> None:
+        self.file_name = f"op_tools_results/op_autocompare_result/op_autocompare_info_pid{os.getpid()}_{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}.csv"  # noqa: E501
+        self.dir = self.file_name[0 : self.file_name.rfind("/")]
+
+    def append(self, forward_id, compare_info):
+        for result in compare_info["result_list"]:
+            self.global_autocompare_result.append({"forward_id": forward_id, **result})
+
+        if len(self.global_autocompare_result) > 1000:
+            self.write_to_file()
+
+    def write_to_file(self):
+        if len(self.global_autocompare_result) == 0:
+            return
+        table = dict_data_list_to_table(self.global_autocompare_result)
+        print(table)
+        self.global_autocompare_result.clear()
+        data_string = table.get_csv_string()
+
+        os.makedirs(self.dir, exist_ok=True)
+        with open(self.file_name, "a+") as f:
+            f.write(data_string)
+            f.close
+        print(f"op autocompare result saved to {self.file_name}")
+
+
+compare_result_cache = AutoCompareResultCache()
+
+
+def dump_all_autocompare_info():
+    compare_result_cache.write_to_file()
+
+
 class BackwardHookHandle:
     def __init__(self, compare_hook) -> None:
         self.compare_hook = compare_hook
@@ -38,9 +74,6 @@ class BackwardHookHandle:
 
         hook_handle = tensor.grad_fn.register_hook(grad_fun)
         return grad_fun
-
-
-global_autocompare_result = []
 
 
 class OpAutoCompareHook(BaseHook):
@@ -128,8 +161,8 @@ class OpAutoCompareHook(BaseHook):
 
     def compare_forward_result(self):
         compare_info = compare_result(self.name, self.result_device, self.result_cpu)
-        compare_info.update({"forward_id": self.forward_op_id})
-        global_autocompare_result.append(compare_info)
+        compare_result_cache.append(self.forward_op_id, compare_info)
+
         allclose = compare_info["allclose"]
         self.forward_allclose = allclose
         if not allclose:
@@ -151,8 +184,8 @@ class OpAutoCompareHook(BaseHook):
         self.args_grad = self.grad_inputs_cpu
         compare_info = compare_result(self.name + " grad", self.args_cpu_grad, self.args_grad)
 
-        compare_info.update({"forward_id": self.forward_op_id})
-        global_autocompare_result.append(compare_info)
+        compare_result_cache.append(self.forward_op_id, compare_info)
+
         if not compare_info["allclose"]:
             # Parameters are not saved when forward accuracy is normal
             if self.forward_allclose:
@@ -239,29 +272,6 @@ class OpAutoCompareHook(BaseHook):
             return False
 
         return is_opname_match(self.name, os.getenv("OP_AUTOCOMPARE_LIST", ".*"))
-
-
-def dump_all_autocompare_info():
-    if len(global_autocompare_result) == 0:
-        return
-    all_compare_info_list = []
-    while len(global_autocompare_result) > 0:
-        compare_info = global_autocompare_result.pop(0)
-        while len(compare_info["result_list"]) > 0:
-            compare_result = compare_info["result_list"].pop(0)
-            all_compare_info_list.append({"forward_id": compare_info["forward_id"], **compare_result})
-
-    table = dict_data_list_to_table(all_compare_info_list)
-    print(table)
-    data_string = table.get_csv_string()
-    file_name = f"op_tools_results/op_autocompare_result/op_autocompare_info_pid{os.getpid()}_{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}.csv"  # noqa: E501
-    dir = file_name[0 : file_name.rfind("/")]
-    os.makedirs(dir, exist_ok=True)
-
-    with open(file_name, "w") as f:
-        f.write(data_string)
-        f.close
-    print(f"op autocompare info saved to {file_name}")
 
 
 atexit.register(dump_all_autocompare_info)
