@@ -67,7 +67,7 @@ class TestRegisterHook(unittest.TestCase):
         assert torch.allclose(bias.grad, bias_grad)
         # assert torch.allclose(input.grad, input_grad) # input.grad is None
 
-    def test_reister_tensor_hook_on_inplace_op(self):
+    def test_register_tensor_hook(self):
         x = torch.randn(20, 30, requires_grad=True, device=device)
         y = torch.randn(20, 30, requires_grad=True, device=device)
         a = torch.add(x, y) * 2
@@ -75,9 +75,13 @@ class TestRegisterHook(unittest.TestCase):
         c = torch.mul(b, a) + 1
         d = torch.div(c, b) - 2
 
+        grad_dict = {}
+
         def get_hook_with_label(label):
             def input_tensor_hook(grad):
                 print(f"{label} got grad")
+                nonlocal grad_dict
+                grad_dict[label] = grad
 
             return input_tensor_hook
 
@@ -89,6 +93,38 @@ class TestRegisterHook(unittest.TestCase):
         d.register_hook(get_hook_with_label("d"))
 
         d.backward(torch.ones_like(d))
+        assert torch.allclose(grad_dict["x"], x.grad)
+        assert torch.allclose(grad_dict["y"], y.grad)
+
+        x = x.cpu()
+        y = y.cpu()
+        x.require_grad_ = True
+        y.require_grad_ = True
+        a = torch.add(x, y) * 2
+        b = torch.sub(a, y) / 3
+        c = torch.mul(b, a) + 1
+        d = torch.div(c, b) - 2
+
+        cpu_grad_dict = {}
+
+        def get_hook_with_label(label):
+            def input_tensor_hook(grad):
+                print(f"{label} got grad")
+                nonlocal cpu_grad_dict
+                cpu_grad_dict[label] = grad
+
+            return input_tensor_hook
+
+        x.register_hook(get_hook_with_label("x"))
+        y.register_hook(get_hook_with_label("y"))
+        a.register_hook(get_hook_with_label("a"))
+        b.register_hook(get_hook_with_label("b"))
+        c.register_hook(get_hook_with_label("c"))
+        d.register_hook(get_hook_with_label("d"))
+
+        d.backward(torch.ones_like(d))
+        for item in ["x", "y", "a", "b", "c", "d"]:
+            assert torch.allclose(cpu_grad_dict[item], grad_dict[item].cpu(), atol=1e-5, rtol=1e-5), f"{item} not equal"
 
 
 if __name__ == "__main__":
