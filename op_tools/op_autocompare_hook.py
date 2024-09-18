@@ -243,8 +243,12 @@ class OpAutoCompareHook(BaseHook):
             arg = self.args[i]
             if isinstance(arg, torch.Tensor) and (arg.requires_grad and self.args_grad[i] is None):
                 return
+        # For leaf nodes, their grad_fn is None, so their gradients can only be obtained through torch.Tensor.register_hook
+        if self.count_params_with_requires_grad() != len(self.args_grad):
+            compare_info = compare_result(self.name + " grad", self.args_cpu_grad, self.args_grad)
+        else:
+            compare_info = compare_result(self.name + " grad", self.args_cpu_grad, self.grad_inputs_cpu)
 
-        compare_info = compare_result(self.name + " grad", self.args_cpu_grad, self.args_grad)
         compare_info.update({"forward_id": self.forward_op_id})
         global_autocompare_result.append(compare_info)
         if not compare_info["allclose"]:
