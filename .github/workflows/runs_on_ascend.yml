@@ -56,34 +56,7 @@ jobs:
       - name: test_torch
         run:  |
           set -ex
-          PLATFORM=/mnt/cache/share/platform
-
-          export MKL_NUM_THREADS=1
-          export OMP_NUM_THREADS=1
-
-          conda_env=torch_npu_py3.9
-          export PATH=/opt/miniconda3/envs/dipu_dev_py39/bin/:/opt/miniconda3/bin:/home/autolink/.local/bin:$PATH
-          source activate $conda_env
-
-
-          #export PYTHON_INCLUDE_DIR=/opt/conda/envs/py_3.9/include/python3.10
-          #export CUDA_PATH=/usr/local/cuda
-          #export VENDOR_INCLUDE_DIRS=$CUDA_PATH/include
-
-          export PYTHONPATH=${PLATFORM}/dep/DIPU_py3.9/torch/torch2.1.0:$PYTHONPATH
-          export PYTHONPATH=${PLATFORM}/dep/DIPU_py3.9/torch/torch_npu2.1.0:$PYTHONPATH
-          source /usr/local/Ascend/ascend-toolkit/set_env.sh
-          ARCH=$(uname -m)
-          echo "Current Architecture: $ARCH"
-
-          # set CPLUS_INCLUDE_PATH
-          if [ "$ARCH" == "aarch64" ]; then
-              export CPLUS_INCLUDE_PATH=/usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/include/:$CPLUS_INCLUDE_PATH
-          elif [ "$ARCH" == "x86_64" ]; then
-              export CPLUS_INCLUDE_PATH=/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux/include/:$CPLUS_INCLUDE_PATH
-          fi
-
-          pip install hypothesis
+          source /mnt/cache/share/platform/cienv/ditorch_env
           cd ${DEEPLINK_PATH}/${GITHUB_RUN_NUMBER} && rm -rf ${GITHUB_JOB} && cp -R Build ${GITHUB_JOB}  && cd ${GITHUB_JOB}
           echo "start to test"
           bash ci/test_torch.sh

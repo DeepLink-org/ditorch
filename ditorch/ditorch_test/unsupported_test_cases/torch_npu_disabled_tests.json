@@ -5,6 +5,12 @@
             "linux"
         ]
     ],
+    "test_LayerNorm_general_privateuse1 (__main__.TestNNDeviceTypePRIVATEUSE1)": [
+        "",
+        [
+            "linux"
+        ]
+    ],
     "test_AdaptiveLogSoftmax_cuda (__main__.TestNN)": [
         "AssertionError: Tensor-likes are not close!",
         [
