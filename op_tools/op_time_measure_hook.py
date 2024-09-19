@@ -40,7 +40,7 @@ class TimeMeasureResultCache:
         else:
             self.global_elasped_info_dict[forward_id].update(elasped_info)
 
-        if len(self.global_elasped_info_dict) > 1000:
+        if len(self.global_elasped_info_dict) > int(os.getenv("OP_TOOLS_MAX_CACHE_SIZE", "5000")):
             self.write_to_file()
 
     def write_to_file(self):
@@ -48,8 +48,8 @@ class TimeMeasureResultCache:
             return
         simple_data_list = []
         for key, value in self.global_elasped_info_dict.items():
-            new_value = {k: value[k] for k in self.ordered_keys}
-            simple_value = {k: value[k] for k in self.ordered_keys[0:5]}
+            new_value = {k: value.get(k,"-") for k in self.ordered_keys}
+            simple_value = {k: value.get(k,"-") for k in self.ordered_keys[0:5]}
             simple_data_list.append(simple_value)
             self.global_elasped_info_dict[key] = new_value
 

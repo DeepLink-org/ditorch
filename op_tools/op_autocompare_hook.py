@@ -35,7 +35,7 @@ class AutoCompareResultCache:
         for result in compare_info["result_list"]:
             self.global_autocompare_result.append({"forward_id": forward_id, **result})
 
-        if len(self.global_autocompare_result) > 1000:
+        if len(self.global_autocompare_result) > int(os.getenv("OP_TOOLS_MAX_CACHE_SIZE", "1000")):
             self.write_to_file()
 
     def write_to_file(self):

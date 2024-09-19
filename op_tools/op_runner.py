@@ -5,6 +5,7 @@ import torch
 import time
 from .utils import to_device, get_function_from_string, traverse_container, is_inplace_op
 from .op_autocompare_hook import OpAutoCompareHook
+from .op_time_measure_hook import OpTimeMeasureHook
 
 
 class OpRunnerHook(ABC):
@@ -42,7 +43,7 @@ class AsyncEventTimer(OpRunnerHook):
     def after_backward(self):
         self.backward_end_event.record(torch.cuda.current_stream)
 
-
+"""
 class SyncExecuteTimer(OpRunnerHook):
     def __init__(self) -> None:
         super().__init__()
@@ -66,6 +67,18 @@ class SyncExecuteTimer(OpRunnerHook):
         self.backward_end_time = time.time()
         self.backward_elasped_time = self.backward_end_time - self.forward_start_time
         print(f"SyncExecuteTimer: {self.runner.name} backward elasped {self.backward_elasped_time * 1000:>.8f} ms")
+"""
+
+class SyncExecuteTimer(OpRunnerHook):
+    def __init__(self) -> None:
+        super().__init__()
+        self.time_measure_hook = None
+
+    def before_forward(self):
+        if self.time_measure_hook is None:
+            self.time_measure_hook = OpTimeMeasureHook(self.runner.name, self.runner.func)
+            self.runner.func = self.time_measure_hook
+
 
 
 class OpAccyChecker(OpRunnerHook):
