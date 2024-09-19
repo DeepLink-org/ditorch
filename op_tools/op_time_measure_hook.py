@@ -48,8 +48,8 @@ class TimeMeasureResultCache:
             return
         simple_data_list = []
         for key, value in self.global_elasped_info_dict.items():
-            new_value = {k: value.get(k,"-") for k in self.ordered_keys}
-            simple_value = {k: value.get(k,"-") for k in self.ordered_keys[0:5]}
+            new_value = {k: value.get(k, "-") for k in self.ordered_keys}
+            simple_value = {k: value.get(k, "-") for k in self.ordered_keys[0:5]}
             simple_data_list.append(simple_value)
             self.global_elasped_info_dict[key] = new_value
 
