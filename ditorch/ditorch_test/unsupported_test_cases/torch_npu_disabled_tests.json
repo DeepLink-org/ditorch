@@ -5,6 +5,12 @@
             "linux"
         ]
     ],
+    "test_projections_lstm_check_device (__main__.TestNN)": [
+        "Segment Fault",
+        [
+            "linux"
+        ]
+    ], 
     "test_LayerNorm_general_privateuse1 (__main__.TestNNDeviceTypePRIVATEUSE1)": [
         "",
         [
