@@ -7,9 +7,9 @@ try:
 except Exception as e:  # noqa: F841
     pass
 try:
-    from ditorch import torch_dipu_adapter
+    from ditorch import torch_dipu_adapter  # noqa: F401
 
-    framework = "torch_dipu:" + torch_dipu_adapter.torch_dipu.__version__
+    framework = "torch_dipu"  # torch_dipu has not __version__ attr
 
 except Exception as e:  # noqa: F841
     pass
