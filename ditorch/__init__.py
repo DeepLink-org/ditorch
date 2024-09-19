@@ -28,4 +28,7 @@ try:
 except Exception as e:  # noqa: F841
     pass
 
+
+from ditorch import common_adapter  # noqa: F401,E402
+
 print(f"ditorch.framework: {framework}")
