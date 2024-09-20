@@ -28,7 +28,7 @@ class AutoCompareResultCache:
     global_autocompare_result = []
 
     def __init__(self) -> None:
-        self.file_name = f"op_tools_results/op_autocompare_result/op_autocompare_info_pid{os.getpid()}_{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}.csv"  # noqa: E501
+        self.file_name = f"/share/work/dongkaixing/logs/op_tools/op_tools_results/op_autocompare_result/op_autocompare_info_pid{os.getpid()}_{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}.csv"  # noqa: E501
         self.dir = self.file_name[0 : self.file_name.rfind("/")]
 
     def append(self, forward_id, compare_info):
