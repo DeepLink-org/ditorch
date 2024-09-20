@@ -21,7 +21,9 @@ from .save_op_args import save_op_args, serialize_args_to_dict
 from .pretty_print import pretty_print_op_args, dict_data_list_to_table
 
 
-SKIP_LIST_OPS = []
+SKIP_LIST_OPS = [
+    "torch.nn.functional.embedding",
+]
 
 
 class AutoCompareResultCache:
