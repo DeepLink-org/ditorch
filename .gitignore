@@ -118,9 +118,12 @@ cmake-build-*/
 
 #.core file
 core.*
+extra-info/  # ascend coredump relate file
 
 # CI temp directory
 mmlab_pack
+pytorch_test_temp
+pytorch_test_result_xml
 
 # CMake
 CMakeLists.txt.user
