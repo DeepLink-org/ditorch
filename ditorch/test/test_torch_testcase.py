@@ -3,6 +3,7 @@ import subprocess
 import json
 import shutil
 from ditorch.test.command_runner import CommandRunner
+from ditorch.test.summary_test_results import summary_test_results
 
 
 def copy_add_ditorch_import_to_pytorch_test_file(file_name, pytorch_dir, dest_dir):
@@ -59,7 +60,7 @@ def main():
         return -1
     pytorch_test_temp = "pytorch_test_temp"
     shutil.rmtree(pytorch_test_temp, ignore_errors=True)
-    shutil.copytree(pytorch_dir, pytorch_test_temp)
+    shutil.copytree(pytorch_dir, pytorch_test_temp, dirs_exist_ok=True)
 
     run_command_in_sub_process(f"python ditorch/test/discover_pytorch_test_case.py {pytorch_test_temp}/test pytorch_test_result")
     with open("pytorch_test_result/all_test_cases.json", "r") as f:
@@ -88,6 +89,7 @@ def main():
 
     testcase_runner = CommandRunner(commands_list, max_workers=64, cwd="pytorch_test_temp/test")
     testcase_runner.run()
+    summary_test_results("pytorch_test_result")
 
 
 if __name__ == "__main__":

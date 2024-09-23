@@ -58,4 +58,5 @@ jobs:
           cd ${DEEPLINK_PATH}/${GITHUB_RUN_NUMBER} && rm -rf ${GITHUB_JOB} && cp -R Build ${GITHUB_JOB}  && cd ${GITHUB_JOB}
           echo "start to test"
           source /mnt/cache/share/platform/env/ditorch_env
+          export PYTHONPATH=${PYTHONPATH}:$PWD
           srun -p camb_mlu370_m8 -n 1 --gres=mlu:1 bash ci/run_pytorch_test_cases.sh
