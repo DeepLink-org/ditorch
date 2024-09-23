@@ -2,6 +2,7 @@ import unittest
 import ditorch  # noqa: F401
 import sys
 import json
+import os
 
 
 def discover_test_cases_recursively(suite_or_case):
@@ -13,17 +14,6 @@ def discover_test_cases_recursively(suite_or_case):
     return rc
 
 
-def get_test_full_names(test_cases):
-    full_name_list = []
-    for case in test_cases:
-        id = case.id()
-        module_name = id.split(".")[0] + ".py"
-        test_name = id[id.find(".") + 1 :]
-        full_name = module_name + " " + test_name
-        full_name_list.append(full_name)
-    return full_name_list
-
-
 def discover_all_test_case(path="."):
     loader = unittest.TestLoader()
     test_cases = loader.discover(path)
@@ -31,7 +21,8 @@ def discover_all_test_case(path="."):
     return test_cases
 
 
-def dump_all_test_case_id_to_file(test_cases, path="all_test_cases.json"):
+def dump_all_test_case_id_to_file(test_cases, path):
+    os.makedirs(path, exist_ok=True)
     test_case_ids = {}
     case_num = 0
     for case in test_cases:
@@ -48,15 +39,23 @@ def dump_all_test_case_id_to_file(test_cases, path="all_test_cases.json"):
         else:
             test_case_ids[module_name].append(test_name)
 
-    with open(path, "wt") as f:
+    total_test_case_file_name = path + "/all_test_cases.json"
+    with open(total_test_case_file_name, "wt") as f:
         json.dump(test_case_ids, f)
 
-    print(f"dumped {case_num} test cases from {len(test_case_ids)} files to {path}")
+    for module_name, test_names in test_case_ids.items():
+        single_module_test_case_file_name = path + "/" + module_name + ".json"
+        with open(single_module_test_case_file_name, "wt") as f:
+            json.dump({module_name: test_names}, f)
+        print(f"dumped {len(test_names)} test cases from {module_name} files to {single_module_test_case_file_name}")
+
+    print(f"dumped {case_num} test cases from {len(test_case_ids)} files to {total_test_case_file_name}")
     return test_case_ids
 
 
 if __name__ == "__main__":
     print(f"discover:{sys.argv}")
-    path = sys.argv[1] if len(sys.argv) > 1 else "."
-    all_tests_case = discover_all_test_case(path)
-    dump_all_test_case_id_to_file(all_tests_case)
+    test_script_path = sys.argv[1] if len(sys.argv) > 1 else "."
+    output_path = sys.argv[2] if len(sys.argv) > 2 else "."
+    all_tests_case = discover_all_test_case(test_script_path)
+    dump_all_test_case_id_to_file(all_tests_case, output_path)

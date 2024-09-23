@@ -123,7 +123,7 @@ extra-info/  # ascend coredump relate file
 # CI temp directory
 mmlab_pack
 pytorch_test_temp
-pytorch_test_result_xml
+pytorch_test_result
 
 # CMake
 CMakeLists.txt.user
@@ -146,6 +146,7 @@ CMakeUserPresets.json
 
 # Autogened on ascend
 fusion_result.json
+ge_check_op.json
 
 op_tools_results/
 export_only_prof_dir/
