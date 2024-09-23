@@ -84,7 +84,7 @@ def main():
             )
 
     run_cpu_test_case_commands = "python run_test.py -k cpu -v --save-xml pytorch_test_result/xml"
-    commands_list.append(run_cpu_test_case_commands)
+    commands_list.append(("all_cpu_test_cases", run_cpu_test_case_commands))
 
     testcase_runner = CommandRunner(commands_list, max_workers=64, cwd="pytorch_test_temp/test")
     testcase_runner.run()

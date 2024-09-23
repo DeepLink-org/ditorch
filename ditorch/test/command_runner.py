@@ -2,6 +2,10 @@ import subprocess
 import json
 import os
 from multiprocessing import Process
+import atexit
+from prettytable import PrettyTable
+
+gloabl_test_result = []
 
 
 class CommandRunner:
@@ -38,6 +42,8 @@ class CommandRunner:
             json.dump(result_data, f, indent=4)
 
         print(f'\"{command}\" exit {result.returncode} {output_file}')
+        simple_result = {"test_case_id": command_id, "exit_code": result.returncode}
+        gloabl_test_result.append(simple_result)
 
     def run(self):
         processes = []
@@ -72,3 +78,17 @@ if __name__ == "__main__":
     runner.run()
 
     print("所有命令已完成，结果已保存为 JSON 格式到独立文件中")
+
+
+def dump_all_test_result():
+    table = PrettyTable()
+    table.field_names = ["test_case_id", "exit_code"]
+    for result in gloabl_test_result:
+        table.add_row([result["test_case_id"], result["exit_code"]])
+    print(table)
+
+    with open("pytorch_test_result/run_pytorch_test_cases_results.csv", "w") as f:
+        f.write(table.get_csv_string())
+
+
+atexit.register(dump_all_test_result)
