@@ -46,5 +46,17 @@ jobs:
           source /mnt/cache/share/platform/cienv/ditorch_env
           cd ${DEEPLINK_PATH}/${GITHUB_RUN_NUMBER} && rm -rf ${GITHUB_JOB} && cp -R Build ${GITHUB_JOB}  && cd ${GITHUB_JOB}
           echo "start to test"
-          bash ci/test.sh
+          bash ci/run_op_tools_test_cases.sh
 
+  Test_with_pytorch_test_case:
+    name: run pytorch test case on ascend
+    runs-on: tps-ascend-ci-910b
+    needs: [Build]
+    steps:
+      - name: test
+        run: |
+          set -ex
+          source /mnt/cache/share/platform/cienv/ditorch_env
+          cd ${DEEPLINK_PATH}/${GITHUB_RUN_NUMBER} && rm -rf ${GITHUB_JOB} && cp -R Build ${GITHUB_JOB}  && cd ${GITHUB_JOB}
+          echo "start to test"
+          bash ci/run_pytorch_test_cases.sh 2>&1
