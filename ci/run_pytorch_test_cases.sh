@@ -1,0 +1,1 @@
+python ditorch/test/test_torch_testcase.py 2>&1 | tee test_pytorch_case.log

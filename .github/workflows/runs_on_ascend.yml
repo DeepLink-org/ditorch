@@ -1,6 +1,12 @@
 name: runs on ascend
 on:
   workflow_dispatch:
+    inputs:
+      run_test_use_pytorch:
+        description: 'Run Test_use_pytorch job'
+        required: true
+        default: 'false'
+        type: boolean
   push:
     branches:
       - main
@@ -46,5 +52,19 @@ jobs:
           source /mnt/cache/share/platform/cienv/ditorch_env
           cd ${DEEPLINK_PATH}/${GITHUB_RUN_NUMBER} && rm -rf ${GITHUB_JOB} && cp -R Build ${GITHUB_JOB}  && cd ${GITHUB_JOB}
           echo "start to test"
-          bash ci/test.sh
+          bash ci/run_op_tools_test_cases.sh
 
+  Test_use_pytorch_test_case:
+    name: run pytorch test case on ascend
+    runs-on: tps-ascend-ci-910b
+    if: ${{ github.event.inputs.run_test_use_pytorch == 'true' || github.ref == 'refs/heads/main' }}
+    needs: [Build]
+    steps:
+      - name: test
+        run: |
+          set -ex
+          source /mnt/cache/share/platform/cienv/ditorch_env
+          export PYTHONPATH=${PYTHONPATH}:$PWD
+          cd ${DEEPLINK_PATH}/${GITHUB_RUN_NUMBER} && rm -rf ${GITHUB_JOB} && cp -R Build ${GITHUB_JOB}  && cd ${GITHUB_JOB}
+          echo "start to test"
+          bash ci/run_pytorch_test_cases.sh 2>&1
