@@ -14,6 +14,8 @@ import torch
 import ditorch
 ```
 
+[ditorch + Ascend910 pytorch原生测例通过情况](ascend_summary_of_pytorch_test_case_testing.csv)
+
 ## **2. 提供多个基础工具，解决训练过程的问题**
 
 提供模型训练过程中需要的基础工具，解决模型训练过程中出现的痛点问题 [算子工具](op_tools/README.md)。

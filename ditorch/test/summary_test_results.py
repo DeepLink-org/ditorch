@@ -4,7 +4,7 @@ from prettytable import PrettyTable
 
 
 def summary_test_results(test_result_dir):
-    test_result_files = glob.glob(test_result_dir + '/result_test_*.json')
+    test_result_files = glob.glob(test_result_dir + '/*/result_test_*.json')
     table = PrettyTable()
     table.field_names = ["test_case_id", "exit_code"]
     for file_name in test_result_files:
