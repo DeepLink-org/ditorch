@@ -23,11 +23,11 @@ def discover_all_test_case(path="."):
 
 def dump_all_test_case_id_to_file(test_cases, path):
     os.makedirs(path, exist_ok=True)
+    os.makedirs(path + "/test_case_ids", exist_ok=True)
     test_case_ids = {}
     case_num = 0
     for case in test_cases:
         case_id = case.id()
-        print(case_id)
         case_num += 1
         module_name = case_id.split(".")[0] + ".py"
         test_name = case_id[case_id.find(".") + 1 :]
@@ -39,12 +39,12 @@ def dump_all_test_case_id_to_file(test_cases, path):
         else:
             test_case_ids[module_name].append(test_name)
 
-    total_test_case_file_name = path + "/all_test_cases.json"
+    total_test_case_file_name = path + "/test_case_ids/all_test_cases.json"
     with open(total_test_case_file_name, "wt") as f:
         json.dump(test_case_ids, f)
 
     for module_name, test_names in test_case_ids.items():
-        single_module_test_case_file_name = path + "/" + module_name + ".json"
+        single_module_test_case_file_name = path + "/test_case_ids/" + module_name + ".json"
         with open(single_module_test_case_file_name, "wt") as f:
             json.dump({module_name: test_names}, f)
         print(f"dumped {len(test_names)} test cases from {module_name} files to {single_module_test_case_file_name}")
@@ -58,4 +58,5 @@ if __name__ == "__main__":
     test_script_path = sys.argv[1] if len(sys.argv) > 1 else "."
     output_path = sys.argv[2] if len(sys.argv) > 2 else "."
     all_tests_case = discover_all_test_case(test_script_path)
+    print(f"discover {len(all_tests_case)} test cases")
     dump_all_test_case_id_to_file(all_tests_case, output_path)

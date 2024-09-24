@@ -58,12 +58,16 @@ def main():
     if not os.path.isdir(pytorch_dir):
         print(f"{pytorch_dir} is not exist")
         return -1
+    print(f"TORCH_SOURCE_PATH: {pytorch_dir}")
     pytorch_test_temp = "pytorch_test_temp"
     shutil.rmtree(pytorch_test_temp, ignore_errors=True)
-    shutil.copytree(pytorch_dir, pytorch_test_temp, dirs_exist_ok=True)
+    print(f"start copy pytorch source files to {pytorch_test_temp}")
+    shutil.copytree(pytorch_dir + "/test", pytorch_test_temp + "/test", dirs_exist_ok=True)
+    shutil.copytree(pytorch_dir + "/tools", pytorch_test_temp + "/tools", dirs_exist_ok=True)
+    print(f"copy pytorch source files to {pytorch_test_temp} success")
 
     run_command_in_sub_process(f"python ditorch/test/discover_pytorch_test_case.py {pytorch_test_temp}/test pytorch_test_result")
-    with open("pytorch_test_result/all_test_cases.json", "r") as f:
+    with open("pytorch_test_result/test_case_ids/all_test_cases.json", "r") as f:
         test_case_ids = json.load(f)
 
     source_files = test_case_ids.keys()

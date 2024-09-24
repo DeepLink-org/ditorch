@@ -39,7 +39,7 @@ class CommandRunner:
         with open(output_file, "w") as f:
             json.dump(result_data, f, indent=4)
 
-        print(f'\"{command}\" exit {result.returncode} {output_file}')
+        print(f'\"{command}\" exit {result.returncode}, details saved to {output_file}')
 
     def run(self):
         processes = []
