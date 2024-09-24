@@ -1,6 +1,11 @@
 name: runs on camb
 on:
   workflow_dispatch:
+    inputs:
+      run_test_use_pytorch:
+        description: 'Run Test_use_pytorch job'
+        required: false
+        default: 'false'
   push:
     branches:
       - main
@@ -50,6 +55,7 @@ jobs:
   Test_use_pytorch_test_case:
     name: run pytorch test case on camb
     runs-on: tps-camb-ci
+    if: ${{ github.event.inputs.run_test_use_pytorch == 'true' || github.ref == 'refs/heads/main' }}
     needs: [Build]
     steps:
       - name: test
