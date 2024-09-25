@@ -3,7 +3,7 @@ import subprocess
 import json
 import shutil
 from ditorch.test.command_runner import CommandRunner
-from ditorch.test.summary_test_results import summary_test_results
+from ditorch.test.summary_test_results import summary_test_results, get_tested_test_cases
 import argparse
 
 
@@ -51,6 +51,27 @@ def split_device_and_cpu_test_cases(test_case_ids):
     return device_test_case_ids, cpu_test_case_ids
 
 
+def filter_tested_cases(test_case_ids, tested_test_cases):
+    filtered_test_case_ids = {}
+    tested_case_count = 0
+    total_case_count = 0
+    for test_script_file, test_cases in test_case_ids.items():
+        total_case_count += len(test_cases)
+        if test_script_file in tested_test_cases.keys():
+            not_tested_cases = []
+            for case in test_cases:
+                if case not in tested_test_cases[test_script_file]:
+                    not_tested_cases.append(case)
+            if len(not_tested_cases) > 0:
+                filtered_test_case_ids[test_script_file] = not_tested_cases
+                tested_case_count += len(not_tested_cases)
+        else:
+            filtered_test_case_ids[test_script_file] = test_cases
+            tested_case_count += len(test_cases)
+    print(f"There are {tested_case_count} test cases after filtering, and there are {total_case_count} test cases before filtering.")
+    return filtered_test_case_ids
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -95,6 +116,9 @@ def main():
     with open(f"{pytorch_test_result}/test_case_ids/all_test_cases.json", "r") as f:
         test_case_ids = json.load(f)
 
+    tested_case = get_tested_test_cases(f"{pytorch_test_result}")
+    test_case_ids = filter_tested_cases(test_case_ids, tested_case)
+
     if not os.path.exists(pytorch_test_temp):
         if not pytorch_dir:
             print("TORCH_SOURCE_PATH not set")
@@ -113,7 +137,6 @@ def main():
             copy_add_ditorch_import_to_pytorch_test_file(file_name, pytorch_dir, dest_dir=f"{pytorch_test_temp}/test")
 
     commands_list = []
-
     device_test_case_ids, cpu_test_cases_ids = split_device_and_cpu_test_cases(test_case_ids)
 
     for test_script_file, test_cases in device_test_case_ids.items():
