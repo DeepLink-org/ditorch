@@ -23,10 +23,23 @@ class CommandRunner:
 
     def _run_command(self, command_id, command):
         """运行命令并将结果写入独立的 JSON 文件中"""
-        result_data = {"command_id": command_id, "returncode": 0, "command": command, "stdout": "", "stderr": "", "exception": ""}
+        result_data = {
+            "command_id": command_id,
+            "returncode": 0,
+            "command": command,
+            "stdout": "",
+            "stderr": "",
+            "exception": "",
+        }
         try:
             result = subprocess.run(
-                command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=False, shell=True, cwd=self.cwd
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=False,
+                shell=True,
+                cwd=self.cwd,
             )
         except Exception as e:
             result_data["exception"] = str(e)
@@ -39,7 +52,7 @@ class CommandRunner:
         with open(output_file, "w") as f:
             json.dump(result_data, f, indent=4)
 
-        print(f'\"{command}\" exit {result.returncode} {output_file}')
+        print(f'"{command}" exit {result.returncode}, details saved to {output_file}')
 
     def run(self):
         processes = []
