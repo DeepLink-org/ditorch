@@ -4,6 +4,7 @@ import json
 import shutil
 from ditorch.test.command_runner import CommandRunner
 from ditorch.test.summary_test_results import summary_test_results
+import argparse
 
 
 def copy_add_ditorch_import_to_pytorch_test_file(file_name, pytorch_dir, dest_dir):
@@ -16,7 +17,7 @@ def copy_add_ditorch_import_to_pytorch_test_file(file_name, pytorch_dir, dest_di
     new_file_name = dest_dir + "/" + file_name
     with open(new_file_name, "w") as new_file:
         new_file.write(content)
-    print(f'\"import ditorch\" has been added to the beginning of the {new_file_name} file line')
+    print(f'"import ditorch" has been added to the beginning of the {new_file_name} file line')
 
 
 def run_command_in_sub_process(commands):
@@ -50,29 +51,66 @@ def split_device_and_cpu_test_cases(test_case_ids):
     return device_test_case_ids, cpu_test_case_ids
 
 
-def main():
-    pytorch_dir = os.environ.get("TORCH_SOURCE_PATH")
-    if not pytorch_dir:
-        print("TORCH_SOURCE_PATH not set")
-        return -1
-    if not os.path.isdir(pytorch_dir):
-        print(f"{pytorch_dir} is not exist")
-        return -1
-    print(f"TORCH_SOURCE_PATH: {pytorch_dir}")
-    pytorch_test_temp = "pytorch_test_temp"
-    shutil.rmtree(pytorch_test_temp, ignore_errors=True)
-    print(f"start copy pytorch source files to {pytorch_test_temp}")
-    shutil.copytree(pytorch_dir + "/test", pytorch_test_temp + "/test", dirs_exist_ok=True)
-    shutil.copytree(pytorch_dir + "/tools", pytorch_test_temp + "/tools", dirs_exist_ok=True)
-    print(f"copy pytorch source files to {pytorch_test_temp} success")
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--pytorch_dir",
+        type=str,
+        default=os.environ.get("TORCH_SOURCE_PATH", None),
+        help="path to pytorch repo",
+    )
+    parser.add_argument(
+        "--skip_discover_test_case",
+        action="store_true",
+        help="wether to skip discover test cases",
+    )
+    parser.add_argument("--max_workers", type=int, default=64, help="max workers number")
+    parser.add_argument(
+        "--pytorch_test_temp",
+        type=str,
+        default="pytorch_test_temp",
+        help="Copy the pytorch test script to this directory",
+    )
+    parser.add_argument(
+        "--pytorch_test_result",
+        type=str,
+        default="pytorch_test_result",
+        help="The directory to save the result files generated using pytorch test case testing",
+    )
 
-    run_command_in_sub_process(f"python ditorch/test/discover_pytorch_test_case.py {pytorch_test_temp}/test pytorch_test_result")
-    with open("pytorch_test_result/test_case_ids/all_test_cases.json", "r") as f:
+    args = parser.parse_args()
+    return args
+
+
+def main():
+    args = parse_args()
+    print(args)
+    pytorch_test_temp = args.pytorch_test_temp
+    pytorch_test_result = args.pytorch_test_result
+    pytorch_dir = args.pytorch_dir
+
+    if not args.skip_discover_test_case or not os.path.exists(f"{pytorch_test_result}/test_case_ids/all_test_cases.json"):
+        run_command_in_sub_process(f"python ditorch/test/discover_pytorch_test_case.py {pytorch_dir}/test {pytorch_test_result}")
+
+    with open(f"{pytorch_test_result}/test_case_ids/all_test_cases.json", "r") as f:
         test_case_ids = json.load(f)
 
-    source_files = test_case_ids.keys()
-    for file_name in source_files:
-        copy_add_ditorch_import_to_pytorch_test_file(file_name, pytorch_dir, dest_dir="pytorch_test_temp/test")
+    if not os.path.exists(pytorch_test_temp):
+        if not pytorch_dir:
+            print("TORCH_SOURCE_PATH not set")
+            return -1
+        if not os.path.isdir(pytorch_dir):
+            print(f"{pytorch_dir} is not exist")
+            return -1
+        print(f"TORCH_SOURCE_PATH: {pytorch_dir}")
+        print(f"start copy pytorch source files to {pytorch_test_temp}")
+        shutil.copytree(pytorch_dir + "/test", pytorch_test_temp + "/test", dirs_exist_ok=True)
+        shutil.copytree(pytorch_dir + "/tools", pytorch_test_temp + "/tools", dirs_exist_ok=True)
+        print(f"copy pytorch source files to {pytorch_test_temp} success")
+
+        source_files = test_case_ids.keys()
+        for file_name in source_files:
+            copy_add_ditorch_import_to_pytorch_test_file(file_name, pytorch_dir, dest_dir=f"{pytorch_test_temp}/test")
 
     commands_list = []
 
@@ -80,7 +118,7 @@ def main():
 
     for test_script_file, test_cases in device_test_case_ids.items():
         for case in test_cases:
-            commands = f"python {test_script_file} {case} -v --save-xml pytorch_test_result/xml"
+            commands = f"python {test_script_file} {case} -v --save-xml {pytorch_test_result}/xml"
             commands_list.append(
                 (
                     f"{test_script_file}.{case}",
@@ -88,12 +126,12 @@ def main():
                 )
             )
 
-    run_cpu_test_case_commands = "python run_test.py -k cpu -v --save-xml pytorch_test_result/xml"
+    run_cpu_test_case_commands = f"python run_test.py -k cpu -v --save-xml {pytorch_test_result}/xml"
     commands_list.append(("all_cpu_test_cases", run_cpu_test_case_commands))
 
-    testcase_runner = CommandRunner(commands_list, max_workers=64, cwd="pytorch_test_temp/test")
+    testcase_runner = CommandRunner(commands_list, max_workers=args.max_workers, cwd=f"{pytorch_test_temp}/test")
     testcase_runner.run()
-    summary_test_results("pytorch_test_result")
+    summary_test_results(f"{pytorch_test_result}")
 
 
 if __name__ == "__main__":

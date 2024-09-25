@@ -1,5 +1,6 @@
 import unittest
 import ditorch  # noqa: F401
+import torch  # noqa: F401
 import sys
 import json
 import os
