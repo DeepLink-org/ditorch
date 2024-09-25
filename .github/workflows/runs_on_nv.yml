@@ -54,7 +54,7 @@ jobs:
   Test_use_pytorch_test_case:
     name: run pytorch test case on nv
     runs-on: tps-sco-ci
-    if: github.ref == 'refs/heads/main' || github.event.inputs.run_test_use_pytorch == 'true' || env.ACTIONS_STEP_DEBUG == 'true'
+    if: github.ref == 'refs/heads/main' || github.event.inputs.run_test_use_pytorch == 'true' || ${{ env.ACTIONS_STEP_DEBUG }} == 'true'
     needs: [Build]
     steps:
       - name: test
