@@ -51,20 +51,12 @@ jobs:
           echo "start to test"
           srun --job-name=${GITHUB_JOB} bash -c "source /mnt/cache/share/platform/env/ditorch_env && cd ${DEEPLINK_PATH}/${GITHUB_RUN_NUMBER}/${GITHUB_JOB} && bash ci/run_op_tools_test_cases.sh"
 
-  save_params:
-    runs-on: ubuntu-latest
-    outputs:
-      run_test: ${{ steps.save.outputs.run_test }}
-    steps:
-    - name: Save input parameter
-      id: save
-      run: echo "::set-output name=run_test::${{ github.event.inputs.run_test_use_pytorch || 'false' }}"
 
   Test_use_pytorch_test_case:
     name: run pytorch test case on nv
     runs-on: tps-sco-ci
-    if: ${{ needs.save_params.outputs.run_test == 'true' || github.ref == 'refs/heads/main' }}
-    needs: [Build, save_params]
+    if: ${{ github.event.inputs.run_test_use_pytorch == 'true' || github.ref == 'refs/heads/main' || env.ACTIONS_STEP_DEBUG == 'true' }}
+    needs: [Build]
     steps:
       - name: test
         run: |
