@@ -14,14 +14,11 @@ def traverse_container(container):
     elif isinstance(container, (list, tuple, set)):
         for item in container:
             yield from traverse_container(item)
-    elif isinstance(container, (int, float, str, bool, str)):
-        yield container
+    elif type(container).__module__.startswith("torch.return_types"):
+        for i in range(len(container)):
+            yield container[i]
     else:
-        try:
-            for i in range(len(container)):
-                yield container[i]
-        except Exception as e:  # noqa: F841
-            yield container
+        yield container
 
 
 def is_cpu_op(*args, **kwargs):
