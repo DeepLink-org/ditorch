@@ -14,12 +14,12 @@ def traverse_container(container):
     elif isinstance(container, (list, tuple, set)):
         for item in container:
             yield from traverse_container(item)
-    elif isinstance(container, (int, float, str, bool, str)):
+    elif isinstance(container, (int, float, str, bool, str, torch.Tensor)):
         yield container
     else:
         try:
             for i in range(len(container)):
-                yield container[i]
+                yield from traverse_container(container[i])
         except Exception as e:  # noqa: F841
             yield container
 
