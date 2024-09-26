@@ -62,6 +62,24 @@ class TestOpToolWithSpecialOp(unittest.TestCase):
         for i in range(len(value_list)):
             self.assertTrue(value_list[i] == x.shape[i])
 
+    def test_overflow(self):
+        x = torch.randn(3, 4, 5, dtype=torch.float32, device="cuda")
+        y = torch.zeros_like(x)
+        z = x / y
+        # print(z)  # all elem is inf or -inf
+
+        nan_detect_result = torch.isnan(z)
+        assert not nan_detect_result.any().item()
+        # print(nan_detect_result) # all elem is False
+
+        inf_detect_result = torch.isinf(z)
+        assert inf_detect_result.all().item()
+        # print(inf_detect_result) # all elem is True
+
+        #torch.isfinite
+        finite_detect_result = torch.isfinite(z)
+        assert not finite_detect_result.any().item()
+
 
 if __name__ == "__main__":
     unittest.main()
