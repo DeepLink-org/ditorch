@@ -150,6 +150,8 @@ class OpAutoCompareHook(BaseHook):
 
         for result_cpu in traverse_container(self.result_cpu):
             if isinstance(result_cpu, torch.Tensor) and result_cpu.requires_grad:
+                if result_cpu.grad_fn is None:
+                    return
                 handle = result_cpu.grad_fn.register_hook(post_hook)
                 result_cpu.backward(*self.grad_outputs_cpu)
                 handle.remove()
