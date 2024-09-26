@@ -25,8 +25,11 @@ def summary_test_results(test_result_dir):
     if table.rowcount > 0:
         summary_file = test_result_dir + "/summary_test_result.csv"
         with open(summary_file, "w") as f:
-            f.write(table.get_string())
-        print(f"Summary test results saved to {summary_file}, {passed_case_count} passed, {failed_case_count} failed")
+            f.write(table.get_csv_string())
+        total_case_count = passed_case_count + failed_case_count
+        print(
+            f"Summary test results saved to {summary_file}, total {total_case_count}, {passed_case_count} passed, {failed_case_count} failed"  # noqa: E501
+        )
 
 
 def get_tested_test_cases(test_result_dir):
