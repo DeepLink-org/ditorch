@@ -98,6 +98,12 @@ def parse_args():
         default="pytorch_test_result",
         help="The directory to save the result files generated using pytorch test case testing",
     )
+    parser.add_argument(
+        "--test_case_ids_file",
+        type=str,
+        default="all_test_cases.json",
+        help="The name of the json file saved to run the test case, the file is in the {pytorch_test_result}/test_case_ids directory, such as test_unary_ufuncs.py.json",  # noqa: E501
+    )
 
     args = parser.parse_args()
     return args
@@ -109,11 +115,12 @@ def main():
     pytorch_test_temp = args.pytorch_test_temp
     pytorch_test_result = args.pytorch_test_result
     pytorch_dir = args.pytorch_dir
+    test_case_ids_file = args.test_case_ids_file
 
     if not args.skip_discover_test_case or not os.path.exists(f"{pytorch_test_result}/test_case_ids/all_test_cases.json"):
-        run_command_in_sub_process(f"python ditorch/test/discover_pytorch_test_case.py {pytorch_dir}/test {pytorch_test_result}")
+        run_command_in_sub_process(f"python ditorch/test/discover_pytorch_test_case.py --pytorch_dir {pytorch_dir} --pytorch_test_result {pytorch_test_result}")  # noqa: E501
 
-    with open(f"{pytorch_test_result}/test_case_ids/all_test_cases.json", "r") as f:
+    with open(f"{pytorch_test_result}/test_case_ids/{test_case_ids_file}", "r") as f:
         test_case_ids = json.load(f)
 
     tested_case = get_tested_test_cases(f"{pytorch_test_result}")
