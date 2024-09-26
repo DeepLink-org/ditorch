@@ -122,7 +122,8 @@ class OpAutoCompareHook(BaseHook):
             if (is_inplace_op(self.name) or is_view_op(self.name)) and self.args[0].requires_grad:
                 args_cpu = [item for item in self.args_cpu]
                 args_cpu[0] = args_cpu[0].clone()
-                self.result_cpu = self.func(*args_cpu, **self.kwargs_cpu)
+                self.args_cpu = tuple(args_cpu)
+                self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
             else:
                 args_cpu = self.args_cpu
                 self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
@@ -148,6 +149,9 @@ class OpAutoCompareHook(BaseHook):
 
         for result_cpu in traverse_container(self.result_cpu):
             if isinstance(result_cpu, torch.Tensor) and result_cpu.requires_grad:
+                if result_cpu.grad_fn is None:
+                    print(f"result_cpu.grad_fn is None!{self.name}")
+                    return
                 handle = result_cpu.grad_fn.register_hook(post_hook)
                 result_cpu.backward(*self.grad_outputs_cpu)
                 handle.remove()
@@ -172,6 +176,10 @@ class OpAutoCompareHook(BaseHook):
                 serialize_args_to_dict(self.result),
             )
             self.save_forward_args()
+
+    def compare_inputs(self):
+        compare_info = compare_result(self.name + " input", self.args, self.args_cpu)
+        compare_result_cache.append(self.forward_op_id, compare_info)
 
     def count_params_with_requires_grad(self):
         count = 0
@@ -246,6 +254,8 @@ class OpAutoCompareHook(BaseHook):
             return
         with DisableHookGuard():
             self.run_forward_on_cpu()
+
+            self.compare_inputs()
 
             if self.result is None and self.result_cpu is None:
                 print(f"{self.name} output is None, no check for accuracy")
