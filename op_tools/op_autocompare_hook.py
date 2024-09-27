@@ -143,19 +143,22 @@ class OpAutoCompareHook(BaseHook):
             if isinstance(arg_cpu, torch.Tensor) and arg_cpu.grad is not None:
                 arg_cpu.grad.zero_()
 
-        self.args_cpu_grad = []
+        self.args_cpu_grad = [None for i in range(self.count_params_with_requires_grad())]
 
         def post_hook(grad_inputs, grad_outputs):
-            self.args_cpu_grad = [grad_input for grad_input in grad_inputs]
+            self.args_cpu_grad = tuple([grad_input for grad_input in grad_inputs])
 
+        index = -1
         for result_cpu in traverse_container(self.result_cpu):
+            index += 1
             if isinstance(result_cpu, torch.Tensor) and result_cpu.requires_grad:
                 if result_cpu.grad_fn is None:
-                    print(f"result_cpu.grad_fn is None!{self.name}")
-                    return
-                handle = result_cpu.grad_fn.register_hook(post_hook)
-                result_cpu.backward(*self.grad_outputs_cpu)
-                handle.remove()
+                    result_cpu.backward(*self.grad_outputs_cpu)
+                    self.args_cpu_grad[index] = result_cpu.grad
+                else:
+                    handle = result_cpu.grad_fn.register_hook(post_hook)
+                    result_cpu.backward(*self.grad_outputs_cpu)
+                    handle.remove()
 
     def register_backward_hook_for_grads(self):
         self.backward_hook_handle = BackwardHookHandle(self)
@@ -185,6 +188,7 @@ class OpAutoCompareHook(BaseHook):
 
         result_list = input_compare_result["result_list"] + output_compare_result["result_list"]
         print("\n" * 2)
+        print(f"{self.name} forward_id: {self.forward_op_id}")
         self.pretty_print_op_forward_args()
         print(dict_data_list_to_table(result_list))
         print("\n" * 2)
@@ -225,6 +229,7 @@ class OpAutoCompareHook(BaseHook):
         backward_compare_result = self.compare_input_grad()
 
         print("\n" * 2)
+        print(f"{self.name} forward_id: {self.forward_op_id}")
         print(self.backward_args_table)
         print(dict_data_list_to_table(backward_compare_result["result_list"]))
         print("\n" * 2)

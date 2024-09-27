@@ -82,15 +82,21 @@ class TestOpToolWithSpecialOp(unittest.TestCase):
 
     def test_contiguous(self):
         with op_tools.OpAutoCompare():
-            x = torch.randn(3, 4, 5, dtype=torch.float32, device="cuda")
-            x = x.contiguous()
-
-            y = torch.randn(3, 4, 5, dtype=torch.float64, device="cuda")
+            x = torch.randn(3, 4, 5, dtype=torch.float32, device="cuda", requires_grad=True)
             y = x.contiguous()
+            z = y + y
+            z.backward(torch.ones_like(z))
 
-            z = torch.randn(3, 3, dtype=torch.float64, device="cuda")
-            z = torch.as_strided(input=z, size=(2, 2), stride=(1, 2))
-            z = z.contiguous()
+            x = torch.randn(3, 4, 5, dtype=torch.float64, device="cuda", requires_grad=True)
+            y = x.contiguous()
+            z = y + y
+            z.backward(torch.ones_like(z))
+
+            x = torch.randn(3, 3, dtype=torch.float64, device="cuda", requires_grad=True)
+            x = torch.as_strided(input=z, size=(2, 2), stride=(1, 2))
+            y = x.contiguous()
+            z = y + y
+            z.backward(torch.ones_like(z))
 
 
 if __name__ == "__main__":
