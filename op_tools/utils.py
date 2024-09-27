@@ -4,7 +4,6 @@ import re
 import importlib
 import math
 import os
-from .pretty_print import dict_data_list_to_table
 
 
 def traverse_container(container):
@@ -245,7 +244,7 @@ def get_error_tolerance(dtype, op_name):
 def compare_result(name, a, b):  # noqa: C901
     a_list = []
     b_list = []
-    allclose, max_abs_diff, max_relative_diff, error_info = True, 0, 0, ""
+    allclose, max_abs_diff, max_relative_diff, error_info, atol, rtol = True, 0, 0, "", 0, 0
     for item in traverse_container(a):
         a_list.append(item)
     for item in traverse_container(b):
@@ -276,19 +275,24 @@ def compare_result(name, a, b):  # noqa: C901
             max_abs_diff_i = 0
             max_relative_diff_i = 0
         elif isinstance(a_item, torch.Tensor) and isinstance(b_item, torch.Tensor):
+            if a_item.dtype != b_item.dtype:
+                error_info_i += f"Inconsistent dtypes: {a_item.dtype} {b_item.dtype}"
+                b_item = b_item.to(a_item.dtype)
             if a_item.shape == b_item.shape:
                 atol, rtol = get_error_tolerance(a_item.dtype, name)
-                max_abs_diff_i, max_relative_diff_i = tensor_max_diff(a_item, b_item)
-                allclose_i = tensor_allclose(a_item, b_item, atol=atol, rtol=rtol)
+                if a_item.numel() > 0:
+                    max_abs_diff_i, max_relative_diff_i = tensor_max_diff(a_item, b_item)
+                    allclose_i = tensor_allclose(a_item, b_item, atol=atol, rtol=rtol)
+                else:
+                    max_abs_diff_i, max_relative_diff_i = 0.0, 0.0
+                    allclose_i = True
             else:
                 error_info_i = f"Inconsistent shape: {a_item.shape} {b_item.shape}"
                 max_abs_diff_i = float("nan")
                 max_relative_diff_i = float("nan")
                 allclose_i = False
-            if a_item.dtype != b_item.dtype:
-                error_info_i += f"Inconsistent dtypes: {a_item.dtype} {b_item.dtype}"
 
-        elif type(a) != type(b):  # noqa: E721
+        elif type(a_item) != type(b_item):  # noqa: E721
             error_info_i = f"Inconsistent types: {type(a)} {type(b)}"
             max_abs_diff_i = float("nan")
             max_relative_diff_i = float("nan")
@@ -307,6 +311,15 @@ def compare_result(name, a, b):  # noqa: C901
             max_relative_diff_i = max_abs_diff_i / (abs(a_item) + 1e-6)
             if not allclose_i:
                 error_info_i = f" value: {a_item} {b_item} "
+        else:
+            try:
+                allclose_i = a_item == b_item
+            except Exception as e:
+                allclose_i = False
+                error_info_i = str(e)
+            error_info_i += f"{type(a_item)} {a_item} {type(b_item)} {b_item}"
+            max_abs_diff_i = float("nan")
+            max_relative_diff_i = float("nan")
         if len(a_list) > 1:
             prefex = f" {i}th "
         else:
@@ -327,7 +340,6 @@ def compare_result(name, a, b):  # noqa: C901
                 "error_info": error_info_i,
             }
         )
-    print(dict_data_list_to_table(result_list))
 
     return {
         "allclose": allclose,

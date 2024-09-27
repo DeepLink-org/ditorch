@@ -62,6 +62,42 @@ class TestOpToolWithSpecialOp(unittest.TestCase):
         for i in range(len(value_list)):
             self.assertTrue(value_list[i] == x.shape[i])
 
+    def test_setitem(self):
+        with op_tools.OpAutoCompare():
+            x = torch.randn(3, 4, 5, dtype=torch.float32, device="cuda")
+            x[0, 0, 0] = 1.0  # __setitem__  return None
+
+    def test_inplace_op(self):
+        with op_tools.OpAutoCompare():
+            m = torch.randn(3, 4, 5, dtype=torch.float32, device="cuda", requires_grad=True)
+            x = m + 1
+            x.add_(1.0)
+            x.mul_(2.0)
+            x.sub_(1.0)
+            x.div_(2.0)
+            x.pow_(2.0)
+            x.sqrt_()
+            y = x.abs()
+            y.backward(torch.ones_like(x))
+
+    def test_contiguous(self):
+        with op_tools.OpAutoCompare():
+            x = torch.randn(3, 4, 5, dtype=torch.float32, device="cuda", requires_grad=True)
+            y = x.contiguous()
+            z = y + y
+            z.backward(torch.ones_like(z))
+
+            x = torch.randn(3, 4, 5, dtype=torch.float64, device="cuda", requires_grad=True)
+            y = x.contiguous()
+            z = y + y
+            z.backward(torch.ones_like(z))
+
+            x = torch.randn(3, 3, dtype=torch.float64, device="cuda", requires_grad=True)
+            x = torch.as_strided(input=z, size=(2, 2), stride=(1, 2))
+            y = x.contiguous()
+            z = y + y
+            z.backward(torch.ones_like(z))
+
 
 if __name__ == "__main__":
     unittest.main()
