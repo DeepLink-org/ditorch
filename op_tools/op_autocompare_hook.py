@@ -161,6 +161,9 @@ class OpAutoCompareHook(BaseHook):
                     handle.remove()
 
     def register_backward_hook_for_grads(self):
+        if self.count_params_with_requires_grad() <= 0:
+            self.backward_hook_handle = None
+            return
         self.backward_hook_handle = BackwardHookHandle(self)
         for result in traverse_container(self.result):
             if isinstance(result, torch.Tensor):
@@ -305,6 +308,10 @@ class OpAutoCompareHook(BaseHook):
             if self.result is None and self.result_cpu is None:
                 print(f"{self.name} output is None, no check for backward accuracy")
                 return
+
+            if self.backward_hook_handle is None:
+                self = None
+                gc.collect()
 
     def is_should_apply(self, *args, **kwargs):
         if is_random_number_gen_op(self.name):
