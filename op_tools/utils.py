@@ -4,7 +4,6 @@ import re
 import importlib
 import math
 import os
-from .pretty_print import dict_data_list_to_table
 
 
 def traverse_container(container):
@@ -328,7 +327,6 @@ def compare_result(name, a, b):  # noqa: C901
                 "error_info": error_info_i,
             }
         )
-    print(dict_data_list_to_table(result_list))
 
     return {
         "allclose": allclose,

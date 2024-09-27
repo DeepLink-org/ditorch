@@ -18,7 +18,7 @@ from .utils import (
 )
 from .save_op_args import save_op_args, serialize_args_to_dict
 
-from .pretty_print import pretty_print_op_args, dict_data_list_to_table
+from .pretty_print import pretty_print_op_args, dict_data_list_to_table, packect_data_to_dict_list
 
 
 SKIP_LIST_OPS = []
@@ -69,7 +69,7 @@ class BackwardHookHandle:
 
         def grad_fun(grad_inputs, grad_outputs):
             self.compare_hook.run_backward_on_cpu(grad_inputs, grad_outputs)
-            self.compare_hook.compare_all_grad()
+            self.compare_hook.compare_backward_relate()
             hook_handle.remove()
 
         hook_handle = tensor.grad_fn.register_hook(grad_fun)
@@ -136,6 +136,7 @@ class OpAutoCompareHook(BaseHook):
             )
 
     def run_backward_on_cpu(self, grad_inputs, grad_output):
+        self.op_backward_args_to_table(grad_inputs, grad_output)
         self.grad_outputs_cpu = to_device("cpu", grad_output, dtype_cast_dict=self.dtype_cast_dict, detach=True)
         self.grad_inputs_cpu = to_device("cpu", grad_inputs, dtype_cast_dict=self.dtype_cast_dict, detach=True)
         for arg_cpu in traverse_container(self.args_cpu):
@@ -164,22 +165,42 @@ class OpAutoCompareHook(BaseHook):
                     self.backward_hook_handle.register_grad_fn_hook(result)
 
     def compare_forward_result(self):
-        compare_info = compare_result(self.name, self.result_device, self.result_cpu)
+        compare_info = compare_result(self.name + " output", self.result_device, self.result_cpu)
         compare_result_cache.append(self.forward_op_id, compare_info)
 
-        allclose = compare_info["allclose"]
-        self.forward_allclose = allclose
-        if not allclose:
-            pretty_print_op_args(
-                self.name,
-                serialize_args_to_dict(*self.args, **self.kwargs),
-                serialize_args_to_dict(self.result),
-            )
-            self.save_forward_args()
+        self.forward_allclose = compare_info["allclose"]
+        compare_info["forward_id"] = self.forward_op_id
+        return compare_info
 
     def compare_inputs(self):
         compare_info = compare_result(self.name + " input", self.args, self.args_cpu)
         compare_result_cache.append(self.forward_op_id, compare_info)
+        compare_info["forward_id"] = self.forward_op_id
+        self.input_allclose = compare_info["allclose"]
+        return compare_info
+
+    def compare_forward_relate(self):
+        input_compare_result = self.compare_inputs()
+        output_compare_result = self.compare_forward_result()
+
+        result_list = input_compare_result["result_list"] + output_compare_result["result_list"]
+        print("\n" * 2)
+        self.pretty_print_op_forward_args()
+        print(dict_data_list_to_table(result_list))
+        print("\n" * 2)
+
+        self.forward_allclose = self.forward_allclose and self.input_allclose
+        if not self.forward_allclose:
+            self.save_forward_args()
+
+    def pretty_print_op_forward_args(self):
+        pretty_print_op_args(self.name, serialize_args_to_dict(*self.args, **self.kwargs), serialize_args_to_dict(self.result))
+
+    def op_backward_args_to_table(self, grad_inputs, grad_output):
+        grad_inputs_list = packect_data_to_dict_list(self.name, serialize_args_to_dict(grad_inputs), "grad_inputs")
+        grad_output_list = packect_data_to_dict_list(self.name, serialize_args_to_dict(grad_output), "grad_output")
+        self.backward_args_table = dict_data_list_to_table(grad_output_list + grad_inputs_list)
+        return self.backward_args_table
 
     def count_params_with_requires_grad(self):
         count = 0
@@ -188,13 +209,27 @@ class OpAutoCompareHook(BaseHook):
                 count = count + 1
         return count
 
-    def compare_all_grad(self):
+    def compare_input_grad(self):
         self.args_grad = self.grad_inputs_cpu
         compare_info = compare_result(self.name + " grad", self.args_cpu_grad, self.args_grad)
+        compare_info["forward_id"] = self.forward_op_id
+        print(dict_data_list_to_table(compare_info["result_list"]))
 
         compare_result_cache.append(self.forward_op_id, compare_info)
 
-        if not compare_info["allclose"]:
+        self.backward_allclose = compare_info["allclose"]
+
+        return compare_info
+
+    def compare_backward_relate(self):
+        backward_compare_result = self.compare_input_grad()
+
+        print("\n" * 2)
+        print(self.backward_args_table)
+        print(dict_data_list_to_table(backward_compare_result["result_list"]))
+        print("\n" * 2)
+
+        if not self.backward_allclose:
             # Parameters are not saved when forward accuracy is normal
             if self.forward_allclose:
                 self.save_forward_args()
@@ -255,18 +290,16 @@ class OpAutoCompareHook(BaseHook):
         with DisableHookGuard():
             self.run_forward_on_cpu()
 
-            self.compare_inputs()
-
-            if self.result is None and self.result_cpu is None:
-                print(f"{self.name} output is None, no check for accuracy")
-                return
-
-            self.compare_forward_result()
-
             self.register_backward_hook_for_grads()
+
+            self.compare_forward_relate()
 
             self.args = to_device("cpu", self.args, detach=True)
             self.kwargs = to_device("cpu", self.kwargs or {}, detach=True)
+
+            if self.result is None and self.result_cpu is None:
+                print(f"{self.name} output is None, no check for backward accuracy")
+                return
 
     def is_should_apply(self, *args, **kwargs):
         if is_random_number_gen_op(self.name):

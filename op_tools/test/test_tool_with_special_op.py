@@ -80,6 +80,18 @@ class TestOpToolWithSpecialOp(unittest.TestCase):
             y = x.abs()
             y.backward(torch.ones_like(x))
 
+    def test_contiguous(self):
+        with op_tools.OpAutoCompare():
+            x = torch.randn(3, 4, 5, dtype=torch.float32, device="cuda")
+            x = x.contiguous()
+
+            y = torch.randn(3, 4, 5, dtype=torch.float64, device="cuda")
+            y = x.contiguous()
+
+            z = torch.randn(3, 3, dtype=torch.float64, device="cuda")
+            z = torch.as_strided(input=z, size=(2, 2), stride=(1, 2))
+            z = z.contiguous()
+
 
 if __name__ == "__main__":
     unittest.main()
