@@ -15,7 +15,6 @@ def _test_function(x, y):
     b.device.type == x.device.type
     c.device.type == x.device.type
     d.device.type == x.device.type
-
     a.requires_grad == x.requires_grad
     b.requires_grad == x.requires_grad
     c.requires_grad == x.requires_grad
@@ -28,12 +27,10 @@ def _test_function(x, y):
     b.dtype == x.dtype
     c.dtype == x.dtype
     d.dtype == x.dtype
-
     a.shape == x.shape
     b.shape == x.shape
     c.shape == x.shape
     d.shape == x.shape
-
     assert a.grad is None
     assert b.grad is None
     assert c.grad is None
@@ -42,7 +39,6 @@ def _test_function(x, y):
     assert b.is_leaf is False
     assert c.is_leaf is False
     assert d.is_leaf is False
-
     assert (x.grad is not None) == x.requires_grad
     assert (y.grad is not None) == y.requires_grad
 
@@ -154,6 +150,37 @@ class TestCustomApplyHook(unittest.TestCase):
         func = torch.nn.functional.linear
         out = func(input, weight, bias)
         out.sum().backward()
+
+    def test_not_str_list(self):
+        op_tools.apply_feature(ops=("torch.add", "torch.sub", "torch.mul", "torch.div"), feature="fallback")
+        x = torch.tensor([1, 2, 3], dtype=torch.float16, device="cuda", requires_grad=True)
+        y = torch.tensor([4, 5, 6], dtype=torch.float16, device="cuda", requires_grad=True)
+        _test_function(x, y)
+
+    def test_str_null(self):
+        op_tools.apply_feature(ops="", feature="fallback")
+        x = torch.tensor([1, 2, 3], dtype=torch.float16, device="cuda", requires_grad=True)
+        y = torch.tensor([4, 5, 6], dtype=torch.float16, device="cuda", requires_grad=True)
+        _test_function(x, y)
+    
+    def test_list_not_str(self):
+        op_tools.apply_feature(ops=[torch.add, torch.add, torch.sub, torch.div], feature="fallback")
+        x = torch.tensor([1, 2, 3], dtype=torch.float16, device="cuda", requires_grad=True)
+        y = torch.tensor([4, 5, 6], dtype=torch.float16, device="cuda", requires_grad=True)
+        _test_function(x, y)
+    
+    def test_error_feature(self):
+        op_tools.apply_feature(ops=[torch.add, torch.add, torch.sub, torch.div], feature="falback")
+        x = torch.tensor([1, 2, 3], dtype=torch.float16, device="cuda", requires_grad=True)
+        y = torch.tensor([4, 5, 6], dtype=torch.float16, device="cuda", requires_grad=True)
+        _test_function(x, y)
+    
+    def test_error_ops(self):
+        op_tools.apply_feature(ops=[torch.ad], feature="fallback")
+        x = torch.tensor([1, 2, 3], dtype=torch.float16, device="cuda", requires_grad=True)
+        y = torch.tensor([4, 5, 6], dtype=torch.float16, device="cuda", requires_grad=True)
+        _test_function(x, y)
+    
 
 
 if __name__ == "__main__":

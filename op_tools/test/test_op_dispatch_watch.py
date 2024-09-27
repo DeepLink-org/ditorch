@@ -4,6 +4,7 @@ from torch.utils._python_dispatch import TorchDispatchMode
 import ditorch
 
 import op_tools
+import os
 
 
 def f():
@@ -43,6 +44,56 @@ f()
 watcher.stop()
 
 
+# usage3
+os.environ["OP_DISPATCH_WATCH_DISABLE_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
+watcher.start()
+f()
+watcher.stop()
+
+# usage4
+os.environ["OP_DISPATCH_WATCH_DISABLE_LIST"] = ""
+os.environ["OP_DISPATCH_WATCH_LIST"] = "torch.Tensor.backward"  # 与EXCLUDE_OPS重复
+watcher.start()
+f()
+watcher.stop()
+
+# usage5
+os.environ["OP_DISPATCH_WATCH_DISABLE_LIST"] = ""
+os.environ["OP_DISPATCH_WATCH_LIST"] = "" # 空
+watcher.start()
+f()
+watcher.stop()
+
+# usage6
+os.environ["OP_DISPATCH_WATCH_DISABLE_LIST"] = "torch.Tensor.sort"
+os.environ["OP_DISPATCH_WATCH_LIST"] = "torch.Tensor.sort,torch.Tensor.add" # 重叠
+watcher.start()
+f()
+watcher.stop()
+
+# usage7
+os.environ["OP_DISPATCH_WATCH_DISABLE_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
+if "OP_DISPATCH_WATCH_LIST" in os.environ:
+    del os.environ["OP_DISPATCH_WATCH_LIST"] # 删除
+watcher.start()
+f()
+watcher.stop()
+
+if "OP_DISPATCH_WATCH_LIST" in os.environ:
+    del os.environ["OP_DISPATCH_WATCH_LIST"] # 删除
+if "OP_DISPATCH_WATCH_DISABLE_LIST" in os.environ:
+    del os.environ["OP_DISPATCH_WATCH_DISABLE_LIST"] # 删除
+
+
+
+print("\n" * 2) # 这里共同使用的时候，只输出了opfallback抓取的算子，没有dispatch_watch的算子，只对dispatch有限制
+print("dispatch process of the operator when it is fallbacked:")
+os.environ["OP_DISPATCH_WATCH_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
+os.environ["OP_FALLBACK_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
+with op_tools.OpDispatchWatcher():
+    with op_tools.OpFallback():
+        f()
+
 print("\n" * 2)
 print("dispatch process of the operator when it is fallbacked:")
 with op_tools.OpDispatchWatcher():
@@ -52,8 +103,24 @@ with op_tools.OpDispatchWatcher():
 
 print("\n" * 2)
 print("dispatch process of the operator when autocompare is enabled:")
+os.environ["OP_DISPATCH_WATCH_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
+os.environ["OP_AUTOCOMPARE_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
 with op_tools.OpDispatchWatcher():
     with op_tools.OpAutoCompare():
+        f()
+
+
+print("\n" * 2) # 推荐在表格中加一些东西，要不然难以分清每一个表格是哪个工具抓取的
+print("dispatch process of the operator when optimemeasure is enabled:")
+with op_tools.OpDispatchWatcher():
+    with op_tools.OpTimeMeasure():
+        f()
+
+
+print("\n" * 2)
+print("dispatch process of the operator when opcapture is enabled:")
+with op_tools.OpDispatchWatcher():
+    with op_tools.OpCapture():
         f()
 
 

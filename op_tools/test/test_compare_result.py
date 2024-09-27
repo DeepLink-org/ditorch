@@ -145,6 +145,92 @@ class TestCompareResult(unittest.TestCase):
             self.assertTrue(math.isnan(compare_info["max_relative_diff"]))
             self.assertTrue(isinstance(compare_info["result_list"], list))
 
+    def test_compare_empty_tensor(self):
+        result1 = torch.empty(0).cuda()
+        result2 = torch.empty(0).cuda()
+        compare_info = compare_result("empty_tensor", result1, result2)
+        self.assertTrue(compare_info["allclose"])
+
+    def test_compare_empty_list(self):
+        result1 = []
+        result2 = []
+        compare_info = compare_result("empty_list", result1, result2)
+        self.assertTrue(compare_info["allclose"])
+
+    def test_compare_diff_shape_tensor(self):
+        result1 = torch.randn(10, 10).cuda()
+        result2 = torch.randn(20, 20).cuda()
+        compare_info = compare_result("diff_shape_tensor", result1, result2)
+        self.assertFalse(compare_info["allclose"])
+        self.assertIn("Inconsistent shape", compare_info["error_info"])
+
+    def test_compare_mixed_types(self):
+        result1 = [1, 2.0, 3]
+        result2 = [1, 2, 3.0]
+        compare_info = compare_result("mixed_types", result1, result2)
+        self.assertTrue(compare_info["allclose"])
+    
+    def test_compare_invalid_type(self):
+        with unittest.TestCase().assertRaises(TypeError):
+            compare_result("invalid_type", {}, [])
+
+    def test_compare_invalid_value_a(self):
+        result1 = ['1', 2.0, 3]
+        result2 = [1, 2, 3.0]
+        compare_info = compare_result("invalid_string_a", result1, result2)
+        self.assertFalse(compare_info["allclose"])
+
+    def test_compare_invalid_value_b(self):
+        result1 = [1, 2.0, 3]
+        result2 = ['1', 2, 3.0]
+        compare_info = compare_result("invalid_string_b", result1, result2)
+        self.assertFalse(compare_info["allclose"])
+    
+    def test_compare_same_dict(self):
+        result1 = {'1':1}
+        result2 = {'1':1}
+        compare_info = compare_result("same_dict", result1, result2)
+        self.assertFalse(compare_info["allclose"])
+
+    def test_compare_different_dict(self):
+        result1 = {'1':2}
+        result2 = {'1':1}
+        compare_info = compare_result("different_dict", result1, result2)
+        self.assertFalse(compare_info["allclose"])
+    
+    def test_compare_same_dict_list_value(self):
+        result1 = {'1':[1,2,3]}
+        result2 = {'1':[1,2,3]}
+        compare_info = compare_result("same_dict_list_value", result1, result2)
+        self.assertFalse(compare_info["allclose"])
+
+    def test_compare_different_dict_list_value(self):
+        result1 = {'1':[2,4,6]}
+        result2 = {'1':[1,2,3]}
+        compare_info = compare_result("different_dict_list_value", result1, result2)
+        self.assertFalse(compare_info["allclose"])
+
+    def test_compare_dict_different_shape(self):
+        result1 = {'1':[2,4,6], '2':[4,5,6]}
+        result2 = {'1':[1,2,3]}
+        compare_info = compare_result("dict_different_shape", result1, result2)
+        self.assertFalse(compare_info["allclose"])
+    
+    def test_compare_dict_different_list_shape(self):
+        result1 = {'1':[2,4,6,8]}
+        result2 = {'1':[1,2,3]}
+        compare_info = compare_result("dict_different_list_shape", result1, result2)
+        self.assertFalse(compare_info["allclose"])
+
+
+
+
 
 if __name__ == "__main__":
     unittest.main()
+
+
+
+
+
+
