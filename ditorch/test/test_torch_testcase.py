@@ -55,6 +55,7 @@ def filter_tested_cases(test_case_ids, tested_test_cases):
     filtered_test_case_ids = {}
     tested_case_count = 0
     total_case_count = 0
+    nerver_tested_files = []
     for test_script_file, test_cases in test_case_ids.items():
         total_case_count += len(test_cases)
         if test_script_file in tested_test_cases.keys():
@@ -66,9 +67,11 @@ def filter_tested_cases(test_case_ids, tested_test_cases):
                 filtered_test_case_ids[test_script_file] = not_tested_cases
                 tested_case_count += len(not_tested_cases)
         else:
+            nerver_tested_files.append(test_script_file)
             filtered_test_case_ids[test_script_file] = test_cases
             tested_case_count += len(test_cases)
     print(f"There are {tested_case_count} test cases after filtering, and there are {total_case_count} test cases before filtering.")
+    print("The test cases in the following files have never been tested:\n", ",".join(nerver_tested_files))
     return filtered_test_case_ids
 
 
