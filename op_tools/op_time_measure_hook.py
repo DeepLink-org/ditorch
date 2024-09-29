@@ -6,7 +6,7 @@ import atexit
 from .base_hook import BaseHook, DisableHookGuard
 
 from .save_op_args import serialize_args_to_dict
-from .utils import is_opname_match
+from .utils import is_opname_match, traverse_container, garbage_collect
 from .pretty_print import (
     dict_data_list_to_table,
     packect_data_to_dict_list,
@@ -90,8 +90,8 @@ class BackwardHookHandle:
             self.end_time = time.time()
             self.backward_elasped = self.end_time - self.start_time
             data_dict_list = []
-            data_dict_list += packect_data_to_dict_list(self.name, serialize_args_to_dict(grad_outputs), prefix="grad_outputs ")
-            data_dict_list += packect_data_to_dict_list(self.name, serialize_args_to_dict(grad_inputs), prefix="grad_inputs  ")
+            data_dict_list += packect_data_to_dict_list(self.name + " grad_outputs", serialize_args_to_dict(grad_outputs))
+            data_dict_list += packect_data_to_dict_list(self.name + " grad_inputs", serialize_args_to_dict(grad_inputs))
             table = dict_data_list_to_table(data_dict_list)
             print(table)
             elasped_info_dict = {
@@ -122,17 +122,11 @@ class OpTimeMeasureHook(BaseHook):
         self.foward_elasped = self.end_time - self.start_time
 
         self.backward_hook_handle = BackwardHookHandle(self.name, self.id)
-        if isinstance(self.result, torch.Tensor):
-            if self.result.grad_fn is not None:
-                self.result.grad_fn.register_hook(self.backward_hook_handle.grad_fun_posthook())
-                self.result.grad_fn.register_prehook(self.backward_hook_handle.grad_fun_prehook())
-        elif isinstance(self.result, (tuple, list)) or type(self.result).__module__.startswith("torch.return_types"):
-            # torch.return_types is a structseq, aka a "namedtuple"-like thing defined by the Python C-API.
-            for i in range(len(self.result)):
-                if isinstance(self.result[i], torch.Tensor) and self.result[i].grad_fn is not None:
-                    self.result[i].grad_fn.register_hook(self.backward_hook_handle.grad_fun_posthook())
 
-                    self.result[i].grad_fn.register_prehook(self.backward_hook_handle.grad_fun_prehook())
+        for result in traverse_container(self.result):
+            if isinstance(result, torch.Tensor) and result.grad_fn is not None:
+                result.grad_fn.register_hook(self.backward_hook_handle.grad_fun_posthook())
+                result.grad_fn.register_prehook(self.backward_hook_handle.grad_fun_prehook())
 
         with DisableHookGuard():
             inputs_list = packect_data_to_dict_list(self.name + " inputs", serialize_args_to_dict(*self.args, **self.kwargs))
@@ -145,11 +139,15 @@ class OpTimeMeasureHook(BaseHook):
                 "forward_elasped": f"{(self.foward_elasped * 1000):>10.8f}",
                 "unit": "ms",
             }
+            print("\n" * 2)
             print(forward_args_table)
             print(dict_data_list_to_table([elasped_info_dict]))
+            print("\n" * 2)
             elasped_info_dict["input"] = serialize_args_to_dict(*self.args, **self.kwargs)
             elasped_info_dict["output"] = serialize_args_to_dict(self.result)
             time_measure_result_cache.append(self.id, elasped_info_dict)
+
+            garbage_collect(self.id)
 
     def is_should_apply(self, *args, **kwargs):
         if is_opname_match(self.name, os.getenv("OP_TIME_MEASURE_DISABLE_LIST", "")):

@@ -78,17 +78,15 @@ class OpFallbackHook(BaseHook):
     def dump_op_args(self):
         data_dict_list = []
         data_dict_list += packect_data_to_dict_list(
-            self.name,
-            serialize_args_to_dict(*self.args_device, **self.kwargs_device),
-            prefix="device_input ",
+            self.name + " input(device)",
+            serialize_args_to_dict(*self.args_device, **self.kwargs_device)
         )
         data_dict_list += packect_data_to_dict_list(
-            self.name,
+            self.name + " input(cpu)",
             serialize_args_to_dict(*self.args, **self.kwargs),
-            prefix="cpu_input    ",
         )
-        data_dict_list += packect_data_to_dict_list(self.name, serialize_args_to_dict(self.result), prefix="device_output")
-        data_dict_list += packect_data_to_dict_list(self.name, serialize_args_to_dict(self.result_cpu), prefix="cpu_output   ")
+        data_dict_list += packect_data_to_dict_list(self.name + " output(device)", serialize_args_to_dict(self.result))
+        data_dict_list += packect_data_to_dict_list(self.name + " output(cpu)", serialize_args_to_dict(self.result_cpu))
 
         table = dict_data_list_to_table(data_dict_list)
         print(table)

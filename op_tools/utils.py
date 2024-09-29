@@ -4,6 +4,7 @@ import re
 import importlib
 import math
 import os
+import gc
 
 
 def traverse_container(container):
@@ -77,7 +78,7 @@ def is_opname_match(name, op_pattern=None):
 
 
 def is_inplace_op(name):
-    INPLACES_OP = ["torch.Tensor.__setitem__"]
+    INPLACES_OP = ["torch.Tensor.__setitem__", "torch.Tensor.to", "torch.Tensor.contiguous", "torch.Tensor.to"]
     return name in INPLACES_OP or (name.endswith("_") and (not name.endswith("__")) and (name.startswith("torch.Tensor.")))
 
 
@@ -321,7 +322,7 @@ def compare_result(name, a, b):  # noqa: C901
             max_abs_diff_i = float("nan")
             max_relative_diff_i = float("nan")
         if len(a_list) > 1:
-            prefex = f" {i}th "
+            prefex = f"[{i}]"
         else:
             prefex = ""
 
@@ -351,3 +352,9 @@ def compare_result(name, a, b):  # noqa: C901
         "name": name,
         "result_list": result_list,
     }
+
+
+def garbage_collect(id):
+    gc_cycle = int(os.getenv("OP_TOOLS_GARBAGE_COLLECTION_CYCLE", "100"))
+    if id % gc_cycle == 0:
+        gc.collect()
