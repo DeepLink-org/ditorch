@@ -317,7 +317,7 @@ def compare_result(name, a, b):  # noqa: C901
             except Exception as e:
                 allclose_i = False
                 error_info_i = str(e)
-            error_info_i += f"{type(a_item)} {a_item} {type(b_item)} {b_item}"
+            error_info_i += f" value: {a_item} {b_item}"
             max_abs_diff_i = float("nan")
             max_relative_diff_i = float("nan")
         if len(a_list) > 1:

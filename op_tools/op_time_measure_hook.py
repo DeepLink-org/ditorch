@@ -8,7 +8,6 @@ from .base_hook import BaseHook, DisableHookGuard
 from .save_op_args import serialize_args_to_dict
 from .utils import is_opname_match
 from .pretty_print import (
-    pretty_print_op_args,
     dict_data_list_to_table,
     packect_data_to_dict_list,
 )
@@ -136,17 +135,17 @@ class OpTimeMeasureHook(BaseHook):
                     self.result[i].grad_fn.register_prehook(self.backward_hook_handle.grad_fun_prehook())
 
         with DisableHookGuard():
-            pretty_print_op_args(
-                self.name,
-                serialize_args_to_dict(*self.args, **self.kwargs),
-                serialize_args_to_dict(self.result),
-            )
+            inputs_list = packect_data_to_dict_list(self.name + " inputs", serialize_args_to_dict(*self.args, **self.kwargs))
+            output_list = packect_data_to_dict_list(self.name + " outputs", serialize_args_to_dict(self.result))
+            forward_args_table = dict_data_list_to_table(inputs_list + output_list)
+
             elasped_info_dict = {
                 "name": self.name,
                 "forward_id": self.id,
                 "forward_elasped": f"{(self.foward_elasped * 1000):>10.8f}",
                 "unit": "ms",
             }
+            print(forward_args_table)
             print(dict_data_list_to_table([elasped_info_dict]))
             elasped_info_dict["input"] = serialize_args_to_dict(*self.args, **self.kwargs)
             elasped_info_dict["output"] = serialize_args_to_dict(self.result)

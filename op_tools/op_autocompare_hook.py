@@ -18,7 +18,7 @@ from .utils import (
 )
 from .save_op_args import save_op_args, serialize_args_to_dict
 
-from .pretty_print import pretty_print_op_args, dict_data_list_to_table, packect_data_to_dict_list
+from .pretty_print import dict_data_list_to_table, packect_data_to_dict_list
 
 
 SKIP_LIST_OPS = []
@@ -191,8 +191,8 @@ class OpAutoCompareHook(BaseHook):
 
         result_list = input_compare_result["result_list"] + output_compare_result["result_list"]
         print("\n" * 2)
-        print(f"{self.name} forward_id: {self.forward_op_id}")
-        self.pretty_print_op_forward_args()
+        print(f"{self.name} forward_id: {self.forward_op_id} {self.dtype_cast_dict if len(self.dtype_cast_dict) > 0 else ''}")
+        print(self.op_forward_args_to_table())
         print(dict_data_list_to_table(result_list))
         print("\n" * 2)
 
@@ -200,12 +200,16 @@ class OpAutoCompareHook(BaseHook):
         if not self.forward_allclose:
             self.save_forward_args()
 
-    def pretty_print_op_forward_args(self):
-        pretty_print_op_args(self.name, serialize_args_to_dict(*self.args, **self.kwargs), serialize_args_to_dict(self.result))
+    def op_forward_args_to_table(self):
+        inputs_list = packect_data_to_dict_list(self.name + " inputs", serialize_args_to_dict(*self.args, **self.kwargs))
+        output_list = packect_data_to_dict_list(self.name + " outputs", serialize_args_to_dict(self.result))
+        cpu_output_list = packect_data_to_dict_list(self.name + " cpu_outputs", serialize_args_to_dict(self.result_cpu))
+        forward_args_table = dict_data_list_to_table(inputs_list + output_list + cpu_output_list)
+        return forward_args_table
 
     def op_backward_args_to_table(self, grad_inputs, grad_output):
-        grad_inputs_list = packect_data_to_dict_list(self.name, serialize_args_to_dict(grad_inputs), "grad_inputs")
-        grad_output_list = packect_data_to_dict_list(self.name, serialize_args_to_dict(grad_output), "grad_output")
+        grad_inputs_list = packect_data_to_dict_list(self.name + " grad_inputs", serialize_args_to_dict(grad_inputs))
+        grad_output_list = packect_data_to_dict_list(self.name + " grad_output", serialize_args_to_dict(grad_output))
         self.backward_args_table = dict_data_list_to_table(grad_output_list + grad_inputs_list)
         return self.backward_args_table
 
@@ -297,21 +301,27 @@ class OpAutoCompareHook(BaseHook):
             return
         with DisableHookGuard():
             self.run_forward_on_cpu()
-
-            self.register_backward_hook_for_grads()
-
             self.compare_forward_relate()
-
-            self.args = to_device("cpu", self.args, detach=True)
-            self.kwargs = to_device("cpu", self.kwargs or {}, detach=True)
 
             if self.result is None and self.result_cpu is None:
                 print(f"{self.name} output is None, no check for backward accuracy")
                 return
 
-            if self.backward_hook_handle is None:
+            self.register_backward_hook_for_grads()
+            result = self.result
+            id = self.id
+            # for reduce device memory usage
+            if self.backward_hook_handle is not None:
+                self.args = to_device("cpu", self.args, detach=True)
+                self.kwargs = to_device("cpu", self.kwargs or {}, detach=True)
+                self.result = to_device("cpu", self.result, detach=True)
+            else:
                 self = None
+
+            gc_cycle = int(os.getenv("OP_AUTOCOMPARE_GARBAGE_COLLECTION_CYCLE", "100"))
+            if id % gc_cycle == 0:
                 gc.collect()
+            return result
 
     def is_should_apply(self, *args, **kwargs):
         if is_random_number_gen_op(self.name):
