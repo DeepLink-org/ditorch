@@ -136,7 +136,6 @@ class OpAutoCompareHook(BaseHook):
             )
 
     def run_backward_on_cpu(self, grad_inputs, grad_output):
-        self.op_backward_args_to_table(grad_inputs, grad_output)
         self.grad_outputs_cpu = to_device("cpu", grad_output, dtype_cast_dict=self.dtype_cast_dict, detach=True)
         self.grad_inputs_cpu = to_device("cpu", grad_inputs, dtype_cast_dict=self.dtype_cast_dict, detach=True)
         for arg_cpu in traverse_container(self.args_cpu):
@@ -159,6 +158,8 @@ class OpAutoCompareHook(BaseHook):
                     handle = result_cpu.grad_fn.register_hook(post_hook)
                     result_cpu.backward(*self.grad_outputs_cpu)
                     handle.remove()
+
+        self.op_backward_args_to_table(grad_inputs, grad_output)
 
     def register_backward_hook_for_grads(self):
         if self.count_params_with_requires_grad() <= 0:
@@ -201,16 +202,17 @@ class OpAutoCompareHook(BaseHook):
             self.save_forward_args()
 
     def op_forward_args_to_table(self):
-        inputs_list = packect_data_to_dict_list(self.name + " inputs", serialize_args_to_dict(*self.args, **self.kwargs))
-        output_list = packect_data_to_dict_list(self.name + " outputs", serialize_args_to_dict(self.result))
-        cpu_output_list = packect_data_to_dict_list(self.name + " cpu_outputs", serialize_args_to_dict(self.result_cpu))
+        inputs_list = packect_data_to_dict_list(self.name + " inputs     ", serialize_args_to_dict(*self.args, **self.kwargs))
+        output_list = packect_data_to_dict_list(self.name + " outputs    ", serialize_args_to_dict(self.result))
+        cpu_output_list = packect_data_to_dict_list(self.name + " outputs(cpu)", serialize_args_to_dict(self.result_cpu))
         forward_args_table = dict_data_list_to_table(inputs_list + output_list + cpu_output_list)
         return forward_args_table
 
     def op_backward_args_to_table(self, grad_inputs, grad_output):
-        grad_inputs_list = packect_data_to_dict_list(self.name + " grad_inputs", serialize_args_to_dict(grad_inputs))
-        grad_output_list = packect_data_to_dict_list(self.name + " grad_output", serialize_args_to_dict(grad_output))
-        self.backward_args_table = dict_data_list_to_table(grad_output_list + grad_inputs_list)
+        grad_output_list = packect_data_to_dict_list(self.name + " grad_output    ", serialize_args_to_dict(grad_output))
+        grad_inputs_list = packect_data_to_dict_list(self.name + " grad_inputs    ", serialize_args_to_dict(grad_inputs))
+        cpu_grad_inputs_list = packect_data_to_dict_list(self.name + " grad_inputs(cpu)", serialize_args_to_dict(self.args_cpu_grad))
+        self.backward_args_table = dict_data_list_to_table(grad_output_list + grad_inputs_list + cpu_grad_inputs_list)
         return self.backward_args_table
 
     def count_params_with_requires_grad(self):
@@ -224,7 +226,6 @@ class OpAutoCompareHook(BaseHook):
         self.args_grad = self.grad_inputs_cpu
         compare_info = compare_result(self.name + " grad", self.args_cpu_grad, self.args_grad)
         compare_info["forward_id"] = self.forward_op_id
-        print(dict_data_list_to_table(compare_info["result_list"]))
 
         compare_result_cache.append(self.forward_op_id, compare_info)
 
