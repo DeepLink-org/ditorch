@@ -14,9 +14,9 @@ import torch
 import ditorch
 ```
 
-[ditorch + Ascend910 pytorch原生测例通过情况](ditorch/test/ascend_summary_of_pytorch_test_case_testing.csv)
+[ditorch + Ascend910 pytorch原生测例通过情况](ditorch/test/ascend_summary_of_pytorch_test_case_testing.csv.tar)
 
-[ditorch + mlu370_m8 pytorch原生测例通过情况](ditorch/test/camb_summary_of_pytorch_test_case_testing.csv)
+[ditorch + mlu370_m8 pytorch原生测例通过情况](ditorch/test/camb_summary_of_pytorch_test_case_testing.csv.tar)
 
 ## **2. 提供多个基础工具，解决训练过程的问题**
 
