@@ -4,7 +4,8 @@ import re
 import importlib
 import math
 import os
-from .pretty_print import dict_data_list_to_table
+import gc
+import traceback
 
 
 def traverse_container(container):
@@ -78,7 +79,7 @@ def is_opname_match(name, op_pattern=None):
 
 
 def is_inplace_op(name):
-    INPLACES_OP = ["torch.Tensor.__setitem__"]
+    INPLACES_OP = ["torch.Tensor.__setitem__", "torch.Tensor.to", "torch.Tensor.contiguous", "torch.Tensor.to"]
     return name in INPLACES_OP or (name.endswith("_") and (not name.endswith("__")) and (name.startswith("torch.Tensor.")))
 
 
@@ -245,7 +246,7 @@ def get_error_tolerance(dtype, op_name):
 def compare_result(name, a, b):  # noqa: C901
     a_list = []
     b_list = []
-    allclose, max_abs_diff, max_relative_diff, error_info = True, 0, 0, ""
+    allclose, max_abs_diff, max_relative_diff, error_info, atol, rtol = True, 0, 0, "", 0, 0
     for item in traverse_container(a):
         a_list.append(item)
     for item in traverse_container(b):
@@ -276,19 +277,24 @@ def compare_result(name, a, b):  # noqa: C901
             max_abs_diff_i = 0
             max_relative_diff_i = 0
         elif isinstance(a_item, torch.Tensor) and isinstance(b_item, torch.Tensor):
+            if a_item.dtype != b_item.dtype:
+                error_info_i += f"Inconsistent dtypes: {a_item.dtype} {b_item.dtype}"
+                b_item = b_item.to(a_item.dtype)
             if a_item.shape == b_item.shape:
                 atol, rtol = get_error_tolerance(a_item.dtype, name)
-                max_abs_diff_i, max_relative_diff_i = tensor_max_diff(a_item, b_item)
-                allclose_i = tensor_allclose(a_item, b_item, atol=atol, rtol=rtol)
+                if a_item.numel() > 0:
+                    max_abs_diff_i, max_relative_diff_i = tensor_max_diff(a_item, b_item)
+                    allclose_i = tensor_allclose(a_item, b_item, atol=atol, rtol=rtol)
+                else:
+                    max_abs_diff_i, max_relative_diff_i = 0.0, 0.0
+                    allclose_i = True
             else:
                 error_info_i = f"Inconsistent shape: {a_item.shape} {b_item.shape}"
                 max_abs_diff_i = float("nan")
                 max_relative_diff_i = float("nan")
                 allclose_i = False
-            if a_item.dtype != b_item.dtype:
-                error_info_i += f"Inconsistent dtypes: {a_item.dtype} {b_item.dtype}"
 
-        elif type(a) != type(b):  # noqa: E721
+        elif type(a_item) != type(b_item):  # noqa: E721
             error_info_i = f"Inconsistent types: {type(a)} {type(b)}"
             max_abs_diff_i = float("nan")
             max_relative_diff_i = float("nan")
@@ -307,8 +313,17 @@ def compare_result(name, a, b):  # noqa: C901
             max_relative_diff_i = max_abs_diff_i / (abs(a_item) + 1e-6)
             if not allclose_i:
                 error_info_i = f" value: {a_item} {b_item} "
+        else:
+            try:
+                allclose_i = a_item == b_item
+            except Exception as e:
+                allclose_i = False
+                error_info_i = str(e)
+            error_info_i += f" value: {a_item} {b_item}"
+            max_abs_diff_i = float("nan")
+            max_relative_diff_i = float("nan")
         if len(a_list) > 1:
-            prefex = f" {i}th "
+            prefex = f"[{i}]"
         else:
             prefex = ""
 
@@ -327,7 +342,6 @@ def compare_result(name, a, b):  # noqa: C901
                 "error_info": error_info_i,
             }
         )
-    print(dict_data_list_to_table(result_list))
 
     return {
         "allclose": allclose,
@@ -339,3 +353,36 @@ def compare_result(name, a, b):  # noqa: C901
         "name": name,
         "result_list": result_list,
     }
+
+
+def garbage_collect(id):
+    gc_cycle = int(os.getenv("OP_TOOLS_GARBAGE_COLLECTION_CYCLE", "100"))
+    if id % gc_cycle == 0:
+        gc.collect()
+
+
+def current_location(name=None, stack_depth=-1, print_stack=False):
+    stack = traceback.extract_stack()
+    if stack_depth < 0:
+        stack_depth = len(stack) + stack_depth
+
+    name = name if name else "!"
+    for i in range(stack_depth, -1, -1):
+        file, line, func, text = stack[i]
+        if "op_tools/apply_hook.py" in file or "op_tools/utils.py" in file or "op_tools/base_hook.py" in file:
+            stack_depth = i - 1
+
+    for i in range(stack_depth, -1, -1):
+        file, line, func, text = stack[i]
+        if torch.__path__[0] in file or "/torch_" in file:
+            stack_depth = i - 1  # skip internal stack in torch, torch_npu, etc.
+        else:
+            break
+
+    if print_stack or int(os.getenv("OP_TOOLS_PRINT_STACK", "0")) > 0:
+        for i in range(len(stack) - 2):
+            file, line, func, text = stack[i]
+            print(f"{file}:{line} {func} {text}")
+
+    file, line, func, text = stack[stack_depth]
+    return f"{file}:{line} {func}: {text}"

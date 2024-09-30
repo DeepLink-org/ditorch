@@ -145,6 +145,17 @@ class TestCompareResult(unittest.TestCase):
             self.assertTrue(math.isnan(compare_info["max_relative_diff"]))
             self.assertTrue(isinstance(compare_info["result_list"], list))
 
+    def test_compare_invalid_input(self):
+        self.assertTrue(compare_result("empty_list", [], [])["allclose"])  # 输入空列表
+        self.assertTrue(compare_result("empty_tesnsor", torch.empty(0).cuda(), torch.empty(0).cuda())["allclose"])  # 输入空张量
+        self.assertTrue(compare_result("equal_tesnsor", torch.ones(1).cuda(), torch.ones(1).cuda())["allclose"])  # 输入相等张量empty
+        self.assertFalse(
+            compare_result("not_equal_tesnsor", torch.rand(1000).cuda(), -torch.rand(1000).cuda())["allclose"]
+        )  # 输入相等张量empty
+        self.assertTrue(compare_result("invalid_type", (), [])["allclose"])  # 输入空元组和空列表
+        self.assertFalse(compare_result("invalid_value_a", ["1", 2, 3], [1, 2, 3])["allclose"])  # 输入a的元素类型不符合要求
+        self.assertFalse(compare_result("invalid_value_b", [1, 2, 3], ["1", 2, 3])["allclose"])  # 输入b的元素类型不符合要求
+
 
 if __name__ == "__main__":
     unittest.main()

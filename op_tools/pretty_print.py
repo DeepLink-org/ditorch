@@ -17,7 +17,7 @@ def dict_data_list_to_table(data_dict_list):
     return table
 
 
-def packect_data_to_dict_list(op_name, inputs_dict, prefix):
+def packect_data_to_dict_list(op_name, inputs_dict):
     data_dict_list = []
     args = inputs_dict.get("args", [])
     kwargs = inputs_dict.get("kwargs", {})
@@ -25,7 +25,7 @@ def packect_data_to_dict_list(op_name, inputs_dict, prefix):
     for arg in args:
         arg_index += 1
         if isinstance(arg, dict):
-            item_name = op_name + f" {prefix}" + (f"[{arg_index}]" if len(args) > 1 else "")
+            item_name = op_name + (f"[{arg_index}]" if len(args) > 1 else "")
             data_dict = {"name": item_name}
             data_dict.update(arg)
             data_dict_list.append(data_dict)
@@ -33,25 +33,16 @@ def packect_data_to_dict_list(op_name, inputs_dict, prefix):
             arg_sub_index = -1
             for item in arg:
                 arg_sub_index += 1
-                item_name = op_name + f" {prefix}[{arg_index}]" + f"[{arg_sub_index}]"
+                item_name = op_name + f" [{arg_index}]" + f"[{arg_sub_index}]"
                 if isinstance(item, dict):
                     data_dict = {"name": item_name}
                     data_dict.update(item)
                     data_dict_list.append(data_dict)
                 else:
                     data_dict_list.append({"name": item_name, "value": item})
+        elif isinstance(arg, (str, int, float, bool)):
+            data_dict_list.append({"name": op_name + (f"[{arg_index}]" if len(args) > 1 else ""), "value": arg})
     for key, value in kwargs.items():
-        data_dict_list.append({"name": op_name + f" [{key}]", "value": value})
+        data_dict_list.append({"name": op_name + f" {key}", "value": value})
 
     return data_dict_list
-
-
-def pretty_print_op_args(op_name, inputs_dict, outputs_dict=None):
-
-    input_data_dict_list = packect_data_to_dict_list(op_name, inputs_dict, "inputs")
-    output_data_dict_list = packect_data_to_dict_list(op_name, outputs_dict, "outputs")
-    data_dict_list = input_data_dict_list + output_data_dict_list
-    table = dict_data_list_to_table(data_dict_list)
-    if len(data_dict_list) > 0:
-        print(table)
-    return table
