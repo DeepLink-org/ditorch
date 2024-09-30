@@ -190,6 +190,7 @@ class OpAutoCompareHook(BaseHook):
             dtype_cast_info = f"cpu_dtype_cast_info(from:to): {self.dtype_cast_dict}"
         print("\n" * 2)
         print(f"{self.name} forward_id: {self.forward_op_id}    {dtype_cast_info}")
+        print(f"{self.current_location}")
         print(self.op_forward_args_to_table())
         print(dict_data_list_to_table(result_list))
         print("\n" * 2)
@@ -241,6 +242,7 @@ class OpAutoCompareHook(BaseHook):
 
         print("\n" * 2)
         print(f"{self.name} forward_id: {self.forward_op_id}    {dtype_cast_info}")
+        print(f"{self.current_location}")
         print(self.backward_args_table)
         print(dict_data_list_to_table(backward_compare_result["result_list"]))
         print("\n" * 2)

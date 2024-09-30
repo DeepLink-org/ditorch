@@ -19,7 +19,11 @@ class OpDispatchWatcherHook(BaseHook):
             inputs_list = packect_data_to_dict_list(self.name + " inputs", serialize_args_to_dict(*self.args, **self.kwargs))
             output_list = packect_data_to_dict_list(self.name + " outputs", serialize_args_to_dict(self.result))
             forward_args_table = dict_data_list_to_table(inputs_list + output_list)
+            print("\n" * 2)
+            print(f"{self.name}  {self.id}")
+            print(f"{self.current_location}")
             print(forward_args_table)
+            print("\n" * 2)
 
     def is_should_apply(self, *args, **kwargs):
         if is_opname_match(self.name, os.getenv("OP_DISPATCH_WATCH_DISABLE_LIST", "")):
