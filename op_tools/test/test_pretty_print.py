@@ -20,6 +20,10 @@ class TestPrettyPrint(unittest.TestCase):
 
         table = dict_data_list_to_table(data_list)
 
+        csv_str = table.get_csv_string()
+
+        print(csv_str)
+
         print(table)
 
 

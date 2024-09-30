@@ -5,6 +5,7 @@ import importlib
 import math
 import os
 import gc
+import traceback
 
 
 def traverse_container(container):
@@ -358,3 +359,30 @@ def garbage_collect(id):
     gc_cycle = int(os.getenv("OP_TOOLS_GARBAGE_COLLECTION_CYCLE", "100"))
     if id % gc_cycle == 0:
         gc.collect()
+
+
+def current_location(name=None, stack_depth=-1, print_stack=False):
+    stack = traceback.extract_stack()
+    if stack_depth < 0:
+        stack_depth = len(stack) + stack_depth
+
+    name = name if name else "!"
+    for i in range(stack_depth, -1, -1):
+        file, line, func, text = stack[i]
+        if "op_tools/apply_hook.py" in file or "op_tools/utils.py" in file or "op_tools/base_hook.py" in file:
+            stack_depth = i - 1
+
+    for i in range(stack_depth, -1, -1):
+        file, line, func, text = stack[i]
+        if torch.__path__[0] in file or "/torch_" in file:
+            stack_depth = i - 1  # skip internal stack in torch, torch_npu, etc.
+        else:
+            break
+
+    if print_stack or int(os.getenv("OP_TOOLS_PRINT_STACK", "0")) > 0:
+        for i in range(len(stack) - 2):
+            file, line, func, text = stack[i]
+            print(f"{file}:{line} {func} {text}")
+
+    file, line, func, text = stack[stack_depth]
+    return f"{file}:{line} {func}: {text}"

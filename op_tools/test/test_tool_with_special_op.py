@@ -122,6 +122,12 @@ class TestOpToolWithSpecialOp(unittest.TestCase):
         with op_tools.OpTimeMeasure():
             f()
 
+    def test_exp(self):
+        with op_tools.OpAutoCompare():
+            x = torch.randn(3, 4, 5, dtype=torch.float16, device="cuda", requires_grad=True)
+            y = x.exp()
+            y.backward(torch.ones_like(y))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -140,6 +140,7 @@ class OpTimeMeasureHook(BaseHook):
                 "unit": "ms",
             }
             print("\n" * 2)
+            print(self.current_location)
             print(forward_args_table)
             print(dict_data_list_to_table([elasped_info_dict]))
             print("\n" * 2)

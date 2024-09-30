@@ -1,6 +1,6 @@
 # Copyright (c) 2024, DeepLink.
 from abc import ABC
-from .utils import is_cpu_op
+from .utils import is_cpu_op, current_location
 
 
 def is_should_apply_hook(name, func, *args, **kwargs):
@@ -96,6 +96,7 @@ class BaseHook(ABC):
             and is_should_apply_hook(self.name, self.func, *args, **kwargs)
             and self.is_should_apply(*args, **kwargs)
         ):
+            self.current_location = current_location(name=self.name, print_stack=False)
             if self.name not in self.applied_op:
                 self.applied_op.add(self.name)
                 print(f"apply {self.class_name()} on {self.name}")
