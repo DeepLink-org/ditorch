@@ -15,6 +15,8 @@ from .utils import (
     compare_result,
     is_random_number_gen_op,
     garbage_collect,
+    get_dtype_cast_dict_form_str,
+    set_env_if_env_is_empty
 )
 from .save_op_args import save_op_args, serialize_args_to_dict
 
@@ -76,11 +78,16 @@ class BackwardHookHandle:
         return grad_fun
 
 
+set_env_if_env_is_empty("LINEAR_OP_DTYPE_CAST_DICT", "torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64")  # noqa: E501
+set_env_if_env_is_empty("EMBEDDING_OP_DTYPE_CAST_DICT", "torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64")  # noqa: E501
+set_env_if_env_is_empty("NORMALIZE_OP_DTYPE_CAST_DICT", "torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64")  # noqa: E501
+set_env_if_env_is_empty("NORM_OP_DTYPE_CAST_DICT", "torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64")  # noqa: E501
+set_env_if_env_is_empty("CROSS_ENTROPY_OP_DTYPE_CAST_DICT", "torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64")  # noqa: E501
+set_env_if_env_is_empty("MUL_OP_DTYPE_CAST_DICT", "torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64")  # noqa: E501
+set_env_if_env_is_empty("MATMUL_OP_DTYPE_CAST_DICT", "torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64")  # noqa: E501
+
+
 class OpAutoCompareHook(BaseHook):
-    AUTO_COMPARE_DTYPE_CAST_DICT = {
-        torch.half: torch.float32,
-        torch.bfloat16: torch.float32,
-    }
 
     def __init__(self, name, func) -> None:
         super().__init__(name, func)
@@ -97,39 +104,63 @@ class OpAutoCompareHook(BaseHook):
             detach=True,
         )
 
+    def update_dtype_cast_dict(self):
+        # some op on cpu backend not support half, bfloat16
+        op_name_suffix = self.name.split(".")[-1].upper()  # LINEAR, ADD, MATMUL etc
+        heigher_priority_env_name = op_name_suffix + "_OP_DTYPE_CAST_DICT"
+        lower_priority_env_name = "OP_DTYPE_CAST_DICT"
+        default_env_value = "torch.float16->torch.float32,torch.bfloat16->torch.float32"
+        heigher_priority_env_value = os.environ.get(heigher_priority_env_name, None)
+        lower_priority_env_value = os.environ.get(lower_priority_env_name, default_env_value)
+        self.dtype_cast_config_str = heigher_priority_env_value or lower_priority_env_value
+
+        self.dtype_cast_dict = get_dtype_cast_dict_form_str(self.dtype_cast_config_str)
+
+        ins_dtype = set()
+        for args in traverse_container(self.args):
+            if isinstance(args, torch.Tensor):
+                ins_dtype.add(args.dtype)
+        raw_dtypes = set(self.dtype_cast_dict.keys())
+        for dtype in raw_dtypes:
+            if dtype not in ins_dtype:
+                self.dtype_cast_dict.pop(dtype)
+
     def run_forward_on_cpu(self):
         self.result_device = to_device("cpu", self.result, detach=True)
-        try:
+        self.update_dtype_cast_dict()
+
+        self.args_cpu = to_device(
+            "cpu",
+            self.args_cpu,
+            dtype_cast_dict=self.dtype_cast_dict,
+            detach=True,
+        )
+        self.kwargs_cpu = to_device(
+            "cpu",
+            self.kwargs_cpu or {},
+            dtype_cast_dict=self.dtype_cast_dict,
+            detach=True,
+        )
+        # RuntimeError: a leaf Variable that requires grad is being used in an in-place operation.
+        if (is_inplace_op(self.name) or self.kwargs.get("inplace", False) or is_view_op(self.name)) and self.args[0].requires_grad:
+            args_cpu = [item for item in self.args_cpu]
+            args_cpu[0] = args_cpu[0].clone()
+            self.args_cpu = tuple(args_cpu)
             self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
-            self.dtype_cast_dict = dict()
-            args_cpu = self.args_cpu
-        except Exception as e:  # noqa: F841
-            self.dtype_cast_dict = OpAutoCompareHook.AUTO_COMPARE_DTYPE_CAST_DICT
-            # some op on cpu backend not support half, bfloat16
-            self.args_cpu = to_device(
+        else:
+            self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
+
+        if len(self.dtype_cast_dict) > 0 and 0:
+            self.result_cpu = to_device(
                 "cpu",
-                self.args_cpu,
-                dtype_cast_dict=self.dtype_cast_dict,
+                self.result_cpu,
+                dtype_cast_dict={value : key for key, value in self.dtype_cast_dict.items()},
                 detach=True,
             )
-            self.kwargs_cpu = to_device(
-                "cpu",
-                self.kwargs_cpu or {},
-                dtype_cast_dict=self.dtype_cast_dict,
-                detach=True,
-            )
-            # RuntimeError: a leaf Variable that requires grad is being used in an in-place operation.
-            if (is_inplace_op(self.name) or self.kwargs.get("inplace", False) or is_view_op(self.name)) and self.args[0].requires_grad:
-                args_cpu = [item for item in self.args_cpu]
-                args_cpu[0] = args_cpu[0].clone()
-                self.args_cpu = tuple(args_cpu)
-                self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
-            else:
-                args_cpu = self.args_cpu
-                self.result_cpu = self.func(*self.args_cpu, **self.kwargs_cpu)
 
     def run_backward_on_cpu(self, grad_inputs, grad_output):
-        self.grad_outputs_cpu = to_device("cpu", grad_output, dtype_cast_dict=self.dtype_cast_dict, detach=True)
+        self.grad_outputs_device = to_device("cpu", grad_output, detach=True)
+        self.grad_outputs_cpu = to_device("cpu", self.grad_outputs_device, dtype_cast_dict=self.dtype_cast_dict, detach=True)
         self.grad_inputs_cpu = to_device("cpu", grad_inputs, dtype_cast_dict=self.dtype_cast_dict, detach=True)
         for arg_cpu in traverse_container(self.args_cpu):
             if isinstance(arg_cpu, torch.Tensor) and arg_cpu.grad is not None:
@@ -255,7 +286,7 @@ class OpAutoCompareHook(BaseHook):
 
         id = self.forward_op_id
         self = None
-        garbage_collect(id)
+        garbage_collect(id, 10)
 
     def save_forward_args(self):
         save_op_args(
@@ -277,7 +308,7 @@ class OpAutoCompareHook(BaseHook):
         save_op_args(
             self.name,
             f"{self.identifier}/device/grad_outputs",
-            *tuple(self.grad_outputs_cpu),
+            *tuple(self.grad_outputs_device),
         )
         save_op_args(
             self.name,
@@ -326,7 +357,7 @@ class OpAutoCompareHook(BaseHook):
             else:
                 self = None
 
-            garbage_collect(id)
+            garbage_collect(id, 10)
             return result
 
     def is_should_apply(self, *args, **kwargs):

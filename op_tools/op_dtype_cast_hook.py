@@ -9,6 +9,7 @@ from .utils import (
     traverse_container,
     get_dtype_cast_dict_form_str,
     is_opname_match,
+    garbage_collect
 )
 from .pretty_print import dict_data_list_to_table
 
@@ -17,11 +18,6 @@ class OpDtypeCastHook(BaseHook):
 
     def __init__(self, name, func) -> None:
         super().__init__(name, func)
-        self.dtype_cast_config_str = os.environ.get(
-            "OP_DTYPE_CAST_DICT",
-            "torch.float16->torch.float32,torch.bfloat16->torch.float32",
-        )
-        self.dtype_cast_dict = get_dtype_cast_dict_form_str(self.dtype_cast_config_str)
 
     def before_call_op(self, *args, **kwargs):
         self.dtype_cast_config_str = os.environ.get(
@@ -93,6 +89,9 @@ class OpDtypeCastHook(BaseHook):
                     self.data_dict_list.append(data_dict)
         if len(self.data_dict_list) > 0:
             print(dict_data_list_to_table(self.data_dict_list))
+        id = self.id
+        self = None
+        garbage_collect(id)
 
     def is_should_apply(self, *args, **kwargs):
         if is_opname_match(self.name, os.getenv("OP_DTYPE_CAST_DISABLE_LIST", "")):

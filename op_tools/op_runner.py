@@ -61,7 +61,7 @@ class OpRunner:
         self.dir = dir
         self.hooks = []
         self.add_hook(hook)
-        print(f"{dir}")
+        print(f"dir: {dir}")
         self.load_forward_input()
         self.load_forward_output()
         self.load_backward_data()

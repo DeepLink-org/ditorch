@@ -3,7 +3,7 @@ import torch
 import os
 
 from .base_hook import BaseHook, DisableHookGuard
-from .utils import to_device, is_cpu_op, is_opname_match
+from .utils import to_device, is_cpu_op, is_opname_match, garbage_collect
 from .save_op_args import serialize_args_to_dict
 from .pretty_print import packect_data_to_dict_list, dict_data_list_to_table
 
@@ -36,6 +36,7 @@ class OpFallbackHook(BaseHook):
 
     def before_call_op(self, *args, **kwargs):
         with DisableHookGuard():
+            self.dtype_cast_dict = dict()
             self.is_cpu_op, self.device = is_cpu_op(*args, **kwargs)
             if self.is_cpu_op:
                 return
@@ -56,24 +57,28 @@ class OpFallbackHook(BaseHook):
         with DisableHookGuard():
             if self.result is not None and self.exception is None:
                 self.result_cpu = self.result
-                dtype_convert_back_dict = dict()
+                self.dtype_convert_back_dict = dict()
             else:
                 # cpu backend do not support half or bfloat16
+                self.dtype_cast_dict = OpFallbackHook.FALLBACK_DTYPE_CAST_DICT
                 self.args = to_device(
                     "cpu",
                     self.args_device,
-                    dtype_cast_dict=OpFallbackHook.FALLBACK_DTYPE_CAST_DICT,
+                    dtype_cast_dict=self.dtype_cast_dict,
                 )
                 self.kwargs = to_device(
                     "cpu",
                     self.kwargs_device or {},
-                    dtype_cast_dict=OpFallbackHook.FALLBACK_DTYPE_CAST_DICT,
+                    dtype_cast_dict=self.dtype_cast_dict,
                 )
                 self.result_cpu = self.func(*self.args, **self.kwargs)
-                dtype_convert_back_dict = self.get_dtype_convert_back_dict()
+                self.dtype_convert_back_dict = self.get_dtype_convert_back_dict()
 
-            self.result = to_device(self.device, self.result_cpu, dtype_convert_back_dict)
+            self.result = to_device(self.device, self.result_cpu, self.dtype_convert_back_dict)
             self.dump_op_args()
+            id = self.id
+            self = None
+            garbage_collect(id)
 
     def dump_op_args(self):
         data_dict_list = []
@@ -89,7 +94,15 @@ class OpFallbackHook(BaseHook):
         data_dict_list += packect_data_to_dict_list(self.name + " output(cpu)", serialize_args_to_dict(self.result_cpu))
 
         table = dict_data_list_to_table(data_dict_list)
+        dtype_cast_info = ""
+        if len(self.dtype_cast_dict) > 0:
+            dtype_cast_info = "cpu_dtype_cast_info: " + str(self.dtype_cast_dict)
+
+        print("\n" * 2)
+        print(f"{self.name}    forward_id: {self.id}  {dtype_cast_info}")
+        print(f"{self.current_location}")
         print(table)
+        print("\n" * 2)
 
     def is_should_apply(self, *args, **kwargs):
         BLACK_OP_LIST = ["torch.Tensor.cpu"]
