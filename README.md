@@ -155,73 +155,450 @@ export AUTOCOMPARE_ERROR_TOLERANCE="1e-4,1e-5" # atol=1e-4, rtol=1e-5
 
 ```
 ...
-OpAutoCompareHook: torch.nn.functional.linear                         allclose: False    max_diff:          0.003906250
-OpAutoCompareHook: torch.nn.functional.linear                         input: {'args': ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20075956404224}, {'shape': torch.Size([2048, 2048]), 'stride': (2048, 1), 'numel': 4194304, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20078077673472}, 'None')}
-OpAutoCompareHook: torch.nn.functional.linear                         output: ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20076023513600},)
-op_capture_result/torch.nn.functional.linear/93/device/input.pth saved
-op_capture_result/torch.nn.functional.linear/93/device/output.pth saved
-op_capture_result/torch.nn.functional.linear/93/cpu/input.pth saved
-op_capture_result/torch.nn.functional.linear/93/cpu/output.pth saved
-OpAutoCompareHook: torch.Tensor.contiguous                            allclose: True    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.is_complex                            allclose: True    max_diff:          0.000000000
-OpAutoCompareHook: torch.nn.functional.dropout                        allclose: True    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.add                                   allclose: True    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.to                                    allclose: True    max_diff:          0.000000000
+torch.Tensor.mul forward_id: 165    cpu_dtype_cast_info(from:to): {torch.bfloat16: torch.float64}
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/ops/norm.py:26 manual_rms_norm: return weight * my_input
++---------------------------------+------------------+---------------------+----------+----------+--------+---------------+---------------+-----------------+
+|               name              |      shape       |        stride       |  numel   |  dtype   | device | requires_grad |     layout    |     data_ptr    |
++---------------------------------+------------------+---------------------+----------+----------+--------+---------------+---------------+-----------------+
+|    torch.Tensor.mul inputs[0]   |     (2048,)      |         (1,)        |   2048   | bfloat16 | npu:0  |      True     | torch.strided |  20076634832896 |
+|    torch.Tensor.mul inputs[1]   | (1, 16384, 2048) | (33554432, 2048, 1) | 33554432 | bfloat16 | npu:0  |     False     | torch.strided |  20067477619200 |
+|     torch.Tensor.mul outputs    | (1, 16384, 2048) | (33554432, 2048, 1) | 33554432 | bfloat16 | npu:0  |     False     | torch.strided |  20067544728576 |
+| torch.Tensor.mul inputs(cpu)[0] |     (2048,)      |         (1,)        |   2048   | float64  |  cpu   |     False     | torch.strided |   34492000832   |
+| torch.Tensor.mul inputs(cpu)[1] | (1, 16384, 2048) | (33554432, 2048, 1) | 33554432 | float64  |  cpu   |     False     | torch.strided | 140503487049792 |
+|  torch.Tensor.mul outputs(cpu)  | (1, 16384, 2048) | (33554432, 2048, 1) | 33554432 | float64  |  cpu   |     False     | torch.strided | 140503218610240 |
++---------------------------------+------------------+---------------------+----------+----------+--------+---------------+---------------+-----------------+
++--------------------------------+----------+--------------+-------------------+-------------+-------------+---------------------------------------------------+
+|              name              | allclose | max_abs_diff | max_relative_diff |     atol    |     rtol    |                     error_info                    |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+---------------------------------------------------+
+| torch.Tensor.mul input[0]      |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 | Inconsistent dtypes: torch.bfloat16 torch.float64 |
+| torch.Tensor.mul input[1]      |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 | Inconsistent dtypes: torch.bfloat16 torch.float64 |
+| torch.Tensor.mul output        |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 | Inconsistent dtypes: torch.bfloat16 torch.float64 |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+---------------------------------------------------+
+
 ...
-OpAutoCompareHook: torch.Tensor.max                                   allclose: True    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.int                                   allclose: True    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.add                                   allclose: True    max_diff:          0.000000000
+torch.Tensor.reshape forward_id: 173    cpu_dtype_cast_info(from:to): {torch.bfloat16: torch.float64}
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/modeling_internlm2.py:421 _packed_forward: q = rearrange(q, "b t h gs d -> b t (h gs) d")
++-----------------------------------------+-----------------------+-------------------------------+----------+----------+--------+---------------+---------------+-----------------+-------+
+|                   name                  |         shape         |             stride            |  numel   |  dtype   | device | requires_grad |     layout    |     data_ptr    | value |
++-----------------------------------------+-----------------------+-------------------------------+----------+----------+--------+---------------+---------------+-----------------+-------+
+|      torch.Tensor.reshape inputs[0]     | (1, 16384, 8, 2, 128) | (67108864, 4096, 512, 128, 1) | 33554432 | bfloat16 | npu:0  |     False     | torch.strided |  20067611837952 |       |
+|    torch.Tensor.reshape inputs [1][0]   |                       |                               |          |          |        |               |               |                 |   1   |
+|    torch.Tensor.reshape inputs [1][1]   |                       |                               |          |          |        |               |               |                 | 16384 |
+|    torch.Tensor.reshape inputs [1][2]   |                       |                               |          |          |        |               |               |                 |   16  |
+|    torch.Tensor.reshape inputs [1][3]   |                       |                               |          |          |        |               |               |                 |  128  |
+|       torch.Tensor.reshape outputs      |  (1, 16384, 16, 128)  |    (33554432, 2048, 128, 1)   | 33554432 | bfloat16 | npu:0  |     False     | torch.strided |  20067477619200 |       |
+|   torch.Tensor.reshape inputs(cpu)[0]   | (1, 16384, 8, 2, 128) | (33554432, 2048, 256, 128, 1) | 33554432 | float64  |  cpu   |     False     | torch.strided | 140502405996608 |       |
+| torch.Tensor.reshape inputs(cpu) [1][0] |                       |                               |          |          |        |               |               |                 |   1   |
+| torch.Tensor.reshape inputs(cpu) [1][1] |                       |                               |          |          |        |               |               |                 | 16384 |
+| torch.Tensor.reshape inputs(cpu) [1][2] |                       |                               |          |          |        |               |               |                 |   16  |
+| torch.Tensor.reshape inputs(cpu) [1][3] |                       |                               |          |          |        |               |               |                 |  128  |
+|    torch.Tensor.reshape outputs(cpu)    |  (1, 16384, 16, 128)  |    (33554432, 2048, 128, 1)   | 33554432 | float64  |  cpu   |     False     | torch.strided | 140502405996608 |       |
++-----------------------------------------+-----------------------+-------------------------------+----------+----------+--------+---------------+---------------+-----------------+-------+
++--------------------------------+----------+--------------+-------------------+-------------+-------------+---------------------------------------------------+
+|              name              | allclose | max_abs_diff | max_relative_diff |     atol    |     rtol    |                     error_info                    |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+---------------------------------------------------+
+| torch.Tensor.reshape input[0]  |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 | Inconsistent dtypes: torch.bfloat16 torch.float64 |
+| torch.Tensor.reshape input[1]  |   True   | 0.000000000  |    0.000000000    | 0.000001000 | 0.000001000 |                                                   |
+| torch.Tensor.reshape input[2]  |   True   | 0.000000000  |    0.000000000    | 0.000001000 | 0.000001000 |                                                   |
+| torch.Tensor.reshape input[3]  |   True   | 0.000000000  |    0.000000000    | 0.000001000 | 0.000001000 |                                                   |
+| torch.Tensor.reshape input[4]  |   True   | 0.000000000  |    0.000000000    | 0.000001000 | 0.000001000 |                                                   |
+| torch.Tensor.reshape output    |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 | Inconsistent dtypes: torch.bfloat16 torch.float64 |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+---------------------------------------------------+
 ...
-OpAutoCompareHook: torch.functional.norm                              allclose: True    max_diff:          0.001953125
-OpAutoCompareHook: torch.functional.norm                              allclose: True    max_diff:         71.062500000
-OpAutoCompareHook: torch.functional.norm                              allclose: True    max_diff:        237.750000000
-OpAutoCompareHook: torch.functional.norm                              allclose: True    max_diff:          0.000488281
-OpAutoCompareHook: torch.functional.norm                              allclose: False    max_diff:       1473.750000000
-OpAutoCompareHook: torch.functional.norm                              input: {'args': ({'shape': torch.Size([2048, 8192]), 'stride': (8192, 1), 'numel': 16777216, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067372762112},), 'kwargs': {'p': '2', 'dim': 'None', 'keepdim': 'False', 'out': 'None', 'dtype': 'None'}}
-OpAutoCompareHook: torch.functional.norm                              output: ({'shape': torch.Size([]), 'stride': (), 'numel': 1, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067180820992},)
-op_capture_result/torch.functional.norm/93/device/input.pth saved
-op_capture_result/torch.functional.norm/93/device/output.pth saved
-op_capture_result/torch.functional.norm/93/cpu/input.pth saved
-op_capture_result/torch.functional.norm/93/cpu/output.pth saved
+torch.nn.functional.linear forward_id: 231    cpu_dtype_cast_info(from:to): {torch.bfloat16: torch.float64}
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/utils.py:287 forward: output = F.linear(total_x, weight, bias)  # pylint: disable=E1102
++-------------------------------------------+------------------+---------------------+----------+----------+--------+---------------+---------------+-----------------+-------+
+|                    name                   |      shape       |        stride       |  numel   |  dtype   | device | requires_grad |     layout    |     data_ptr    | value |
++-------------------------------------------+------------------+---------------------+----------+----------+--------+---------------+---------------+-----------------+-------+
+|    torch.nn.functional.linear inputs[0]   | (1, 16384, 2048) | (33554432, 2048, 1) | 33554432 | bfloat16 | npu:0  |     False     | torch.strided |  20088138762240 |       |
+|    torch.nn.functional.linear inputs[1]   |   (2048, 2048)   |      (2048, 1)      | 4194304  | bfloat16 | npu:0  |      True     | torch.strided |  20076626444288 |       |
+|    torch.nn.functional.linear inputs[2]   |                  |                     |          |          |        |               |               |                 |  None |
+|     torch.nn.functional.linear outputs    | (1, 16384, 2048) | (33554432, 2048, 1) | 33554432 | bfloat16 | npu:0  |     False     | torch.strided |  20076634845696 |       |
+| torch.nn.functional.linear inputs(cpu)[0] | (1, 16384, 2048) | (33554432, 2048, 1) | 33554432 | float64  |  cpu   |     False     | torch.strided | 140502875758656 |       |
+| torch.nn.functional.linear inputs(cpu)[1] |   (2048, 2048)   |      (2048, 1)      | 4194304  | float64  |  cpu   |     False     | torch.strided | 140560622940224 |       |
+| torch.nn.functional.linear inputs(cpu)[2] |                  |                     |          |          |        |               |               |                 |  None |
+|  torch.nn.functional.linear outputs(cpu)  | (1, 16384, 2048) | (33554432, 2048, 1) | 33554432 | float64  |  cpu   |     False     | torch.strided | 140502607319104 |       |
++-------------------------------------------+------------------+---------------------+----------+----------+--------+---------------+---------------+-----------------+-------+
++-------------------------------------+----------+--------------+-------------------+-------------+-------------+---------------------------------------------------+
+|                 name                | allclose | max_abs_diff | max_relative_diff |     atol    |     rtol    |                     error_info                    |
++-------------------------------------+----------+--------------+-------------------+-------------+-------------+---------------------------------------------------+
+| torch.nn.functional.linear input[0] |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 | Inconsistent dtypes: torch.bfloat16 torch.float64 |
+| torch.nn.functional.linear input[1] |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 | Inconsistent dtypes: torch.bfloat16 torch.float64 |
+| torch.nn.functional.linear input[2] |   True   | 0.000000000  |    0.000000000    | 0.000000000 | 0.000000000 |                                                   |
+|  torch.nn.functional.linear output  |  False   | 0.003906250  |    0.083984375    | 0.001000000 | 0.001000000 | Inconsistent dtypes: torch.bfloat16 torch.float64 |
++-------------------------------------+----------+--------------+-------------------+-------------+-------------+---------------------------------------------------+
+
+
+
+op_tools_results/op_capture_results/torch.nn.functional.linear/1527072/autocompare/231/2024-10-08-15-20-39/device/input.pth saved
+op_tools_results/op_capture_results/torch.nn.functional.linear/1527072/autocompare/231/2024-10-08-15-20-39/device/output.pth saved
+op_tools_results/op_capture_results/torch.nn.functional.linear/1527072/autocompare/231/2024-10-08-15-20-39/cpu/input.pth saved
+op_tools_results/op_capture_results/torch.nn.functional.linear/1527072/autocompare/231/2024-10-08-15-20-39/cpu/output.pth saved
+
 ...
-OpAutoCompareHook: torch.triu                                         allclose: True    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.bool                                  allclose: True    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.tolist                            0th allclose: True    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.tolist                            1th allclose: True    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.tolist                            2th allclose: True    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.tolist                            3th allclose: True    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.tolist                            0th allclose: True    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.tolist                            1th allclose: True    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.tolist                            2th allclose: True    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.tolist                            3th allclose: True    max_diff:          0.000000000
-skip OpAutoCompareHook on npu.npu_fusion_attention
+torch.outer forward_id: 175    cpu_dtype_cast_info(from:to): {torch.float32: torch.float64}
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/modules/embedding.py:351 _update_cos_sin_cache: freqs = torch.outer(t, self.inv_freq.to(device=t.device))
++----------------------------+------------+---------+-------+---------+--------+---------------+---------------+----------------+
+|            name            |   shape    |  stride | numel |  dtype  | device | requires_grad |     layout    |    data_ptr    |
++----------------------------+------------+---------+-------+---------+--------+---------------+---------------+----------------+
+|   torch.outer inputs[0]    |  (1025,)   |   (1,)  |  1025 | float32 | npu:0  |     False     | torch.strided | 20067180423168 |
+|   torch.outer inputs[1]    |   (64,)    |   (1,)  |   64  | float32 | npu:0  |     False     | torch.strided | 20067179825152 |
+|    torch.outer outputs     | (1025, 64) | (64, 1) | 65600 | float32 | npu:0  |     False     | torch.strided | 20067180428800 |
+| torch.outer inputs(cpu)[0] |  (1025,)   |   (1,)  |  1025 | float64 |  cpu   |     False     | torch.strided |  36028922944   |
+| torch.outer inputs(cpu)[1] |   (64,)    |   (1,)  |   64  | float64 |  cpu   |     False     | torch.strided |  33746424192   |
+|  torch.outer outputs(cpu)  | (1025, 64) | (64, 1) | 65600 | float64 |  cpu   |     False     | torch.strided |  33745266368   |
++----------------------------+------------+---------+-------+---------+--------+---------------+---------------+----------------+
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+|              name              | allclose | max_abs_diff | max_relative_diff |     atol    |     rtol    |                    error_info                    |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+| torch.outer input[0]           |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+| torch.outer input[1]           |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+| torch.outer output             |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
 ...
-OpAutoCompareHook: torch.Tensor.sum (ins[0].grad)                     allclose: True    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.sort (ins[0].grad)                    allclose: True    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.add (ins[0].grad)                     allclose: True    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.add (ins[1].grad)                     allclose: True    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.half (ins[0].grad)                    allclose: True    max_diff:          0.000000000
+
+torch.Tensor.add forward_id: 214    cpu_dtype_cast_info(from:to): {torch.float32: torch.float64}
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/modules/embedding.py:100 _torch_apply_rotary_func: out2.copy_(x1 * sin + x2 * cos)
++---------------------------------+-------------------+-----------------------+---------+---------+--------+---------------+---------------+-----------------+
+|               name              |       shape       |         stride        |  numel  |  dtype  | device | requires_grad |     layout    |     data_ptr    |
++---------------------------------+-------------------+-----------------------+---------+---------+--------+---------------+---------------+-----------------+
+|    torch.Tensor.add inputs[0]   | (1, 16384, 8, 64) | (8388608, 512, 64, 1) | 8388608 | float32 | npu:0  |     False     | torch.strided |  20088138762240 |
+|    torch.Tensor.add inputs[1]   | (1, 16384, 8, 64) | (8388608, 512, 64, 1) | 8388608 | float32 | npu:0  |     False     | torch.strided |  20088172317184 |
+|     torch.Tensor.add outputs    | (1, 16384, 8, 64) | (8388608, 512, 64, 1) | 8388608 | float32 | npu:0  |     False     | torch.strided |  20088205872128 |
+| torch.Tensor.add inputs(cpu)[0] | (1, 16384, 8, 64) | (8388608, 512, 64, 1) | 8388608 | float64 |  cpu   |     False     | torch.strided | 140504225255488 |
+| torch.Tensor.add inputs(cpu)[1] | (1, 16384, 8, 64) | (8388608, 512, 64, 1) | 8388608 | float64 |  cpu   |     False     | torch.strided | 140504158142528 |
+|  torch.Tensor.add outputs(cpu)  | (1, 16384, 8, 64) | (8388608, 512, 64, 1) | 8388608 | float64 |  cpu   |     False     | torch.strided | 140503009972288 |
++---------------------------------+-------------------+-----------------------+---------+---------+--------+---------------+---------------+-----------------+
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+|              name              | allclose | max_abs_diff | max_relative_diff |     atol    |     rtol    |                    error_info                    |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+| torch.Tensor.add input[0]      |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+| torch.Tensor.add input[1]      |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+| torch.Tensor.add output        |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+
+
+
+
+
+
+torch.Tensor.copy_ forward_id: 215    cpu_dtype_cast_info(from:to): {torch.bfloat16: torch.float64, torch.float32: torch.float64}
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/modules/embedding.py:100 _torch_apply_rotary_func: out2.copy_(x1 * sin + x2 * cos)
++-----------------------------------+-------------------+--------------------------+---------+----------+--------+---------------+---------------+-----------------+
+|                name               |       shape       |          stride          |  numel  |  dtype   | device | requires_grad |     layout    |     data_ptr    |
++-----------------------------------+-------------------+--------------------------+---------+----------+--------+---------------+---------------+-----------------+
+|    torch.Tensor.copy_ inputs[0]   | (1, 16384, 8, 64) | (16777216, 1024, 128, 1) | 8388608 | bfloat16 | npu:0  |     False     | torch.strided |  20067746056320 |
+|    torch.Tensor.copy_ inputs[1]   | (1, 16384, 8, 64) |  (8388608, 512, 64, 1)   | 8388608 | float32  | npu:0  |     False     | torch.strided |  20088205872128 |
+|     torch.Tensor.copy_ outputs    | (1, 16384, 8, 64) | (16777216, 1024, 128, 1) | 8388608 | bfloat16 | npu:0  |     False     | torch.strided |  20067746056320 |
+| torch.Tensor.copy_ inputs(cpu)[0] | (1, 16384, 8, 64) |  (8388608, 512, 64, 1)   | 8388608 | float64  |  cpu   |     False     | torch.strided | 140503144198208 |
+| torch.Tensor.copy_ inputs(cpu)[1] | (1, 16384, 8, 64) |  (8388608, 512, 64, 1)   | 8388608 | float64  |  cpu   |     False     | torch.strided | 140503077085248 |
+|  torch.Tensor.copy_ outputs(cpu)  | (1, 16384, 8, 64) |  (8388608, 512, 64, 1)   | 8388608 | float64  |  cpu   |     False     | torch.strided | 140503144198208 |
++-----------------------------------+-------------------+--------------------------+---------+----------+--------+---------------+---------------+-----------------+
++--------------------------------+----------+--------------+-------------------+-------------+-------------+---------------------------------------------------+
+|              name              | allclose | max_abs_diff | max_relative_diff |     atol    |     rtol    |                     error_info                    |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+---------------------------------------------------+
+| torch.Tensor.copy_ input[0]    |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 | Inconsistent dtypes: torch.bfloat16 torch.float64 |
+| torch.Tensor.copy_ input[1]    |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 |  Inconsistent dtypes: torch.float32 torch.float64 |
+| torch.Tensor.copy_ output      |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 | Inconsistent dtypes: torch.bfloat16 torch.float64 |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+---------------------------------------------------+
 ...
-OpAutoCompareHook: torch.nn.functional.silu (ins[0].grad)             allclose: True    max_diff:          0.000000000
-OpAutoCompareHook: torch.nn.functional.linear (ins[2].grad)           allclose: True    max_diff:          0.000000000
-OpAutoCompareHook: torch.nn.functional.linear (ins[1].grad)           allclose: True    max_diff:          0.000000238
-OpAutoCompareHook: torch.nn.functional.linear (ins[0].grad)           allclose: True    max_diff:          0.000000060
+torch.Tensor.tolist forward_id: 225
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/modules/multi_head_attention.py:205 _forward: actual_seq_qlen = actual_seq_qlen[1:].tolist()
++-----------------------------------------+-------+--------+-------+-------+--------+---------------+---------------+----------------+-------+
+|                   name                  | shape | stride | numel | dtype | device | requires_grad |     layout    |    data_ptr    | value |
++-----------------------------------------+-------+--------+-------+-------+--------+---------------+---------------+----------------+-------+
+|        torch.Tensor.tolist inputs       |  (4,) |  (1,)  |   4   | int32 | npu:0  |     False     | torch.strided | 20067179825668 |       |
+|    torch.Tensor.tolist outputs [0][0]   |       |        |       |       |        |               |               |                |  4096 |
+|    torch.Tensor.tolist outputs [0][1]   |       |        |       |       |        |               |               |                |  8192 |
+|    torch.Tensor.tolist outputs [0][2]   |       |        |       |       |        |               |               |                | 12288 |
+|    torch.Tensor.tolist outputs [0][3]   |       |        |       |       |        |               |               |                | 16384 |
+|     torch.Tensor.tolist inputs(cpu)     |  (4,) |  (1,)  |   4   | int32 |  cpu   |     False     | torch.strided |  33694948224   |       |
+| torch.Tensor.tolist outputs(cpu) [0][0] |       |        |       |       |        |               |               |                |  4096 |
+| torch.Tensor.tolist outputs(cpu) [0][1] |       |        |       |       |        |               |               |                |  8192 |
+| torch.Tensor.tolist outputs(cpu) [0][2] |       |        |       |       |        |               |               |                | 12288 |
+| torch.Tensor.tolist outputs(cpu) [0][3] |       |        |       |       |        |               |               |                | 16384 |
++-----------------------------------------+-------+--------+-------+-------+--------+---------------+---------------+----------------+-------+
++--------------------------------+----------+--------------+-------------------+-------------+-------------+------------+
+|              name              | allclose | max_abs_diff | max_relative_diff |     atol    |     rtol    | error_info |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+------------+
+| torch.Tensor.tolist input      |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 |            |
+| torch.Tensor.tolist output[0]  |   True   | 0.000000000  |    0.000000000    | 0.000001000 | 0.000001000 |            |
+| torch.Tensor.tolist output[1]  |   True   | 0.000000000  |    0.000000000    | 0.000001000 | 0.000001000 |            |
+| torch.Tensor.tolist output[2]  |   True   | 0.000000000  |    0.000000000    | 0.000001000 | 0.000001000 |            |
+| torch.Tensor.tolist output[3]  |   True   | 0.000000000  |    0.000000000    | 0.000001000 | 0.000001000 |            |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+------------+
 ...
-OpAutoCompareHook: torch.Tensor.add_ (ins[0].grad)                    allclose: True    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.div_ (ins[0].grad)                    allclose: True    max_diff:          0.000000000
-OpAutoCompareHook: torch.Tensor.div (ins[0].grad)                     allclose: True    max_diff:          0.000000000
+torch.Tensor.mul forward_id: 252    cpu_dtype_cast_info(from:to): {torch.bfloat16: torch.float64}
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/utils.py:667 Silu: return F.silu(w1_o) * w2_o
++---------------------------------+------------------+----------------------+-----------+----------+--------+---------------+---------------+-----------------+
+|               name              |      shape       |        stride        |   numel   |  dtype   | device | requires_grad |     layout    |     data_ptr    |
++---------------------------------+------------------+----------------------+-----------+----------+--------+---------------+---------------+-----------------+
+|    torch.Tensor.mul inputs[0]   | (1, 16384, 8192) | (134217728, 8192, 1) | 134217728 | bfloat16 | npu:0  |     False     | torch.strided |  20077980155904 |
+|    torch.Tensor.mul inputs[1]   | (1, 16384, 8192) | (134217728, 8192, 1) | 134217728 | bfloat16 | npu:0  |     False     | torch.strided |  20076769064448 |
+|     torch.Tensor.mul outputs    | (1, 16384, 8192) | (134217728, 8192, 1) | 134217728 | bfloat16 | npu:0  |     False     | torch.strided |  20078282145792 |
+| torch.Tensor.mul inputs(cpu)[0] | (1, 16384, 8192) | (134217728, 8192, 1) | 134217728 | float64  |  cpu   |     False     | torch.strided | 140501332246592 |
+| torch.Tensor.mul inputs(cpu)[1] | (1, 16384, 8192) | (134217728, 8192, 1) | 134217728 | float64  |  cpu   |     False     | torch.strided | 140497574117440 |
+|  torch.Tensor.mul outputs(cpu)  | (1, 16384, 8192) | (134217728, 8192, 1) | 134217728 | float64  |  cpu   |     False     | torch.strided | 140496500371520 |
++---------------------------------+------------------+----------------------+-----------+----------+--------+---------------+---------------+-----------------+
++--------------------------------+----------+--------------+-------------------+-------------+-------------+---------------------------------------------------+
+|              name              | allclose | max_abs_diff | max_relative_diff |     atol    |     rtol    |                     error_info                    |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+---------------------------------------------------+
+| torch.Tensor.mul input[0]      |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 | Inconsistent dtypes: torch.bfloat16 torch.float64 |
+| torch.Tensor.mul input[1]      |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 | Inconsistent dtypes: torch.bfloat16 torch.float64 |
+| torch.Tensor.mul output        |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 | Inconsistent dtypes: torch.bfloat16 torch.float64 |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+---------------------------------------------------+
 ...
-OpAutoCompareHook: torch.mul (ins[0].grad)                            allclose: False   max_diff:          4.077112675
-OpAutoCompareHook: torch.mul (ins[1].grad)                            allclose: False   max_diff:          4.077112675
+torch.Tensor.mean forward_id: 262    cpu_dtype_cast_info(from:to): {torch.float32: torch.float64}
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/ops/norm.py:13 manual_rms_norm: variance = my_input.to(torch.float32).pow(2).mean(dims, keepdim=True)
++---------------------------------------+------------------+---------------------+----------+---------+--------+---------------+---------------+-----------------+-------+
+|                  name                 |      shape       |        stride       |  numel   |  dtype  | device | requires_grad |     layout    |     data_ptr    | value |
++---------------------------------------+------------------+---------------------+----------+---------+--------+---------------+---------------+-----------------+-------+
+|      torch.Tensor.mean inputs[0]      | (1, 16384, 2048) | (33554432, 2048, 1) | 33554432 | float32 | npu:0  |      True     | torch.strided |  20078114374144 |       |
+|    torch.Tensor.mean inputs [1][0]    |                  |                     |          |         |        |               |               |                 |   -1  |
+|    torch.Tensor.mean inputs keepdim   |                  |                     |          |         |        |               |               |                 |  True |
+|       torch.Tensor.mean outputs       |  (1, 16384, 1)   |    (16384, 1, 1)    |  16384   | float32 | npu:0  |      True     | torch.strided |  20067180823040 |       |
+|    torch.Tensor.mean inputs(cpu)[0]   | (1, 16384, 2048) | (33554432, 2048, 1) | 33554432 | float64 |  cpu   |      True     | torch.strided | 140500392681536 |       |
+|  torch.Tensor.mean inputs(cpu) [1][0] |                  |                     |          |         |        |               |               |                 |   -1  |
+| torch.Tensor.mean inputs(cpu) keepdim |                  |                     |          |         |        |               |               |                 |  True |
+|     torch.Tensor.mean outputs(cpu)    |  (1, 16384, 1)   |    (16384, 1, 1)    |  16384   | float64 |  cpu   |      True     | torch.strided |   33746053632   |       |
++---------------------------------------+------------------+---------------------+----------+---------+--------+---------------+---------------+-----------------+-------+
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+|              name              | allclose | max_abs_diff | max_relative_diff |     atol    |     rtol    |                    error_info                    |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+| torch.Tensor.mean input[0]     |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+| torch.Tensor.mean input[1]     |   True   | 0.000000000  |    0.000000000    | 0.000001000 | 0.000001000 |                                                  |
+| torch.Tensor.mean output       |   True   | 0.000000060  |    0.000000152    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+...
+torch.Tensor.argmax forward_id: 296    cpu_dtype_cast_info(from:to): {torch.float32: torch.float64}
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/metrics/base.py:115 update: (shift_labels == (shift_logits.argmax(dim=-1) + pred_shift)), logits_global
++-------------------------------------+----------------+------------+------------+---------+--------+---------------+---------------+-----------------+-------+
+|                 name                |     shape      |   stride   |   numel    |  dtype  | device | requires_grad |     layout    |     data_ptr    | value |
++-------------------------------------+----------------+------------+------------+---------+--------+---------------+---------------+-----------------+-------+
+|      torch.Tensor.argmax inputs     | (16384, 92544) | (92544, 1) | 1516240896 | float32 | npu:0  |      True     | torch.strided |  20088635785216 |       |
+|    torch.Tensor.argmax inputs dim   |                |            |            |         |        |               |               |                 |   -1  |
+|     torch.Tensor.argmax outputs     |    (16384,)    |    (1,)    |   16384    |  int64  | npu:0  |     False     | torch.strided |  20067181522432 |       |
+|   torch.Tensor.argmax inputs(cpu)   | (16384, 92544) | (92544, 1) | 1516240896 | float64 |  cpu   |     False     | torch.strided | 140336718184512 |       |
+| torch.Tensor.argmax inputs(cpu) dim |                |            |            |         |        |               |               |                 |   -1  |
+|   torch.Tensor.argmax outputs(cpu)  |    (16384,)    |    (1,)    |   16384    |  int64  |  cpu   |     False     | torch.strided |   35724171200   |       |
++-------------------------------------+----------------+------------+------------+---------+--------+---------------+---------------+-----------------+-------+
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+|              name              | allclose | max_abs_diff | max_relative_diff |     atol    |     rtol    |                    error_info                    |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+| torch.Tensor.argmax input      |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+| torch.Tensor.argmax output     |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 |                                                  |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+...
+torch.Tensor.mul forward_id: 381    cpu_dtype_cast_info(from:to): {torch.float32: torch.float64}
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/solver/optimizer/hybrid_zero_optim.py:609 backward: loss = self.loss_scale * loss
++--------------------------------------+-------+--------+-------+---------+--------+---------------+---------------+-----------------+-------+
+|                 name                 | shape | stride | numel |  dtype  | device | requires_grad |     layout    |     data_ptr    | value |
++--------------------------------------+-------+--------+-------+---------+--------+---------------+---------------+-----------------+-------+
+|  torch.Tensor.mul grad_output(cpu)   |  (1,) |  (1,)  |   1   | float32 |  cpu   |     False     | torch.strided | 139747700714432 |       |
+|   torch.Tensor.mul grad_inputs[0]    |       |        |       |         |        |               |               |                 |  None |
+|   torch.Tensor.mul grad_inputs[1]    |   ()  |   ()   |   1   | float32 | npu:0  |     False     | torch.strided |  20067181907968 |       |
+| torch.Tensor.mul grad_inputs(cpu)[0] |       |        |       |         |        |               |               |                 |  None |
+| torch.Tensor.mul grad_inputs(cpu)[1] |   ()  |   ()   |   1   | float64 |  cpu   |     False     | torch.strided | 139747700718656 |       |
++--------------------------------------+-------+--------+-------+---------+--------+---------------+---------------+-----------------+-------+
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+|              name              | allclose | max_abs_diff | max_relative_diff |     atol    |     rtol    |                    error_info                    |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+| torch.Tensor.mul grad[0]       |   True   | 0.000000000  |    0.000000000    | 0.000000000 | 0.000000000 |                                                  |
+| torch.Tensor.mul grad[1]       |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+...
+torch.Tensor.add_ forward_id: 289    cpu_dtype_cast_info(from:to): {torch.bfloat16: torch.float32, torch.float32: torch.float64}
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/core/scheduler/no_pipeline_scheduler.py:143 _train_one_batch: loss += moe_loss
++---------------------------------------+-------+--------+-------+---------+--------+---------------+---------------+-----------------+-------+
+|                  name                 | shape | stride | numel |  dtype  | device | requires_grad |     layout    |     data_ptr    | value |
++---------------------------------------+-------+--------+-------+---------+--------+---------------+---------------+-----------------+-------+
+|   torch.Tensor.add_ grad_output(cpu)  |   ()  |   ()   |   1   | float32 |  cpu   |     False     | torch.strided | 139747700723072 |       |
+|    torch.Tensor.add_ grad_inputs[0]   |   ()  |   ()   |   1   | float32 | npu:0  |     False     | torch.strided |  20067181907968 |       |
+|    torch.Tensor.add_ grad_inputs[1]   |       |        |       |         |        |               |               |                 |  None |
+| torch.Tensor.add_ grad_inputs(cpu)[0] |   ()  |   ()   |   1   | float64 |  cpu   |     False     | torch.strided | 139747700726528 |       |
+| torch.Tensor.add_ grad_inputs(cpu)[1] |       |        |       |         |        |               |               |                 |  None |
++---------------------------------------+-------+--------+-------+---------+--------+---------------+---------------+-----------------+-------+
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+|              name              | allclose | max_abs_diff | max_relative_diff |     atol    |     rtol    |                    error_info                    |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+| torch.Tensor.add_ grad[0]      |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+| torch.Tensor.add_ grad[1]      |   True   | 0.000000000  |    0.000000000    | 0.000000000 | 0.000000000 |                                                  |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+...
+torch.Tensor.div_ forward_id: 288    cpu_dtype_cast_info(from:to): {torch.float32: torch.float64}
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/core/scheduler/no_pipeline_scheduler.py:142 _train_one_batch: loss /= scale_loss
++---------------------------------------+-------+--------+-------+---------+--------+---------------+---------------+-----------------+-------+
+|                  name                 | shape | stride | numel |  dtype  | device | requires_grad |     layout    |     data_ptr    | value |
++---------------------------------------+-------+--------+-------+---------+--------+---------------+---------------+-----------------+-------+
+|   torch.Tensor.div_ grad_output(cpu)  |   ()  |   ()   |   1   | float32 |  cpu   |     False     | torch.strided | 139747700733376 |       |
+|    torch.Tensor.div_ grad_inputs[0]   |   ()  |   ()   |   1   | float32 | npu:0  |     False     | torch.strided |  20067247392256 |       |
+|    torch.Tensor.div_ grad_inputs[1]   |       |        |       |         |        |               |               |                 |  None |
+| torch.Tensor.div_ grad_inputs(cpu)[0] |   ()  |   ()   |   1   | float64 |  cpu   |     False     | torch.strided | 139747700740672 |       |
+| torch.Tensor.div_ grad_inputs(cpu)[1] |       |        |       |         |        |               |               |                 |  None |
++---------------------------------------+-------+--------+-------+---------+--------+---------------+---------------+-----------------+-------+
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+|              name              | allclose | max_abs_diff | max_relative_diff |     atol    |     rtol    |                    error_info                    |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+| torch.Tensor.div_ grad[0]      |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+| torch.Tensor.div_ grad[1]      |   True   | 0.000000000  |    0.000000000    | 0.000000000 | 0.000000000 |                                                  |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+...
+torch.Tensor.sum forward_id: 279    cpu_dtype_cast_info(from:to): {torch.float32: torch.float64}
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/losses/ce_loss.py:645 forward: loss = loss_list.sum() / (cond).sum()
++-----------------------------------+----------+--------+-------+---------+--------+---------------+---------------+-----------------+
+|                name               |  shape   | stride | numel |  dtype  | device | requires_grad |     layout    |     data_ptr    |
++-----------------------------------+----------+--------+-------+---------+--------+---------------+---------------+-----------------+
+| torch.Tensor.sum grad_output(cpu) |    ()    |   ()   |   1   | float32 |  cpu   |     False     | torch.strided | 139747700752832 |
+|    torch.Tensor.sum grad_inputs   | (16384,) |  (0,)  | 16384 | float32 | npu:0  |     False     | torch.strided |  20067181907968 |
+| torch.Tensor.sum grad_inputs(cpu) | (16384,) |  (0,)  | 16384 | float64 |  cpu   |     False     | torch.strided | 139747699960640 |
++-----------------------------------+----------+--------+-------+---------+--------+---------------+---------------+-----------------+
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+|              name              | allclose | max_abs_diff | max_relative_diff |     atol    |     rtol    |                    error_info                    |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+| torch.Tensor.sum grad          |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+
+
+
+
+
+
+torch.nn.functional.cross_entropy forward_id: 277    cpu_dtype_cast_info(from:to): {torch.float32: torch.float64}
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/losses/ce_loss.py:635 forward: loss_list = self.loss_fn(
++----------------------------------------------------+----------------+------------+------------+---------+--------+---------------+---------------+-----------------+
+|                        name                        |     shape      |   stride   |   numel    |  dtype  | device | requires_grad |     layout    |     data_ptr    |
++----------------------------------------------------+----------------+------------+------------+---------+--------+---------------+---------------+-----------------+
+| torch.nn.functional.cross_entropy grad_output(cpu) |    (16384,)    |    (1,)    |   16384    | float32 |  cpu   |     False     | torch.strided | 139747701147904 |
+|   torch.nn.functional.cross_entropy grad_inputs    | (16384, 92544) | (92544, 1) | 1516240896 | float32 | npu:0  |     False     | torch.strided |  20110110621696 |
+| torch.nn.functional.cross_entropy grad_inputs(cpu) | (16384, 92544) | (92544, 1) | 1516240896 | float64 |  cpu   |     False     | torch.strided | 139473962684480 |
++----------------------------------------------------+----------------+------------+------------+---------+--------+---------------+---------------+-----------------+
++----------------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+|                  name                  | allclose | max_abs_diff | max_relative_diff |     atol    |     rtol    |                    error_info                    |
++----------------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+| torch.nn.functional.cross_entropy grad |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
++----------------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+...
++------------+------------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+| forward_id |                name                | allclose | max_abs_diff | max_relative_diff |     atol    |     rtol    |                    error_info                    |
++------------+------------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
+|    358     |   torch.Tensor.expand output       |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 |                                                  |
+|    359     |   torch.Tensor.max input           |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 |                                                  |
+|    359     |   torch.Tensor.max output          |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 |                                                  |
+|    360     |   torch.Tensor.int input           |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 |                                                  |
+|    360     |   torch.Tensor.int output          |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 |                                                  |
+|    361     |   torch.Tensor.add input[0]        |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 |                                                  |
+|    361     |   torch.Tensor.add input[1]        |   True   | 0.000000000  |    0.000000000    | 0.000001000 | 0.000001000 |                                                  |
+|    361     |   torch.Tensor.add output          |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 |                                                  |
+|    362     |   torch.Tensor.__index__ input     |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 |                                                  |
+|    362     |   torch.Tensor.__index__ output    |   True   | 0.000000000  |    0.000000000    | 0.000001000 | 0.000001000 |                                                  |
+|    363     |   torch.Tensor.__index__ input     |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 |                                                  |
+|    363     |   torch.Tensor.__index__ output    |   True   | 0.000000000  |    0.000000000    | 0.000001000 | 0.000001000 |                                                  |
+|    364     | torch.Tensor.scatter_add_ input[0] |  False   | 2.062500000  |    0.000011804    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    364     | torch.Tensor.scatter_add_ input[1] |   True   | 0.000000000  |    0.000000000    | 0.000001000 | 0.000001000 |                                                  |
+|    364     | torch.Tensor.scatter_add_ input[2] |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 |                                                  |
+|    364     | torch.Tensor.scatter_add_ input[3] |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    364     |  torch.Tensor.scatter_add_ output  |  False   | 2.062500000  |    0.000011804    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    365     |   torch.Tensor.expand input[0]     |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 |                                                  |
+|    365     |   torch.Tensor.expand input[1]     |   True   | 0.000000000  |    0.000000000    | 0.000001000 | 0.000001000 |                                                  |
+|    365     |   torch.Tensor.expand output       |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 |                                                  |
+|    366     |   torch.Tensor.max input           |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 |                                                  |
+|    366     |   torch.Tensor.max output          |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 |                                                  |
+|    367     |   torch.Tensor.int input           |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 |                                                  |
+|    367     |   torch.Tensor.int output          |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 |                                                  |
+|    368     |   torch.Tensor.add input[0]        |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 |                                                  |
+|    368     |   torch.Tensor.add input[1]        |   True   | 0.000000000  |    0.000000000    | 0.000001000 | 0.000001000 |                                                  |
+|    368     |   torch.Tensor.add output          |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 |                                                  |
+|    369     |   torch.Tensor.__index__ input     |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 |                                                  |
+|    369     |   torch.Tensor.__index__ output    |   True   | 0.000000000  |    0.000000000    | 0.000001000 | 0.000001000 |                                                  |
+|    370     |   torch.Tensor.__index__ input     |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 |                                                  |
+|    370     |   torch.Tensor.__index__ output    |   True   | 0.000000000  |    0.000000000    | 0.000001000 | 0.000001000 |                                                  |
+|    371     | torch.Tensor.scatter_add_ input[0] |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    371     | torch.Tensor.scatter_add_ input[1] |   True   | 0.000000000  |    0.000000000    | 0.000001000 | 0.000001000 |                                                  |
+|    371     | torch.Tensor.scatter_add_ input[2] |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 |                                                  |
+|    371     | torch.Tensor.scatter_add_ input[3] |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    371     |  torch.Tensor.scatter_add_ output  |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    372     |   torch.Tensor.__len__ input       |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    372     |   torch.Tensor.__len__ output      |   True   | 0.000000000  |    0.000000000    | 0.000001000 | 0.000001000 |                                                  |
+|    373     |   torch.Tensor.__len__ input       |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    373     |   torch.Tensor.__len__ output      |   True   | 0.000000000  |    0.000000000    | 0.000001000 | 0.000001000 |                                                  |
+|    374     |  torch.Tensor.new_zeros input[0]   |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    374     |  torch.Tensor.new_zeros input[1]   |   True   | 0.000000000  |    0.000000000    | 0.000001000 | 0.000001000 |                                                  |
+|    374     |   torch.Tensor.new_zeros output    |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    375     |   torch.cat input[0]               |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    375     |   torch.cat input[1]               |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    375     |   torch.cat output                 |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    376     |   torch.Tensor.__len__ input       |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    376     |   torch.Tensor.__len__ output      |   True   | 0.000000000  |    0.000000000    | 0.000001000 | 0.000001000 |                                                  |
+|    377     |  torch.Tensor.new_zeros input[0]   |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    377     |  torch.Tensor.new_zeros input[1]   |   True   | 0.000000000  |    0.000000000    | 0.000001000 | 0.000001000 |                                                  |
+|    377     |   torch.Tensor.new_zeros output    |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    378     |   torch.cat input[0]               |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    378     |   torch.cat input[1]               |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    378     |   torch.cat output                 |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    379     |   torch.Tensor.add_ input[0]       |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    379     |   torch.Tensor.add_ input[1]       |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    379     |   torch.Tensor.add_ output         |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    380     |   torch.Tensor.add_ input[0]       |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    380     |   torch.Tensor.add_ input[1]       |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    380     |   torch.Tensor.add_ output         |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    381     |   torch.Tensor.mul input[0]        |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    381     |   torch.Tensor.mul input[1]        |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    381     |   torch.Tensor.mul output          |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+|    381     |   torch.Tensor.mul grad[0]         |   True   | 0.000000000  |    0.000000000    | 0.000000000 | 0.000000000 |                                                  |
+|    381     |   torch.Tensor.mul grad[1]         |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
++------------+------------------------------------+----------+--------------+-------------------+-------------+-------------+--------------------------------------------------+
 ```
 
 #### **离线算子精度测试**
 ```
-python op_tools/run_op_from_data.py /deeplink/op_capture_result/torch.Tensor.div/2334011/5  --acc_check --run_times 1
+python op_tools/run_op_from_data.py /deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/op_tools_results/op_capture_results/torch.nn.functional.normalize/ --acc_check --run_ti
+mes 1
 ditorch.framework: torch_npu:2.1.0.post3
-OpAutoCompareHook: torch.Tensor.div                                   allclose: True    max_diff:          0.000000060
-OpAutoCompareHook: torch.Tensor.div 0th input grad                    allclose: True    max_diff:          0.000000954
-OpAutoCompareHook: torch.Tensor.div 1th input grad                    allclose: True    max_diff:          0.000000238
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/op_tools_results/op_capture_results/torch.nn.functional.normalize/1556339/autocompare/268/2024-10-08-16-14-55/device
+
+
+torch.nn.functional.normalize forward_id: 1    cpu_dtype_cast_info(from:to): {torch.bfloat16: torch.float64}
+/deeplink_afs/zhaoguochun/ditorch2/op_tools/op_runner.py:124 run_forward: self.result = self.func(*self.args, **self.kwargs)
++-----------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+-----------------+-------+
+|                      name                     |     shape     |   stride  |   numel   |  dtype   | device | requires_grad |     layout    |     data_ptr    | value |
++-----------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+-----------------+-------+
+|      torch.nn.functional.normalize inputs     | (92544, 2048) | (2048, 1) | 189530112 | bfloat16 | npu:0  |      True     | torch.strided |  20067179823104 |       |
+|     torch.nn.functional.normalize inputs p    |               |           |           |          |        |               |               |                 |  2.0  |
+|    torch.nn.functional.normalize inputs dim   |               |           |           |          |        |               |               |                 |   1   |
+|    torch.nn.functional.normalize inputs eps   |               |           |           |          |        |               |               |                 | 1e-12 |
+|    torch.nn.functional.normalize inputs out   |               |           |           |          |        |               |               |                 |  None |
+|     torch.nn.functional.normalize outputs     | (92544, 2048) | (2048, 1) | 189530112 | bfloat16 | npu:0  |      True     | torch.strided |  20076824625152 |       |
+|   torch.nn.functional.normalize inputs(cpu)   | (92544, 2048) | (2048, 1) | 189530112 | float64  |  cpu   |      True     | torch.strided | 140583390142528 |       |
+|  torch.nn.functional.normalize inputs(cpu) p  |               |           |           |          |        |               |               |                 |  2.0  |
+| torch.nn.functional.normalize inputs(cpu) dim |               |           |           |          |        |               |               |                 |   1   |
+| torch.nn.functional.normalize inputs(cpu) eps |               |           |           |          |        |               |               |                 | 1e-12 |
+| torch.nn.functional.normalize inputs(cpu) out |               |           |           |          |        |               |               |                 |  None |
+|   torch.nn.functional.normalize outputs(cpu)  | (92544, 2048) | (2048, 1) | 189530112 | float64  |  cpu   |      True     | torch.strided | 140573367332928 |       |
++-----------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+-----------------+-------+
++--------------------------------------+----------+--------------+-------------------+-------------+-------------+---------------------------------------------------+
+|                 name                 | allclose | max_abs_diff | max_relative_diff |     atol    |     rtol    |                     error_info                    |
++--------------------------------------+----------+--------------+-------------------+-------------+-------------+---------------------------------------------------+
+| torch.nn.functional.normalize input  |   True   | 0.000000000  |    0.000000000    | 0.001000000 | 0.001000000 | Inconsistent dtypes: torch.bfloat16 torch.float64 |
+| torch.nn.functional.normalize output |   True   | 0.000976562  |    0.007751465    | 0.001000000 | 0.001000000 | Inconsistent dtypes: torch.bfloat16 torch.float64 |
++--------------------------------------+----------+--------------+-------------------+-------------+-------------+---------------------------------------------------+
+
+torch.nn.functional.normalize forward_id: 1    cpu_dtype_cast_info(from:to): {torch.bfloat16: torch.float64}
+/deeplink_afs/zhaoguochun/ditorch2/op_tools/op_runner.py:124 run_forward: self.result = self.func(*self.args, **self.kwargs)
++---------------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+-----------------+
+|                        name                       |     shape     |   stride  |   numel   |  dtype   | device | requires_grad |     layout    |     data_ptr    |
++---------------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+-----------------+
+|   torch.nn.functional.normalize grad_output(cpu)  | (92544, 2048) | (2048, 1) | 189530112 | float32  |  cpu   |     False     | torch.strided | 140572514840640 |
+|    torch.nn.functional.normalize grad_inputs[0]   | (92544, 2048) | (2048, 1) | 189530112 | bfloat16 | npu:0  |     False     | torch.strided |  20077898366976 |
+|    torch.nn.functional.normalize grad_inputs[1]   | (92544, 2048) | (2048, 1) | 189530112 | bfloat16 | npu:0  |     False     | torch.strided |  20079351693312 |
+| torch.nn.functional.normalize grad_inputs(cpu)[0] | (92544, 2048) | (2048, 1) | 189530112 | float64  |  cpu   |     False     | torch.strided | 140559542906944 |
+| torch.nn.functional.normalize grad_inputs(cpu)[1] | (92544, 2048) | (2048, 1) | 189530112 | float64  |  cpu   |     False     | torch.strided | 140554994171968 |
++---------------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+-----------------+
++---------------------------------------+----------+---------------+-------------------+-------------+-------------+--------------------------------------------------+
+|                  name                 | allclose |  max_abs_diff | max_relative_diff |     atol    |     rtol    |                    error_info                    |
++---------------------------------------+----------+---------------+-------------------+-------------+-------------+--------------------------------------------------+
+| torch.nn.functional.normalize grad[0] |  False   | 104.576171875 |    0.005955214    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
+| torch.nn.functional.normalize grad[1] |  False   |  5.168151855  |    0.014576809    | 0.000010000 | 0.000010000 | Inconsistent dtypes: torch.float32 torch.float64 |
++---------------------------------------+----------+---------------+-------------------+-------------+-------------+--------------------------------------------------+
 ```
 
 ### 速度分析工具 <a id="tool3"> </a>
@@ -231,24 +608,127 @@ OpAutoCompareHook: torch.Tensor.div 1th input grad                    allclose: 
 用模型训练过程中真实的输入输出分析算子和通信的耗时，分析出性能瓶颈
 ```
 # 测量算子耗时（输入为使用算子抓取工具在模型训练时抓取到的真实数据）
-python op_tools/run_op_from_data.py /deeplink/op_capture_result/torch.Tensor.div/2334011/5 --run_times 3 --sync_time_measure
+python op_tools/run_op_from_data.py /deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/op_tools_results/op_capture_results/torch.nn.functional.normalize/ --sync_time_measure  --run_times 3
 ditorch.framework: torch_npu:2.1.0.post3
-SyncExecuteTimer: torch.Tensor.div forward  elasped 69.61202621 ms
-SyncExecuteTimer: torch.Tensor.div backward elasped 169.42977905 ms
-SyncExecuteTimer: torch.Tensor.div forward  elasped 0.08678436 ms
-SyncExecuteTimer: torch.Tensor.div backward elasped 2.97260284 ms
-SyncExecuteTimer: torch.Tensor.div forward  elasped 0.04935265 ms
-SyncExecuteTimer: torch.Tensor.div backward elasped 0.16641617 ms
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/op_tools_results/op_capture_results/torch.nn.functional.normalize/1556339/autocompare/268/2024-10-08-16-14-55/device
+
+
+/deeplink_afs/zhaoguochun/ditorch2/op_tools/op_runner.py:124 run_forward: self.result = self.func(*self.args, **self.kwargs)
++------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+----------------+-------+
+|                   name                   |     shape     |   stride  |   numel   |  dtype   | device | requires_grad |     layout    |    data_ptr    | value |
++------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+----------------+-------+
+|   torch.nn.functional.normalize inputs   | (92544, 2048) | (2048, 1) | 189530112 | bfloat16 | npu:0  |      True     | torch.strided | 20067179823104 |       |
+|  torch.nn.functional.normalize inputs p  |               |           |           |          |        |               |               |                |  2.0  |
+| torch.nn.functional.normalize inputs dim |               |           |           |          |        |               |               |                |   1   |
+| torch.nn.functional.normalize inputs eps |               |           |           |          |        |               |               |                | 1e-12 |
+| torch.nn.functional.normalize inputs out |               |           |           |          |        |               |               |                |  None |
+|  torch.nn.functional.normalize outputs   | (92544, 2048) | (2048, 1) | 189530112 | bfloat16 | npu:0  |      True     | torch.strided | 20076824625152 |       |
++------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+----------------+-------+
++-------------------------------+------------+-----------------+------+
+|              name             | forward_id | forward_elasped | unit |
++-------------------------------+------------+-----------------+------+
+| torch.nn.functional.normalize |     1      |   41.59259796   |  ms  |
++-------------------------------+------------+-----------------+------+
+
+
+
++---------------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+----------------+
+|                        name                       |     shape     |   stride  |   numel   |  dtype   | device | requires_grad |     layout    |    data_ptr    |
++---------------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+----------------+
+| torch.nn.functional.normalize grad_outputs [0][0] | (92544, 2048) | (2048, 1) | 189530112 | bfloat16 | npu:0  |     False     | torch.strided | 20077204209664 |
+|  torch.nn.functional.normalize grad_inputs [0][0] | (92544, 2048) | (2048, 1) | 189530112 | bfloat16 | npu:0  |     False     | torch.strided | 20077898366976 |
+|  torch.nn.functional.normalize grad_inputs [0][1] | (92544, 2048) | (2048, 1) | 189530112 | bfloat16 | npu:0  |     False     | torch.strided | 20079351693312 |
++---------------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+----------------+
++-------------------------------+------------+------------------+------+
+|              name             | forward_id | backward_elasped | unit |
++-------------------------------+------------+------------------+------+
+| torch.nn.functional.normalize |     1      |    6.45375252    |  ms  |
++-------------------------------+------------+------------------+------+
+/opt/miniconda3/envs/torch_npu_py39/lib/python3.9/site-packages/torch/autograd/__init__.py:251: UserWarning: AutoNonVariableTypeMode is deprecated and will be removed in 1.10 release. For kernel implementations please use AutoDispatchBelowADInplaceOrView instead, If you are looking for a user facing API to enable running your inference-only workload, please use c10::InferenceMode. Using AutoDispatchBelowADInplaceOrView in user code is under risk of producing silent wrong result in some edge cases. See Note [AutoDispatchBelowAutograd] for more details. (Triggered internally at torch_npu/csrc/aten/common/TensorFactories.cpp:74.)
+  Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+
+
+
+/deeplink_afs/zhaoguochun/ditorch2/op_tools/op_runner.py:124 run_forward: self.result = self.func(*self.args, **self.kwargs)
++------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+----------------+-------+
+|                   name                   |     shape     |   stride  |   numel   |  dtype   | device | requires_grad |     layout    |    data_ptr    | value |
++------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+----------------+-------+
+|   torch.nn.functional.normalize inputs   | (92544, 2048) | (2048, 1) | 189530112 | bfloat16 | npu:0  |      True     | torch.strided | 20067179823104 |       |
+|  torch.nn.functional.normalize inputs p  |               |           |           |          |        |               |               |                |  2.0  |
+| torch.nn.functional.normalize inputs dim |               |           |           |          |        |               |               |                |   1   |
+| torch.nn.functional.normalize inputs eps |               |           |           |          |        |               |               |                | 1e-12 |
+| torch.nn.functional.normalize inputs out |               |           |           |          |        |               |               |                |  None |
+|  torch.nn.functional.normalize outputs   | (92544, 2048) | (2048, 1) | 189530112 | bfloat16 | npu:0  |      True     | torch.strided | 20077204209664 |       |
++------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+----------------+-------+
++-------------------------------+------------+-----------------+------+
+|              name             | forward_id | forward_elasped | unit |
++-------------------------------+------------+-----------------+------+
+| torch.nn.functional.normalize |     2      |    2.06089020   |  ms  |
++-------------------------------+------------+-----------------+------+
+
+
+
++---------------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+----------------+
+|                        name                       |     shape     |   stride  |   numel   |  dtype   | device | requires_grad |     layout    |    data_ptr    |
++---------------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+----------------+
+| torch.nn.functional.normalize grad_outputs [0][0] | (92544, 2048) | (2048, 1) | 189530112 | bfloat16 | npu:0  |     False     | torch.strided | 20076824625152 |
+|  torch.nn.functional.normalize grad_inputs [0][0] | (92544, 2048) | (2048, 1) | 189530112 | bfloat16 | npu:0  |     False     | torch.strided | 20077898366976 |
+|  torch.nn.functional.normalize grad_inputs [0][1] | (92544, 2048) | (2048, 1) | 189530112 | bfloat16 | npu:0  |     False     | torch.strided | 20079351693312 |
++---------------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+----------------+
++-------------------------------+------------+------------------+------+
+|              name             | forward_id | backward_elasped | unit |
++-------------------------------+------------+------------------+------+
+| torch.nn.functional.normalize |     2      |    5.55872917    |  ms  |
++-------------------------------+------------+------------------+------+
+
+
+
+/deeplink_afs/zhaoguochun/ditorch2/op_tools/op_runner.py:124 run_forward: self.result = self.func(*self.args, **self.kwargs)
++------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+----------------+-------+
+|                   name                   |     shape     |   stride  |   numel   |  dtype   | device | requires_grad |     layout    |    data_ptr    | value |
++------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+----------------+-------+
+|   torch.nn.functional.normalize inputs   | (92544, 2048) | (2048, 1) | 189530112 | bfloat16 | npu:0  |      True     | torch.strided | 20067179823104 |       |
+|  torch.nn.functional.normalize inputs p  |               |           |           |          |        |               |               |                |  2.0  |
+| torch.nn.functional.normalize inputs dim |               |           |           |          |        |               |               |                |   1   |
+| torch.nn.functional.normalize inputs eps |               |           |           |          |        |               |               |                | 1e-12 |
+| torch.nn.functional.normalize inputs out |               |           |           |          |        |               |               |                |  None |
+|  torch.nn.functional.normalize outputs   | (92544, 2048) | (2048, 1) | 189530112 | bfloat16 | npu:0  |      True     | torch.strided | 20076824625152 |       |
++------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+----------------+-------+
++-------------------------------+------------+-----------------+------+
+|              name             | forward_id | forward_elasped | unit |
++-------------------------------+------------+-----------------+------+
+| torch.nn.functional.normalize |     3      |    2.00271606   |  ms  |
++-------------------------------+------------+-----------------+------+
+
+
+
++---------------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+----------------+
+|                        name                       |     shape     |   stride  |   numel   |  dtype   | device | requires_grad |     layout    |    data_ptr    |
++---------------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+----------------+
+| torch.nn.functional.normalize grad_outputs [0][0] | (92544, 2048) | (2048, 1) | 189530112 | bfloat16 | npu:0  |     False     | torch.strided | 20077204209664 |
+|  torch.nn.functional.normalize grad_inputs [0][0] | (92544, 2048) | (2048, 1) | 189530112 | bfloat16 | npu:0  |     False     | torch.strided | 20077898366976 |
+|  torch.nn.functional.normalize grad_inputs [0][1] | (92544, 2048) | (2048, 1) | 189530112 | bfloat16 | npu:0  |     False     | torch.strided | 20079351693312 |
++---------------------------------------------------+---------------+-----------+-----------+----------+--------+---------------+---------------+----------------+
++-------------------------------+------------+------------------+------+
+|              name             | forward_id | backward_elasped | unit |
++-------------------------------+------------+------------------+------+
+| torch.nn.functional.normalize |     3      |    5.68151474    |  ms  |
++-------------------------------+------------+------------------+------+
++-------------------------------+------------+-----------------+------------------+------+
+|              name             | forward_id | forward_elasped | backward_elasped | unit |
++-------------------------------+------------+-----------------+------------------+------+
+| torch.nn.functional.normalize |     1      |   41.59259796   |    6.45375252    |  ms  |
+| torch.nn.functional.normalize |     2      |    2.06089020   |    5.55872917    |  ms  |
+| torch.nn.functional.normalize |     3      |    2.00271606   |    5.68151474    |  ms  |
++-------------------------------+------------+-----------------+------------------+------+
+op elasped info saved to op_tools_results/op_time_measure_result/op_elasped_info_pid3722879_2024-10-08-17-00-42.csv
+
 ```
 
 #### **只跑指定算子3遍前向**
 ```
 ditorch/op_tools# python run_op_from_data.py /op_capture_result/torch.Tensor.div/2278281/5  --run_times 3 --only_run_forward --sync_time_measure
-ditorch.framework: torch_npu:2.1.0.post3
-/deeplink_afs/zhaoguochun/ditorch/op_tools/op_capture_result/torch.Tensor.div/2278281/5
-SyncExecuteTimer: torch.Tensor.div forward elasped 91.06540680 ms
-SyncExecuteTimer: torch.Tensor.div forward elasped 0.24318695 ms
-SyncExecuteTimer: torch.Tensor.div forward elasped 0.07224083 ms
+...
 ```
 
 #### **模型训练时算子耗时分析 (前向 + 反向)**
@@ -270,17 +750,162 @@ timemeasure.end()
 
 ```
 ...
-OpTimeMeasureHook: torch.cat                      forward elasped:  0.02408028 ms     input: {'args': ([{'shape': torch.Size([1]), 'stride': (1,), 'numel': 1, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179863040}, {'shape': torch.Size([2]), 'stride': (1,), 'numel': 2, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179862016}],)} output: {'args': ({'shape': torch.Size([3]), 'stride': (1,), 'numel': 3, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179862528},)}
-OpTimeMeasureHook: torch.Tensor.add_              forward elasped:  0.02861023 ms     input: {'args': ({'shape': torch.Size([3]), 'stride': (1,), 'numel': 3, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179863552}, {'shape': torch.Size([3]), 'stride': (1,), 'numel': 3, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067180651008})} output: {'args': ({'shape': torch.Size([3]), 'stride': (1,), 'numel': 3, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179863552},)}
-OpTimeMeasureHook: torch.Tensor.mul               forward elasped:  0.03147125 ms     input: {'args': ({'shape': torch.Size([1]), 'stride': (1,), 'numel': 1, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179860480}, {'shape': torch.Size([]), 'stride': (), 'numel': 1, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179859456})} output: {'args': ({'shape': torch.Size([1]), 'stride': (1,), 'numel': 1, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20067179862016},)}
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/modules/embedding.py:99 _torch_apply_rotary_func: out1.copy_(x1 * cos - x2 * sin)
++----------------------------+-------------------+-----------------------+---------+---------+--------+---------------+---------------+----------------+
+|            name            |       shape       |         stride        |  numel  |  dtype  | device | requires_grad |     layout    |    data_ptr    |
++----------------------------+-------------------+-----------------------+---------+---------+--------+---------------+---------------+----------------+
+| torch.Tensor.mul inputs[0] | (1, 16384, 8, 64) | (8388608, 512, 64, 1) | 8388608 | float32 | npu:0  |     False     | torch.strided | 20080180069376 |
+| torch.Tensor.mul inputs[1] |   (16384, 1, 64)  |      (64, 64, 1)      | 1048576 | float32 | npu:0  |     False     | torch.strided | 20081048292864 |
+|  torch.Tensor.mul outputs  | (1, 16384, 8, 64) | (8388608, 512, 64, 1) | 8388608 | float32 | npu:0  |     False     | torch.strided | 20080247179264 |
++----------------------------+-------------------+-----------------------+---------+---------+--------+---------------+---------------+----------------+
++------------------+------------+-----------------+------+
+|       name       | forward_id | forward_elasped | unit |
++------------------+------------+-----------------+------+
+| torch.Tensor.mul |    6195    |    0.07629395   |  ms  |
++------------------+------------+-----------------+------+
+
+
+
+
+
+
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/modules/embedding.py:99 _torch_apply_rotary_func: out1.copy_(x1 * cos - x2 * sin)
++----------------------------+-------------------+-----------------------+---------+---------+--------+---------------+---------------+----------------+
+|            name            |       shape       |         stride        |  numel  |  dtype  | device | requires_grad |     layout    |    data_ptr    |
++----------------------------+-------------------+-----------------------+---------+---------+--------+---------------+---------------+----------------+
+| torch.Tensor.mul inputs[0] | (1, 16384, 8, 64) | (8388608, 512, 64, 1) | 8388608 | float32 | npu:0  |     False     | torch.strided | 20080213624320 |
+| torch.Tensor.mul inputs[1] |   (16384, 1, 64)  |      (64, 64, 1)      | 1048576 | float32 | npu:0  |     False     | torch.strided | 20081052487680 |
+|  torch.Tensor.mul outputs  | (1, 16384, 8, 64) | (8388608, 512, 64, 1) | 8388608 | float32 | npu:0  |     False     | torch.strided | 20080280734208 |
++----------------------------+-------------------+-----------------------+---------+---------+--------+---------------+---------------+----------------+
++------------------+------------+-----------------+------+
+|       name       | forward_id | forward_elasped | unit |
++------------------+------------+-----------------+------+
+| torch.Tensor.mul |    6196    |    0.06532669   |  ms  |
++------------------+------------+-----------------+------+
+
+
+
+
+
+
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/modules/embedding.py:99 _torch_apply_rotary_func: out1.copy_(x1 * cos - x2 * sin)
++----------------------------+-------------------+-----------------------+---------+---------+--------+---------------+---------------+----------------+
+|            name            |       shape       |         stride        |  numel  |  dtype  | device | requires_grad |     layout    |    data_ptr    |
++----------------------------+-------------------+-----------------------+---------+---------+--------+---------------+---------------+----------------+
+| torch.Tensor.sub inputs[0] | (1, 16384, 8, 64) | (8388608, 512, 64, 1) | 8388608 | float32 | npu:0  |     False     | torch.strided | 20080247179264 |
+| torch.Tensor.sub inputs[1] | (1, 16384, 8, 64) | (8388608, 512, 64, 1) | 8388608 | float32 | npu:0  |     False     | torch.strided | 20080280734208 |
+|  torch.Tensor.sub outputs  | (1, 16384, 8, 64) | (8388608, 512, 64, 1) | 8388608 | float32 | npu:0  |     False     | torch.strided | 20080316383232 |
++----------------------------+-------------------+-----------------------+---------+---------+--------+---------------+---------------+----------------+
++------------------+------------+-----------------+------+
+|       name       | forward_id | forward_elasped | unit |
++------------------+------------+-----------------+------+
+| torch.Tensor.sub |    6197    |    0.06794930   |  ms  |
++------------------+------------+-----------------+------+
 ...
-OpTimeMeasureHook: torch.Tensor.add_              backward elasped: 0.01120567 ms     grad_inputs: {'args': (({'shape': torch.Size([]), 'stride': (), 'numel': 1, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067180634112}, 'None'),)} output: {'args': (({'shape': torch.Size([]), 'stride': (), 'numel': 1, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067180634112},),)}
-OpTimeMeasureHook: torch.Tensor.div_              backward elasped: 0.03290176 ms     grad_inputs: {'args': (({'shape': torch.Size([]), 'stride': (), 'numel': 1, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179863040}, 'None'),)} output: {'args': (({'shape': torch.Size([]), 'stride': (), 'numel': 1, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067180634112},),)}
-OpTimeMeasureHook: torch.Tensor.div               backward elasped: 0.06675720 ms     grad_inputs: {'args': (({'shape': torch.Size([]), 'stride': (), 'numel': 1, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067180634112}, 'None'),)} output: {'args': (({'shape': torch.Size([]), 'stride': (), 'numel': 1, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179863040},),)}
-OpTimeMeasureHook: torch.Tensor.sum               backward elasped: 0.01549721 ms     grad_inputs: {'args': (({'shape': torch.Size([16384]), 'stride': (0,), 'numel': 16384, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067180634112},),)} output: {'args': (({'shape': torch.Size([]), 'stride': (), 'numel': 1, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067180634112},),)}
-OpTimeMeasureHook: torch.nn.functional.cross_entropy backward elasped: 4.20713425 ms     grad_inputs: {'args': (({'shape': torch.Size([16384, 92544]), 'stride': (92544, 1), 'numel': 1516240896, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20095078236160},),)} output: {'args': (({'shape': torch.Size([16384]), 'stride': (0,), 'numel': 16384, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067180634112},),)}
-OpTimeMeasureHook: torch.Tensor.float             backward elasped: 7.45630264 ms     grad_inputs: {'args': (({'shape': torch.Size([1, 16384, 92544]), 'stride': (1516240896, 92544, 1), 'numel': 1516240896, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20091857010688},),)} output: {'args': (({'shape': torch.Size([1, 16384, 92544]), 'stride': (1516240896, 92544, 1), 'numel': 1516240896, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20107963138048},),)}
-OpTimeMeasureHook: torch.nn.functional.normalize  backward elasped: 5.66196442 ms     grad_inputs: {'args': (({'shape': torch.Size([92544, 2048]), 'stride': (2048, 1), 'numel': 189530112, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20090863111168}, {'shape': torch.Size([92544, 2048]), 'stride': (2048, 1), 'numel': 189530112, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20086551741952}),)} output: {'args': (({'shape': torch.Size([92544, 2048]), 'stride': (2048, 1), 'numel': 189530112, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20085414559744},),)}
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/ops/scatter.py:14 broadcast: src = src.expand(other.size())
++-------------------------------+----------+--------+-------+-------+--------+---------------+---------------+----------------+---------------------+
+|              name             |  shape   | stride | numel | dtype | device | requires_grad |     layout    |    data_ptr    |        value        |
++-------------------------------+----------+--------+-------+-------+--------+---------------+---------------+----------------+---------------------+
+| torch.Tensor.expand inputs[0] | (16384,) |  (1,)  | 16384 | int64 | npu:0  |     False     | torch.strided | 20067181255168 |                     |
+| torch.Tensor.expand inputs[1] |          |        |       |       |        |               |               |                | torch.Size([16384]) |
+|  torch.Tensor.expand outputs  | (16384,) |  (1,)  | 16384 | int64 | npu:0  |     False     | torch.strided | 20067181255168 |                     |
++-------------------------------+----------+--------+-------+-------+--------+---------------+---------------+----------------+---------------------+
++---------------------+------------+-----------------+------+
+|         name        | forward_id | forward_elasped | unit |
++---------------------+------------+-----------------+------+
+| torch.Tensor.expand |    5496    |    0.03361702   |  ms  |
++---------------------+------------+-----------------+------+
+
+
+
+
+
+
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/ops/scatter.py:35 vanilla_scatter: size[dim] = index.max().int() + 1
++--------------------------+----------+--------+-------+-------+--------+---------------+---------------+----------------+
+|           name           |  shape   | stride | numel | dtype | device | requires_grad |     layout    |    data_ptr    |
++--------------------------+----------+--------+-------+-------+--------+---------------+---------------+----------------+
+| torch.Tensor.max inputs  | (16384,) |  (1,)  | 16384 | int64 | npu:0  |     False     | torch.strided | 20067181255168 |
+| torch.Tensor.max outputs |    ()    |   ()   |   1   | int64 | npu:0  |     False     | torch.strided | 20067179832832 |
++--------------------------+----------+--------+-------+-------+--------+---------------+---------------+----------------+
++------------------+------------+-----------------+------+
+|       name       | forward_id | forward_elasped | unit |
++------------------+------------+-----------------+------+
+| torch.Tensor.max |    5497    |    0.21767616   |  ms  |
++------------------+------------+-----------------+------+
+
+...
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/solver/optimizer/utils.py:177 multi_tensor_l2norm_torch: l2_norm = torch.norm(norms_tensor, p=2).unsqueeze(0)
++----------------------------------+-------+--------+-------+---------+--------+---------------+---------------+----------------+-------+
+|               name               | shape | stride | numel |  dtype  | device | requires_grad |     layout    |    data_ptr    | value |
++----------------------------------+-------+--------+-------+---------+--------+---------------+---------------+----------------+-------+
+| torch.Tensor.unsqueeze inputs[0] |   ()  |   ()   |   1   | float32 | npu:0  |     False     | torch.strided | 20067181123072 |       |
+| torch.Tensor.unsqueeze inputs[1] |       |        |       |         |        |               |               |                |   0   |
+|  torch.Tensor.unsqueeze outputs  |  (1,) |  (1,)  |   1   | float32 | npu:0  |     False     | torch.strided | 20067181123072 |       |
++----------------------------------+-------+--------+-------+---------+--------+---------------+---------------+----------------+-------+
++------------------------+------------+-----------------+------+
+|          name          | forward_id | forward_elasped | unit |
++------------------------+------------+-----------------+------+
+| torch.Tensor.unsqueeze |   18299    |    0.01835823   |  ms  |
++------------------------+------------+-----------------+------+
+
+
+
+
+
+
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/solver/optimizer/utils.py:224 get_norm: grad_norm = calc_l2_norm(grads) ** norm_type
++--------------------------------+-------+--------+-------+---------+--------+---------------+---------------+----------------+-------+
+|              name              | shape | stride | numel |  dtype  | device | requires_grad |     layout    |    data_ptr    | value |
++--------------------------------+-------+--------+-------+---------+--------+---------------+---------------+----------------+-------+
+| torch.Tensor.__pow__ inputs[0] |  (1,) |  (1,)  |   1   | float32 | npu:0  |     False     | torch.strided | 20067181123072 |       |
+| torch.Tensor.__pow__ inputs[1] |       |        |       |         |        |               |               |                |  2.0  |
+|  torch.Tensor.__pow__ outputs  |  (1,) |  (1,)  |   1   | float32 | npu:0  |     False     | torch.strided | 20067181917184 |       |
++--------------------------------+-------+--------+-------+---------+--------+---------------+---------------+----------------+-------+
++----------------------+------------+-----------------+------+
+|         name         | forward_id | forward_elasped | unit |
++----------------------+------------+-----------------+------+
+| torch.Tensor.__pow__ |   18300    |    0.04887581   |  ms  |
++----------------------+------------+-----------------+------+
+...
+
++--------------------------------------+----------+--------+-------+---------+--------+---------------+---------------+----------------+
+|                 name                 |  shape   | stride | numel |  dtype  | device | requires_grad |     layout    |    data_ptr    |
++--------------------------------------+----------+--------+-------+---------+--------+---------------+---------------+----------------+
+| torch.Tensor.sum grad_outputs [0][0] |    ()    |   ()   |   1   | float32 | npu:0  |     False     | torch.strided | 20067179833856 |
+| torch.Tensor.sum grad_inputs [0][0]  | (16384,) |  (0,)  | 16384 | float32 | npu:0  |     False     | torch.strided | 20067179833856 |
++--------------------------------------+----------+--------+-------+---------+--------+---------------+---------------+----------------+
++------------------+------------+------------------+------+
+|       name       | forward_id | backward_elasped | unit |
++------------------+------------+------------------+------+
+| torch.Tensor.sum |   25750    |    0.02026558    |  ms  |
++------------------+------------+------------------+------+
+
+...
++-------------------------------------------------------+----------------+------------+------------+---------+--------+---------------+---------------+----------------+
+|                          name                         |     shape      |   stride   |   numel    |  dtype  | device | requires_grad |     layout    |    data_ptr    |
++-------------------------------------------------------+----------------+------------+------------+---------+--------+---------------+---------------+----------------+
+| torch.nn.functional.cross_entropy grad_outputs [0][0] |    (16384,)    |    (0,)    |   16384    | float32 | npu:0  |     False     | torch.strided | 20067179833856 |
+|  torch.nn.functional.cross_entropy grad_inputs [0][0] | (16384, 92544) | (92544, 1) | 1516240896 | float32 | npu:0  |     False     | torch.strided | 20111184363520 |
++-------------------------------------------------------+----------------+------------+------------+---------+--------+---------------+---------------+----------------+
++-----------------------------------+------------+------------------+------+
+|                name               | forward_id | backward_elasped | unit |
++-----------------------------------+------------+------------------+------+
+| torch.nn.functional.cross_entropy |   25748    |    4.23026085    |  ms  |
++-----------------------------------+------------+------------------+------+
+...
++--------------------------------------+------------------+---------------------+----------+----------+--------+---------------+---------------+----------------+
+|                 name                 |      shape       |        stride       |  numel   |  dtype   | device | requires_grad |     layout    |    data_ptr    |
++--------------------------------------+------------------+---------------------+----------+----------+--------+---------------+---------------+----------------+
+| torch.Tensor.mul grad_outputs [0][0] | (1, 16384, 2048) | (33554432, 2048, 1) | 33554432 | bfloat16 | npu:0  |     False     | torch.strided | 20067414704128 |
+| torch.Tensor.mul grad_inputs [0][0]  |     (2048,)      |         (1,)        |   2048   | bfloat16 | npu:0  |     False     | torch.strided | 20067181914112 |
+| torch.Tensor.mul grad_inputs [0][1]  | (1, 16384, 2048) | (33554432, 2048, 1) | 33554432 | bfloat16 | npu:0  |     False     | torch.strided | 20080586915840 |
++--------------------------------------+------------------+---------------------+----------+----------+--------+---------------+---------------+----------------+
++------------------+------------+------------------+------+
+|       name       | forward_id | backward_elasped | unit |
++------------------+------------+------------------+------+
+| torch.Tensor.mul |   26134    |    0.42295456    |  ms  |
++------------------+------------+------------------+------+
 ```
 
 ### 算子 fallback <a id="tool4"> </a>
@@ -322,16 +947,16 @@ skip OpFallbackHook on torch.Tensor.shape.__get__
 #### **fallback 指定算子以外所有算子（export OP_FALLBACK_DISABLE_LIST="torch.nn.functional.linear"）**
 ```
 ...
-skip OpFallbackHook on torch.nn.functional.linear
-OpFallbackHook: torch.Tensor.float                                 input: {'args': ({'shape': torch.Size([1, 16384, 92544]), 'stride': (1516240896, 92544, 1), 'numel': 1516240896, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20081119592448},)}
-OpFallbackHook: torch.Tensor.float                                 output: ({'shape': torch.Size([1, 16384, 92544]), 'stride': (1516240896, 92544, 1), 'numel': 1516240896, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20100446945280},) cpu output: ({'shape': torch.Size([1, 16384, 92544]), 'stride': (1516240896, 92544, 1), 'numel': 1516240896, 'dtype': 'torch.float32', 'device': 'cpu', 'requires_grad': True, 'layout': 'torch.strided', 'data': 140152888873024},) dtype_convert_back_dict:{}
-OpFallbackHook: torch.Tensor.contiguous                            input: {'args': ({'shape': torch.Size([1, 16384, 92544]), 'stride': (1516240896, 92544, 1), 'numel': 1516240896, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20100446945280},)}
-OpFallbackHook: torch.Tensor.contiguous                            output: ({'shape': torch.Size([1, 16384, 92544]), 'stride': (1516240896, 92544, 1), 'numel': 1516240896, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20106889396224},) cpu output: ({'shape': torch.Size([1, 16384, 92544]), 'stride': (1516240896, 92544, 1), 'numel': 1516240896, 'dtype': 'torch.float32', 'device': 'cpu', 'requires_grad': True, 'layout': 'torch.strided', 'data': 140155921358912},) dtype_convert_back_dict:{}
-OpFallbackHook: torch.Tensor.view                                  input: {'args': ({'shape': torch.Size([1, 16384, 92544]), 'stride': (1516240896, 92544, 1), 'numel': 1516240896, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20106889396224}, '-1', '92544')}
-OpFallbackHook: torch.Tensor.view                                  output: ({'shape': torch.Size([16384, 92544]), 'stride': (92544, 1), 'numel': 1516240896, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': True, 'layout': 'torch.strided', 'data': 20113331847168},) cpu output: ({'shape': torch.Size([16384, 92544]), 'stride': (92544, 1), 'numel': 1516240896, 'dtype': 'torch.float32', 'device': 'cpu', 'requires_grad': True, 'layout': 'torch.strided', 'data': 140155921358912},) dtype_convert_back_dict:{}
-OpFallbackHook: torch.Tensor.contiguous                            input: {'args': ({'shape': torch.Size([1, 16384]), 'stride': (16384, 1), 'numel': 16384, 'dtype': 'torch.int64', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067180535808},)}
-OpFallbackHook: torch.Tensor.contiguous                            output: ({'shape': torch.Size([1, 16384]), 'stride': (16384, 1), 'numel': 16384, 'dtype': 'torch.int64', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179877888},) cpu output: ({'shape': torch.Size([1, 16384]), 'stride': (16384, 1), 'numel': 16384, 'dtype': 'torch.int64', 'device': 'cpu', 'requires_grad': False, 'layout': 'torch.strided', 'data': 33663304832},) dtype_convert_back_dict:{}
-OpFallbackHook: torch.Tensor.view                                  input: {'args': ({'shape': torch.Size([1, 16384]), 'stride': (16384, 1), 'numel': 16384, 'dtype': 'torch.int64', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179877888}, '-1')}
+torch.Tensor.std    forward_id: 475
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/utils/verifiers.py:28 check_parallel_statistic_equality: named_std = params.to(dtype=torch.float64).std()
++---------------------------------+--------------+-----------+----------+---------+--------+---------------+---------------+-----------------+
+|               name              |    shape     |   stride  |  numel   |  dtype  | device | requires_grad |     layout    |     data_ptr    |
++---------------------------------+--------------+-----------+----------+---------+--------+---------------+---------------+-----------------+
+|  torch.Tensor.std input(device) | (8192, 2048) | (2048, 1) | 16777216 | float64 | npu:0  |      True     | torch.strided |  20079859204096 |
+|   torch.Tensor.std input(cpu)   | (8192, 2048) | (2048, 1) | 16777216 | float64 |  cpu   |      True     | torch.strided | 139687015878720 |
+| torch.Tensor.std output(device) |      ()      |     ()    |    1     | float64 | npu:0  |      True     | torch.strided |  20067180001792 |
+|   torch.Tensor.std output(cpu)  |      ()      |     ()    |    1     | float64 |  cpu   |      True     | torch.strided |   33658540800   |
++---------------------------------+--------------+-----------+----------+---------+--------+---------------+---------------+-----------------+
 ...
 
 ```
@@ -339,25 +964,91 @@ OpFallbackHook: torch.Tensor.view                                  input: {'args
 #### **fallback 所有算子时部分输出**
 ```
 ...
-OpFallbackHook: torch.nn.functional.linear                         input: {'args': ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20074851205120}, {'shape': torch.Size([2048, 2048]), 'stride': (2048, 1), 'numel': 4194304, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067599254528}, 'None')}
-OpFallbackHook: torch.nn.functional.linear                         output: ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20074920411136},) cpu output: ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.bfloat16', 'device': 'cpu', 'requires_grad': False, 'layout': 'torch.strided', 'data': 139739386380352},) dtype_convert_back_dict:{}
-OpFallbackHook: torch.Tensor.contiguous                            input: {'args': ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20074920411136},)}
-OpFallbackHook: torch.Tensor.contiguous                            output: ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20074851205120},) cpu output: ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.bfloat16', 'device': 'cpu', 'requires_grad': False, 'layout': 'torch.strided', 'data': 139739506286656},) dtype_convert_back_dict:{}
-OpFallbackHook: torch.Tensor.is_complex                            input: {'args': ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20074851205120},)}
-OpFallbackHook: torch.Tensor.is_complex                            output: ('False',) cpu output: ('False',) dtype_convert_back_dict:{}
-OpFallbackHook: torch.nn.functional.dropout                        input: {'args': ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20074851205120},), 'kwargs': {'p': '0', 'training': 'True', 'inplace': 'False'}}
-OpFallbackHook: torch.nn.functional.dropout                        output: ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067756539904},) cpu output: ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.bfloat16', 'device': 'cpu', 'requires_grad': False, 'layout': 'torch.strided', 'data': 139739506286656},) dtype_convert_back_dict:{}
-OpFallbackHook: torch.Tensor.add                                   input: {'args': ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067756539904}, {'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20076199673856})}
-OpFallbackHook: torch.Tensor.add                                   output: ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20074712793088},) cpu output: ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.bfloat16', 'device': 'cpu', 'requires_grad': False, 'layout': 'torch.strided', 'data': 139739319267392},) dtype_convert_back_dict:{}
-OpFallbackHook: torch.Tensor.to                                    input: {'args': ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.bfloat16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20074712793088}, 'torch.float32')}
-OpFallbackHook: torch.Tensor.to                                    output: ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20076338085888},) cpu output: ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.float32', 'device': 'cpu', 'requires_grad': False, 'layout': 'torch.strided', 'data': 139739319271488},) dtype_convert_back_dict:{}
-OpFallbackHook: torch.Tensor.to                                    input: {'args': ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20076338085888}, 'torch.float32')}
-OpFallbackHook: torch.Tensor.to                                    output: ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20076474400768},) cpu output: ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.float32', 'device': 'cpu', 'requires_grad': False, 'layout': 'torch.strided', 'data': 139739319271488},) dtype_convert_back_dict:{}
-OpFallbackHook: torch.Tensor.pow                                   input: {'args': ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20076474400768}, '2')}
-OpFallbackHook: torch.Tensor.pow                                   output: ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20076610715648},) cpu output: ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.float32', 'device': 'cpu', 'requires_grad': False, 'layout': 'torch.strided', 'data': 139730855391296},) dtype_convert_back_dict:{}
-OpFallbackHook: torch.Tensor.mean                                  input: {'args': ({'shape': torch.Size([1, 16384, 2048]), 'stride': (33554432, 2048, 1), 'numel': 33554432, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20076610715648}, ('-1',)), 'kwargs': {'keepdim': 'True'}}
-OpFallbackHook: torch.Tensor.mean                                  output: ({'shape': torch.Size([1, 16384, 1]), 'stride': (16384, 1, 1), 'numel': 16384, 'dtype': 'torch.float32', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067180141056},) cpu output: ({'shape': torch.Size([1, 16384, 1]), 'stride': (16384, 1, 1), 'numel': 16384, 'dtype': 'torch.float32', 'device': 'cpu', 'requires_grad': False, 'layout': 'torch.strided', 'data': 33561021952},) dtype_convert_back_dict:{}
+torch.Tensor.to    forward_id: 474
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/utils/verifiers.py:28 check_parallel_statistic_equality: named_std = params.to(dtype=torch.float64).std()
++-------------------------------------+--------------+-----------+----------+----------+--------+---------------+---------------+-----------------+---------------+
+|                 name                |    shape     |   stride  |  numel   |  dtype   | device | requires_grad |     layout    |     data_ptr    |     value     |
++-------------------------------------+--------------+-----------+----------+----------+--------+---------------+---------------+-----------------+---------------+
+|    torch.Tensor.to input(device)    | (8192, 2048) | (2048, 1) | 16777216 | bfloat16 | npu:0  |      True     | torch.strided |  20067790094336 |               |
+| torch.Tensor.to input(device) dtype |              |           |          |          |        |               |               |                 | torch.float64 |
+|      torch.Tensor.to input(cpu)     | (8192, 2048) | (2048, 1) | 16777216 | bfloat16 |  cpu   |      True     | torch.strided | 139738740682816 |               |
+|   torch.Tensor.to input(cpu) dtype  |              |           |          |          |        |               |               |                 | torch.float64 |
+|    torch.Tensor.to output(device)   | (8192, 2048) | (2048, 1) | 16777216 | float64  | npu:0  |      True     | torch.strided |  20079859204096 |               |
+|     torch.Tensor.to output(cpu)     | (8192, 2048) | (2048, 1) | 16777216 | float64  |  cpu   |      True     | torch.strided | 139687150100544 |               |
++-------------------------------------+--------------+-----------+----------+----------+--------+---------------+---------------+-----------------+---------------+
+
 ...
+torch.Tensor.mean    forward_id: 477
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/utils/verifiers.py:27 check_parallel_statistic_equality: named_mean = params.to(dtype=torch.float64).mean()
++----------------------------------+---------+--------+-------+---------+--------+---------------+---------------+----------------+
+|               name               |  shape  | stride | numel |  dtype  | device | requires_grad |     layout    |    data_ptr    |
++----------------------------------+---------+--------+-------+---------+--------+---------------+---------------+----------------+
+| torch.Tensor.mean input(device)  | (2048,) |  (1,)  |  2048 | float64 | npu:0  |      True     | torch.strided | 20067181881344 |
+|   torch.Tensor.mean input(cpu)   | (2048,) |  (1,)  |  2048 | float64 |  cpu   |      True     | torch.strided |  33649506688   |
+| torch.Tensor.mean output(device) |    ()   |   ()   |   1   | float64 | npu:0  |      True     | torch.strided | 20067180002304 |
+|  torch.Tensor.mean output(cpu)   |    ()   |   ()   |   1   | float64 |  cpu   |      True     | torch.strided |  33658542784   |
++----------------------------------+---------+--------+-------+---------+--------+---------------+---------------+----------------+
+
+
+
+
+
+
+torch.Tensor.to    forward_id: 478
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/utils/verifiers.py:28 check_parallel_statistic_equality: named_std = params.to(dtype=torch.float64).std()
++-------------------------------------+---------+--------+-------+----------+--------+---------------+---------------+----------------+---------------+
+|                 name                |  shape  | stride | numel |  dtype   | device | requires_grad |     layout    |    data_ptr    |     value     |
++-------------------------------------+---------+--------+-------+----------+--------+---------------+---------------+----------------+---------------+
+|    torch.Tensor.to input(device)    | (2048,) |  (1,)  |  2048 | bfloat16 | npu:0  |      True     | torch.strided | 20067179883008 |               |
+| torch.Tensor.to input(device) dtype |         |        |       |          |        |               |               |                | torch.float64 |
+|      torch.Tensor.to input(cpu)     | (2048,) |  (1,)  |  2048 | bfloat16 |  cpu   |      True     | torch.strided |  33649527040   |               |
+|   torch.Tensor.to input(cpu) dtype  |         |        |       |          |        |               |               |                | torch.float64 |
+|    torch.Tensor.to output(device)   | (2048,) |  (1,)  |  2048 | float64  | npu:0  |      True     | torch.strided | 20067181898240 |               |
+|     torch.Tensor.to output(cpu)     | (2048,) |  (1,)  |  2048 | float64  |  cpu   |      True     | torch.strided |  33649532480   |               |
++-------------------------------------+---------+--------+-------+----------+--------+---------------+---------------+----------------+---------------+
+...
+torch.exp    forward_id: 487
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/metrics/base.py:210 get_metric: perplexity = round(torch.exp(self.total_log_probs / self.total).item(), 4)
++--------------------------+-------+--------+-------+---------+--------+---------------+---------------+----------------+
+|           name           | shape | stride | numel |  dtype  | device | requires_grad |     layout    |    data_ptr    |
++--------------------------+-------+--------+-------+---------+--------+---------------+---------------+----------------+
+| torch.exp input(device)  |  (1,) |  (1,)  |   1   | float32 | npu:0  |     False     | torch.strided | 20067179862016 |
+|   torch.exp input(cpu)   |  (1,) |  (1,)  |   1   | float32 |  cpu   |     False     | torch.strided |   399798976    |
+| torch.exp output(device) |  (1,) |  (1,)  |   1   | float32 | npu:0  |     False     | torch.strided | 20067179862528 |
+|  torch.exp output(cpu)   |  (1,) |  (1,)  |   1   | float32 |  cpu   |     False     | torch.strided |   399799360    |
++--------------------------+-------+--------+-------+---------+--------+---------------+---------------+----------------+
+
+
+
+
+
+
+torch.Tensor.item    forward_id: 488
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/metrics/base.py:210 get_metric: perplexity = round(torch.exp(self.total_log_probs / self.total).item(), 4)
++----------------------------------+-------+--------+-------+---------+--------+---------------+---------------+----------------+--------------+
+|               name               | shape | stride | numel |  dtype  | device | requires_grad |     layout    |    data_ptr    |    value     |
++----------------------------------+-------+--------+-------+---------+--------+---------------+---------------+----------------+--------------+
+| torch.Tensor.item input(device)  |  (1,) |  (1,)  |   1   | float32 | npu:0  |     False     | torch.strided | 20067179862528 |              |
+|   torch.Tensor.item input(cpu)   |  (1,) |  (1,)  |   1   | float32 |  cpu   |     False     | torch.strided |  33581209792   |              |
+| torch.Tensor.item output(device) |       |        |       |         |        |               |               |                | 147525.78125 |
+|  torch.Tensor.item output(cpu)   |       |        |       |         |        |               |               |                | 147525.78125 |
++----------------------------------+-------+--------+-------+---------+--------+---------------+---------------+----------------+--------------+
+
+
+
+
+
+
+torch.Tensor.float    forward_id: 489
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/metrics/base.py:218 get_metric: (self.ds_right[i].float() / (self.ds_tokens[i].float() + 1e-5)).item(), 4
++-----------------------------------+-------+--------+-------+---------+--------+---------------+---------------+----------------+
+|                name               | shape | stride | numel |  dtype  | device | requires_grad |     layout    |    data_ptr    |
++-----------------------------------+-------+--------+-------+---------+--------+---------------+---------------+----------------+
+|  torch.Tensor.float input(device) |   ()  |   ()   |   1   |  int64  | npu:0  |     False     | torch.strided | 20067180395520 |
+|   torch.Tensor.float input(cpu)   |   ()  |   ()   |   1   |  int64  |  cpu   |     False     | torch.strided |  33652536256   |
+| torch.Tensor.float output(device) |   ()  |   ()   |   1   | float32 | npu:0  |     False     | torch.strided | 20067179863040 |
+|   torch.Tensor.float output(cpu)  |   ()  |   ()   |   1   | float32 |  cpu   |     False     | torch.strided |  33652536640   |
++-----------------------------------+-------+--------+-------+---------+--------+---------------+---------------+----------------+
 ```
 
 ### **算子数据类型转换工具** <a id="tool5"></a>
@@ -394,32 +1085,55 @@ dtype_caster.stop()
 ```
 
 ```
-apply OpDtypeCastHook on torch.nn.functional.linear
-OpDtypeCastHook: torch.nn.functional.linear                         0th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
-OpDtypeCastHook: torch.nn.functional.linear                         1th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
-OpDtypeCastHook: torch.nn.functional.linear                         2th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
-OpDtypeCastHook: torch.nn.functional.linear                         0th out torch.float32 -> torch.float16  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
-apply OpDtypeCastHook on torch.Tensor.add
-OpDtypeCastHook: torch.Tensor.add                                   0th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
-OpDtypeCastHook: torch.Tensor.add                                   1th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
-OpDtypeCastHook: torch.Tensor.add                                   0th out torch.float32 -> torch.float16  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
-apply OpDtypeCastHook on torch.Tensor.sub
-OpDtypeCastHook: torch.Tensor.sub                                   0th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
-OpDtypeCastHook: torch.Tensor.sub                                   1th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
-OpDtypeCastHook: torch.Tensor.sub                                   0th out torch.float32 -> torch.float16  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
-apply OpDtypeCastHook on torch.Tensor.div
-OpDtypeCastHook: torch.Tensor.div                                   0th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
-OpDtypeCastHook: torch.Tensor.div                                   1th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
-OpDtypeCastHook: torch.Tensor.div                                   0th out torch.float32 -> torch.float16  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
-apply OpDtypeCastHook on torch.Tensor.sort
-OpDtypeCastHook: torch.Tensor.sort                                  0th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
-OpDtypeCastHook: torch.Tensor.sort                                  0th out torch.float32 -> torch.float16  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
-apply OpDtypeCastHook on torch.Tensor.__getitem__
-OpDtypeCastHook: torch.Tensor.__getitem__                           0th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
-OpDtypeCastHook: torch.Tensor.__getitem__                           0th out torch.float32 -> torch.float16  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
-apply OpDtypeCastHook on torch.Tensor.sum
-OpDtypeCastHook: torch.Tensor.sum                                   0th arg torch.float16 -> torch.float32  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
-OpDtypeCastHook: torch.Tensor.sum                                   0th out torch.float32 -> torch.float16  config:torch.float16->torch.float32,torch.bfloat16->torch.float32
+torch.nn.functional.linear    forward_id: 490
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/utils.py:287 forward: output = F.linear(total_x, weight, bias)  # pylint: disable=E1102
++---------------------------------------------+------------------+----------------------+-----------+---------+--------+---------------+---------------+-----------------+-------+
+|                     name                    |      shape       |        stride        |   numel   |  dtype  | device | requires_grad |     layout    |     data_ptr    | value |
++---------------------------------------------+------------------+----------------------+-----------+---------+--------+---------------+---------------+-----------------+-------+
+| torch.nn.functional.linear input(device)[0] | (1, 16384, 2048) | (33554432, 2048, 1)  |  33554432 | float32 | npu:0  |     False     | torch.strided |  20082537267200 |       |
+| torch.nn.functional.linear input(device)[1] |   (8192, 2048)   |      (2048, 1)       |  16777216 | float32 | npu:0  |     False     | torch.strided |  20082673582080 |       |
+| torch.nn.functional.linear input(device)[2] |                  |                      |           |         |        |               |               |                 |  None |
+|   torch.nn.functional.linear input(cpu)[0]  | (1, 16384, 2048) | (33554432, 2048, 1)  |  33554432 | float32 |  cpu   |     False     | torch.strided | 139842851389504 |       |
+|   torch.nn.functional.linear input(cpu)[1]  |   (8192, 2048)   |      (2048, 1)       |  16777216 | float32 |  cpu   |     False     | torch.strided | 139842720587840 |       |
+|   torch.nn.functional.linear input(cpu)[2]  |                  |                      |           |         |        |               |               |                 |  None |
+|  torch.nn.functional.linear output(device)  | (1, 16384, 8192) | (134217728, 8192, 1) | 134217728 | float32 | npu:0  |     False     | torch.strided |  20083267076096 |       |
+|    torch.nn.functional.linear output(cpu)   | (1, 16384, 8192) | (134217728, 8192, 1) | 134217728 | float32 |  cpu   |     False     | torch.strided | 139833330622528 |       |
++---------------------------------------------+------------------+----------------------+-----------+---------+--------+---------------+---------------+-----------------+-------+
+
+
+
++----------------------------+-----------+---------------------------------+------------------------------------------------------------+
+|            name            |   target  |              action             |                           config                           |
++----------------------------+-----------+---------------------------------+------------------------------------------------------------+
+| torch.nn.functional.linear |  input[0] | torch.bfloat16 -> torch.float32 | torch.float16->torch.float32,torch.bfloat16->torch.float32 |
+| torch.nn.functional.linear |  input[1] | torch.bfloat16 -> torch.float32 | torch.float16->torch.float32,torch.bfloat16->torch.float32 |
+| torch.nn.functional.linear | output[0] | torch.float32 -> torch.bfloat16 | torch.float16->torch.float32,torch.bfloat16->torch.float32 |
++----------------------------+-----------+---------------------------------+------------------------------------------------------------+
+apply OpDtypeCastHook on torch.nn.functional.silu
+
+
+
+torch.nn.functional.silu    forward_id: 492
+/deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/utils.py:667 Silu: return F.silu(w1_o) * w2_o
++------------------------------------------------+------------------+----------------------+-----------+---------+--------+---------------+---------------+-----------------+-------+
+|                      name                      |      shape       |        stride        |   numel   |  dtype  | device | requires_grad |     layout    |     data_ptr    | value |
++------------------------------------------------+------------------+----------------------+-----------+---------+--------+---------------+---------------+-----------------+-------+
+|     torch.nn.functional.silu input(device)     | (1, 16384, 8192) | (134217728, 8192, 1) | 134217728 | float32 | npu:0  |     False     | torch.strided |  20084340817920 |       |
+| torch.nn.functional.silu input(device) inplace |                  |                      |           |         |        |               |               |                 | False |
+|      torch.nn.functional.silu input(cpu)       | (1, 16384, 8192) | (134217728, 8192, 1) | 134217728 | float32 |  cpu   |     False     | torch.strided | 139832793747520 |       |
+|  torch.nn.functional.silu input(cpu) inplace   |                  |                      |           |         |        |               |               |                 | False |
+|    torch.nn.functional.silu output(device)     | (1, 16384, 8192) | (134217728, 8192, 1) | 134217728 | float32 | npu:0  |     False     | torch.strided |  20085414559744 |       |
+|      torch.nn.functional.silu output(cpu)      | (1, 16384, 8192) | (134217728, 8192, 1) | 134217728 | float32 |  cpu   |     False     | torch.strided | 139832256872512 |       |
++------------------------------------------------+------------------+----------------------+-----------+---------+--------+---------------+---------------+-----------------+-------+
+
+
+
++--------------------------+-----------+---------------------------------+------------------------------------------------------------+
+|           name           |   target  |              action             |                           config                           |
++--------------------------+-----------+---------------------------------+------------------------------------------------------------+
+| torch.nn.functional.silu |  input[0] | torch.bfloat16 -> torch.float32 | torch.float16->torch.float32,torch.bfloat16->torch.float32 |
+| torch.nn.functional.silu | output[0] | torch.float32 -> torch.bfloat16 | torch.float16->torch.float32,torch.bfloat16->torch.float32 |
++--------------------------+-----------+---------------------------------+------------------------------------------------------------+
 ```
 
 ### 自定义算子工具生效的条件
@@ -469,8 +1183,33 @@ outputs:
 ```
 hook enable because a.dtype is float16
 apply OpFallbackHook on torch.add
-OpFallbackHook: torch.add                                          input: {'args': ({'shape': torch.Size([2, 3, 4]), 'stride': (12, 4, 1), 'numel': 24, 'dtype': 'torch.float16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179823104}, {'shape': torch.Size([2, 3, 4]), 'stride': (12, 4, 1), 'numel': 24, 'dtype': 'torch.float16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179823104})}
-OpFallbackHook: torch.add                                          output: ({'shape': torch.Size([2, 3, 4]), 'stride': (12, 4, 1), 'numel': 24, 'dtype': 'torch.float16', 'device': 'npu:0', 'requires_grad': False, 'layout': 'torch.strided', 'data': 20067179824640},) cpu output: ({'shape': torch.Size([2, 3, 4]), 'stride': (12, 4, 1), 'numel': 24, 'dtype': 'torch.float16', 'device': 'cpu', 'requires_grad': False, 'layout': 'torch.strided', 'data': 544920640},) dtype_convert_back_dict:{}
+
+
+
+torch.add    forward_id: 1
+<stdin>:1 <module>:
++----------------------------+-----------+------------+-------+---------+--------+---------------+---------------+----------------+
+|            name            |   shape   |   stride   | numel |  dtype  | device | requires_grad |     layout    |    data_ptr    |
++----------------------------+-----------+------------+-------+---------+--------+---------------+---------------+----------------+
+| torch.add input(device)[0] | (2, 3, 4) | (12, 4, 1) |   24  | float16 | npu:0  |     False     | torch.strided | 20067179823104 |
+| torch.add input(device)[1] | (2, 3, 4) | (12, 4, 1) |   24  | float16 | npu:0  |     False     | torch.strided | 20067179823104 |
+|  torch.add input(cpu)[0]   | (2, 3, 4) | (12, 4, 1) |   24  | float16 |  cpu   |     False     | torch.strided |   541245376    |
+|  torch.add input(cpu)[1]   | (2, 3, 4) | (12, 4, 1) |   24  | float16 |  cpu   |     False     | torch.strided |   541245504    |
+|  torch.add output(device)  | (2, 3, 4) | (12, 4, 1) |   24  | float16 | npu:0  |     False     | torch.strided | 20067179824640 |
+|   torch.add output(cpu)    | (2, 3, 4) | (12, 4, 1) |   24  | float16 |  cpu   |     False     | torch.strided |   541249984    |
++----------------------------+-----------+------------+-------+---------+--------+---------------+---------------+----------------+
+
+
+
+Warning: Device do not support double dtype now, dtype cast repalce with float.
+tensor([[[ 0.8032,  1.8779, -0.6846,  1.5342],
+         [-3.9688,  4.1055,  0.8447,  0.6836],
+         [ 1.1914, -2.4746,  4.8086, -0.3574]],
+
+        [[-2.1758,  2.1816,  1.1768, -1.0342],
+         [-0.0070,  1.8252,  1.7373,  3.2109],
+         [ 1.0361, -1.8564,  4.2070,  0.6558]]], device='npu:0',
+       dtype=torch.float16)
 ```
 
 #### 2.按需autocompare
@@ -483,10 +1222,33 @@ output:
 ```
 hook enable because a.dim() is 2
 apply OpAutoCompareHook on torch.sub
-compare_result: torch.sub                                            allclose: True     max_abs_diff:          0.000000000      max_relative_diff:          0.000000000
+
+
+
+torch.sub forward_id: 2
+<stdin>:1 <module>:
++--------------------------+--------+--------+-------+---------+--------+---------------+---------------+----------------+
+|           name           | shape  | stride | numel |  dtype  | device | requires_grad |     layout    |    data_ptr    |
++--------------------------+--------+--------+-------+---------+--------+---------------+---------------+----------------+
+|   torch.sub inputs[0]    | (4, 2) | (2, 1) |   8   | float32 | npu:0  |     False     | torch.strided | 20067179823616 |
+|   torch.sub inputs[1]    | (4, 2) | (2, 1) |   8   | float32 | npu:0  |     False     | torch.strided | 20067179823616 |
+|    torch.sub outputs     | (4, 2) | (2, 1) |   8   | float32 | npu:0  |     False     | torch.strided | 20067179825152 |
+| torch.sub inputs(cpu)[0] | (4, 2) | (2, 1) |   8   | float32 |  cpu   |     False     | torch.strided |   555367360    |
+| torch.sub inputs(cpu)[1] | (4, 2) | (2, 1) |   8   | float32 |  cpu   |     False     | torch.strided |   554988416    |
+|  torch.sub outputs(cpu)  | (4, 2) | (2, 1) |   8   | float32 |  cpu   |     False     | torch.strided |   555613184    |
++--------------------------+--------+--------+-------+---------+--------+---------------+---------------+----------------+
++--------------------------------+----------+--------------+-------------------+-------------+-------------+------------+
+|              name              | allclose | max_abs_diff | max_relative_diff |     atol    |     rtol    | error_info |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+------------+
+| torch.sub input[0]             |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 |            |
+| torch.sub input[1]             |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 |            |
+| torch.sub output               |   True   | 0.000000000  |    0.000000000    | 0.000010000 | 0.000010000 |            |
++--------------------------------+----------+--------------+-------------------+-------------+-------------+------------+
+
 
 hook disable
 skip OpAutoCompareHook on torch.sub
+
 ```
 
 #### 3.抓取特定输入情况下的算子输入输出
@@ -505,16 +1267,18 @@ op_capture_result/torch.mul/366650/3/output.pth saved
 #### 4.将特定算子的输入数据类型转成特定数据类型计算
 ```
 op_tools.apply_feature("torch.div", feature="cast_dtype", condition_func=custom_condition)
-os.environ["OP_DTYPE_CAST_DICT"] = "float32->float16"
+os.environ["OP_DTYPE_CAST_DICT"] = "torch.float32->torch.float16"
 torch.div(y, y)
 ```
 output:
 ```
 hook enable because a.dim() is 2
-apply OpDtypeCastHook on torch.div
-OpDtypeCastHook: torch.div                                          0th arg torch.float32 -> torch.float16  config:torch.float32->torch.float16
-OpDtypeCastHook: torch.div                                          1th arg torch.float32 -> torch.float16  config:torch.float32->torch.float16
-OpDtypeCastHook: torch.div                                          0th out torch.float16 -> torch.float32  config:torch.float32->torch.float16
++-----------+-----------+--------------------------------+------------------------------+
+|    name   |   target  |             action             |            config            |
++-----------+-----------+--------------------------------+------------------------------+
+| torch.div |  input[0] | torch.float32 -> torch.float16 | torch.float32->torch.float16 |
+| torch.div |  input[1] | torch.float32 -> torch.float16 | torch.float32->torch.float16 |
+| torch.div | output[0] | torch.float16 -> torch.float32 | torch.float32->torch.float16 |
 ```
 
 ### 相关环境变量

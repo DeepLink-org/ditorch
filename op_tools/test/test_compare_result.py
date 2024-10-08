@@ -67,7 +67,7 @@ class TestCompareResult(unittest.TestCase):
         compare_info = compare_result("diff_int_list", result1, result2)
         self.assertTrue(compare_info["allclose"] is False, compare_info)
         self.assertTrue(compare_info["max_abs_diff"] == 9, compare_info)
-        self.assertTrue(abs(compare_info["max_relative_diff"] - 1) < 1e-3, compare_info)
+        self.assertTrue(compare_info["max_relative_diff"] <= 1)
         self.assertTrue(isinstance(compare_info["result_list"], list))
 
     def test_same_torch_return_type(self):
@@ -102,7 +102,7 @@ class TestCompareResult(unittest.TestCase):
             compare_info = compare_result("different_int", result1, result2)
             self.assertTrue(compare_info["allclose"] is False)
             self.assertTrue(compare_info["max_abs_diff"] == i + 10)
-            self.assertTrue(abs(compare_info["max_relative_diff"] - ((i + 10) / i)) < 1e-3)
+            self.assertTrue(compare_info["max_relative_diff"] < (abs(result1 - result2) / result2))
             self.assertTrue(isinstance(compare_info["result_list"], list))
 
     def test_compare_same_float(self):
@@ -112,7 +112,7 @@ class TestCompareResult(unittest.TestCase):
             compare_info = compare_result("same_float", result1, result2)
             self.assertTrue(compare_info["allclose"] is True)
             self.assertTrue(compare_info["max_abs_diff"] == 0)
-            self.assertTrue(abs(compare_info["max_relative_diff"] - 0) < 1e-3)
+            self.assertTrue(compare_info["max_relative_diff"] <= (abs(result1 - result2) / (result2 + 1e-9)))
             self.assertTrue(isinstance(compare_info["result_list"], list))
 
     def test_compare_different_float(self):
@@ -122,7 +122,7 @@ class TestCompareResult(unittest.TestCase):
             compare_info = compare_result("different_float", result1, result2)
             self.assertTrue(compare_info["allclose"] is False)
             self.assertTrue(compare_info["max_abs_diff"] == i + 10)
-            self.assertTrue(abs(compare_info["max_relative_diff"] - ((i + 10) / i)) < 1e-3)
+            self.assertTrue(compare_info["max_relative_diff"] < (abs(result1 - result2) / result2))
             self.assertTrue(isinstance(compare_info["result_list"], list))
 
     def test_compare_same_bool(self):

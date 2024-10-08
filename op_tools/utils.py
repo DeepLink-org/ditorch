@@ -270,7 +270,7 @@ def compare_result(name, a, b):  # noqa: C901
     for i in range(len(a_list)):
         a_item = a_list[i]
         b_item = b_list[i]
-        atol, rtol = 0, 0
+        atol_i, rtol_i = 0, 0
         error_info_i = ""
         if a_item is None and b_item is None:
             allclose_i = True
@@ -281,10 +281,10 @@ def compare_result(name, a, b):  # noqa: C901
                 error_info_i += f"Inconsistent dtypes: {a_item.dtype} {b_item.dtype}"
                 b_item = b_item.to(a_item.dtype)
             if a_item.shape == b_item.shape:
-                atol, rtol = get_error_tolerance(a_item.dtype, name)
+                atol_i, rtol_i = get_error_tolerance(a_item.dtype, name)
                 if a_item.numel() > 0:
                     max_abs_diff_i, max_relative_diff_i = tensor_max_diff(a_item, b_item)
-                    allclose_i = tensor_allclose(a_item, b_item, atol=atol, rtol=rtol)
+                    allclose_i = tensor_allclose(a_item, b_item, atol=atol_i, rtol=rtol_i)
                 else:
                     max_abs_diff_i, max_relative_diff_i = 0.0, 0.0
                     allclose_i = True
@@ -306,11 +306,11 @@ def compare_result(name, a, b):  # noqa: C901
             if not allclose_i:
                 error_info_i = f" value: {a_item} {b_item} "
         elif isinstance(a_item, (float, int)):
-            atol = 1e-6
-            rtol = 1e-6
-            allclose_i = (math.isnan(a_item) and math.isnan(b_item)) or (abs(a_item - b_item) <= atol + rtol * abs(a_item))
+            atol_i = 1e-6
+            rtol_i = 1e-6
+            allclose_i = (math.isnan(a_item) and math.isnan(b_item)) or (abs(a_item - b_item) <= atol_i + rtol_i * abs(b_item))
             max_abs_diff_i = abs(a_item - b_item)
-            max_relative_diff_i = max_abs_diff_i / (abs(a_item) + 1e-6)
+            max_relative_diff_i = max_abs_diff_i / (abs(b_item) + 1e-6)
             if not allclose_i:
                 error_info_i = f" value: {a_item} {b_item} "
         else:
@@ -320,8 +320,12 @@ def compare_result(name, a, b):  # noqa: C901
                 allclose_i = False
                 error_info_i = str(e)
             error_info_i += f" value: {a_item} {b_item}"
-            max_abs_diff_i = float("nan")
-            max_relative_diff_i = float("nan")
+            if not allclose_i:
+                max_abs_diff_i = float("nan")
+                max_relative_diff_i = float("nan")
+            else:
+                max_abs_diff_i = 0
+                max_relative_diff_i = 0
         if len(a_list) > 1:
             prefex = f"[{i}]"
         else:
@@ -331,14 +335,16 @@ def compare_result(name, a, b):  # noqa: C901
         allclose = allclose_i and allclose
         max_abs_diff = max(max_abs_diff_i, max_abs_diff)
         max_relative_diff = max(max_relative_diff_i, max_relative_diff)
+        atol = max(atol_i, atol)
+        rtol = max(rtol_i, rtol)
         result_list.append(
             {
                 "name": f"{name + prefex:<30}",
                 "allclose": allclose_i,
                 "max_abs_diff": f"{max_abs_diff_i:10.9f}",
                 "max_relative_diff": f"{max_relative_diff_i:10.9f}",
-                "atol": f"{atol:10.9f}",
-                "rtol": f"{rtol:10.9f}",
+                "atol": f"{atol_i:10.9f}",
+                "rtol": f"{rtol_i:10.9f}",
                 "error_info": error_info_i,
             }
         )
@@ -355,8 +361,7 @@ def compare_result(name, a, b):  # noqa: C901
     }
 
 
-def garbage_collect(id):
-    gc_cycle = int(os.getenv("OP_TOOLS_GARBAGE_COLLECTION_CYCLE", "100"))
+def garbage_collect(id, gc_cycle=int(os.getenv("OP_TOOLS_GARBAGE_COLLECTION_CYCLE", "50"))):
     if id % gc_cycle == 0:
         gc.collect()
 
@@ -386,3 +391,8 @@ def current_location(name=None, stack_depth=-1, print_stack=False):
 
     file, line, func, text = stack[stack_depth]
     return f"{file}:{line} {func}: {text}"
+
+
+def set_env_if_env_is_empty(env_name, env_value):
+    if os.environ.get(env_name, None) is None:
+        os.environ[env_name] = env_value
