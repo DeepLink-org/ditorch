@@ -55,6 +55,7 @@ def filter_tested_cases(test_case_ids, tested_test_cases):
     filtered_test_case_ids = {}
     tested_case_count = 0
     total_case_count = 0
+    nerver_tested_files = []
     for test_script_file, test_cases in test_case_ids.items():
         total_case_count += len(test_cases)
         if test_script_file in tested_test_cases.keys():
@@ -66,9 +67,11 @@ def filter_tested_cases(test_case_ids, tested_test_cases):
                 filtered_test_case_ids[test_script_file] = not_tested_cases
                 tested_case_count += len(not_tested_cases)
         else:
+            nerver_tested_files.append(test_script_file)
             filtered_test_case_ids[test_script_file] = test_cases
             tested_case_count += len(test_cases)
     print(f"There are {tested_case_count} test cases after filtering, and there are {total_case_count} test cases before filtering.")
+    print("The test cases in the following files have never been tested:\n", ",".join(nerver_tested_files))
     return filtered_test_case_ids
 
 
@@ -98,6 +101,12 @@ def parse_args():
         default="pytorch_test_result",
         help="The directory to save the result files generated using pytorch test case testing",
     )
+    parser.add_argument(
+        "--test_case_ids_file",
+        type=str,
+        default="all_test_cases.json",
+        help="The name of the json file saved to run the test case, the file is in the {pytorch_test_result}/test_case_ids directory, such as test_unary_ufuncs.py.json",  # noqa: E501
+    )
 
     args = parser.parse_args()
     return args
@@ -109,11 +118,12 @@ def main():
     pytorch_test_temp = args.pytorch_test_temp
     pytorch_test_result = args.pytorch_test_result
     pytorch_dir = args.pytorch_dir
+    test_case_ids_file = args.test_case_ids_file
 
     if not args.skip_discover_test_case or not os.path.exists(f"{pytorch_test_result}/test_case_ids/all_test_cases.json"):
-        run_command_in_sub_process(f"python ditorch/test/discover_pytorch_test_case.py {pytorch_dir}/test {pytorch_test_result}")
+        run_command_in_sub_process(f"python ditorch/test/discover_pytorch_test_case.py --pytorch_dir {pytorch_dir} --pytorch_test_result {pytorch_test_result}")  # noqa: E501
 
-    with open(f"{pytorch_test_result}/test_case_ids/all_test_cases.json", "r") as f:
+    with open(f"{pytorch_test_result}/test_case_ids/{test_case_ids_file}", "r") as f:
         test_case_ids = json.load(f)
 
     tested_case = get_tested_test_cases(f"{pytorch_test_result}")

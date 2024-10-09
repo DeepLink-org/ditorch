@@ -1,7 +1,7 @@
 import unittest
 import ditorch  # noqa: F401
 import torch  # noqa: F401
-import sys
+import argparse
 import json
 import os
 
@@ -54,10 +54,28 @@ def dump_all_test_case_id_to_file(test_cases, path):
     return test_case_ids
 
 
+def parase_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--pytorch_dir",
+        type=str,
+        default=os.environ.get("TORCH_SOURCE_PATH", None),
+        help="path to pytorch repo",
+    )
+    parser.add_argument(
+        "--pytorch_test_result",
+        type=str,
+        default="pytorch_test_result",
+        help="The directory to save the result files generated using pytorch test case testing",
+    )
+    args = parser.parse_args()
+    return args
+
+
 if __name__ == "__main__":
-    print(f"discover:{sys.argv}")
-    test_script_path = sys.argv[1] if len(sys.argv) > 1 else "."
-    output_path = sys.argv[2] if len(sys.argv) > 2 else "."
+    args = parase_args()
+    test_script_path = args.pytorch_dir + "/test"
+    output_path = args.pytorch_test_result
     all_tests_case = discover_all_test_case(test_script_path)
     print(f"discover {len(all_tests_case)} test cases")
     dump_all_test_case_id_to_file(all_tests_case, output_path)
