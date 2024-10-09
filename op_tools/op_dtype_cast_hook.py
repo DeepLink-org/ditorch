@@ -55,7 +55,6 @@ class OpDtypeCastHook(BaseHook):
             for i in range(len(self.ins_list)):
                 if isinstance(self.ins_list[i], torch.Tensor):
                     if self.ins_list[i].dtype != self.raw_ins_list[i].dtype:
-                        # print(f"OpDtypeCastHook: {self.name:<50} {i}th arg {self.raw_ins_list[i].dtype} -> {self.ins_list[i].dtype}  config:{self.dtype_cast_config_str}")  # noqa: E501
                         self.dtype_cast_back_dict[self.ins_list[i].dtype] = self.raw_ins_list[i].dtype
                         data_dict = {
                             "name": self.name,

@@ -53,33 +53,47 @@ with op_tools.OpCapture():
 #### **抓取前向和反向的所有输入输出**
 
 ```
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.to/8/input.pth saved
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.to/8/output.pth saved
-apply OpCaptureHook on torch.Tensor.mul
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.mul/9/input.pth saved
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.mul/9/output.pth saved
+...
 apply OpCaptureHook on torch.Tensor.add
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.add/10/input.pth saved
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.add/10/output.pth saved
-apply OpCaptureHook on torch.Tensor.sub
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.sub/11/input.pth saved
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.sub/11/output.pth saved
-apply OpCaptureHook on torch.Tensor.div
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.div/12/input.pth saved
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.div/12/output.pth saved
-apply OpCaptureHook on torch.Tensor.sort
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.sort/13/input.pth saved
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.sort/13/output.pth saved
-apply OpCaptureHook on torch.Tensor.sum
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.sum/14/input.pth saved
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.sum/14/output.pth saved
-skip OpCaptureHook on torch.Tensor.backward
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.sum/14/grad_inputs.pth saved
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.sum/14/grad_outputs.pth saved
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.sort/13/grad_inputs.pth saved
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.sort/13/grad_outputs.pth saved
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.to/8/grad_inputs.pth saved
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.to/8/grad_outputs.pth saved
+op_tools_results/op_capture_results/torch.Tensor.add/283699/161/2024-10-09-11-42-15/input.pth saved
+op_tools_results/op_capture_results/torch.Tensor.add/283699/161/2024-10-09-11-42-15/output.pth saved
+torch.Tensor.add    forward_id:161/2024-10-09-11-42-15    /deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/ops/norm.py:14 manual_rms_norm: my_input = my_input * torch.rsqrt(variance + eps)
++----------------------------+--------+---------+-------+---------------+---------------+---------------+---------------+----------------+-------+
+|            name            | device |  dtype  | numel |     shape     |     stride    | requires_grad |     layout    |    data_ptr    | value |
++----------------------------+--------+---------+-------+---------------+---------------+---------------+---------------+----------------+-------+
+| torch.Tensor.add inputs[0] | npu:0  | float32 | 16384 | (1, 16384, 1) | (16384, 1, 1) |     False     | torch.strided | 20067180408320 |       |
+| torch.Tensor.add inputs[1] |        |         |       |               |               |               |               |                | 1e-05 |
+|  torch.Tensor.add outputs  | npu:0  | float32 | 16384 | (1, 16384, 1) | (16384, 1, 1) |     False     | torch.strided | 20067180474368 |       |
++----------------------------+--------+---------+-------+---------------+---------------+---------------+---------------+----------------+-------+
+
+
+
+
+apply OpCaptureHook on torch.rsqrt
+op_tools_results/op_capture_results/torch.rsqrt/283699/162/2024-10-09-11-42-15/input.pth saved
+op_tools_results/op_capture_results/torch.rsqrt/283699/162/2024-10-09-11-42-15/output.pth saved
+torch.rsqrt    forward_id:162/2024-10-09-11-42-15    /deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/ops/norm.py:14 manual_rms_norm: my_input = my_input * torch.rsqrt(variance + eps)
++---------------------+--------+---------+-------+---------------+---------------+---------------+---------------+----------------+
+|         name        | device |  dtype  | numel |     shape     |     stride    | requires_grad |     layout    |    data_ptr    |
++---------------------+--------+---------+-------+---------------+---------------+---------------+---------------+----------------+
+|  torch.rsqrt inputs | npu:0  | float32 | 16384 | (1, 16384, 1) | (16384, 1, 1) |     False     | torch.strided | 20067180474368 |
+| torch.rsqrt outputs | npu:0  | float32 | 16384 | (1, 16384, 1) | (16384, 1, 1) |     False     | torch.strided | 20067180540416 |
++---------------------+--------+---------+-------+---------------+---------------+---------------+---------------+----------------+
+
+
+
+
+apply OpCaptureHook on torch.Tensor.mul
+op_tools_results/op_capture_results/torch.Tensor.mul/283699/163/2024-10-09-11-42-15/input.pth saved
+op_tools_results/op_capture_results/torch.Tensor.mul/283699/163/2024-10-09-11-42-15/output.pth saved
+torch.Tensor.mul    forward_id:163/2024-10-09-11-42-15    /deeplink_afs/zhaoguochun/SmallModelOptimize/InternTrain/internlm/model/ops/norm.py:14 manual_rms_norm: my_input = my_input * torch.rsqrt(variance + eps)
++----------------------------+--------+----------+----------+------------------+---------------------+---------------+---------------+----------------+
+|            name            | device |  dtype   |  numel   |      shape       |        stride       | requires_grad |     layout    |    data_ptr    |
++----------------------------+--------+----------+----------+------------------+---------------------+---------------+---------------+----------------+
+| torch.Tensor.mul inputs[0] | npu:0  | bfloat16 | 33554432 | (1, 16384, 2048) | (33554432, 2048, 1) |      True     | torch.strided | 20074677141504 |
+| torch.Tensor.mul inputs[1] | npu:0  | float32  |  16384   |  (1, 16384, 1)   |    (16384, 1, 1)    |     False     | torch.strided | 20067180540416 |
+|  torch.Tensor.mul outputs  | npu:0  | float32  | 33554432 | (1, 16384, 2048) | (33554432, 2048, 1) |     False     | torch.strided | 20075012687360 |
++----------------------------+--------+----------+----------+------------------+---------------------+---------------+---------------+----------------+
 ...
 ```
 
@@ -87,14 +101,32 @@ op_capture_result/0/2024-08-06--11-41/torch.Tensor.to/8/grad_outputs.pth saved
 ```
 ...
 skip OpCaptureHook on torch.Tensor.mul
-skip OpCaptureHook on torch.Tensor.add
-skip OpCaptureHook on torch.Tensor.sub
 skip OpCaptureHook on torch.Tensor.div
-apply OpCaptureHook on torch.Tensor.sort
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.sort/34/input.pth saved
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.sort/34/output.pth saved
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.sort/34/grad_inputs.pth saved
-op_capture_result/0/2024-08-06--11-41/torch.Tensor.sort/34/grad_outputs.pth saved
+op_tools_results/op_capture_results/torch.Tensor.sort/3834328/59/2024-10-09-11-40-14/input.pth saved
+op_tools_results/op_capture_results/torch.Tensor.sort/3834328/59/2024-10-09-11-40-14/output.pth saved
+torch.Tensor.sort    forward_id:59/2024-10-09-11-40-14    /deeplink_afs/zhaoguochun/ditorch2/op_tools/test/test_op_capture.py:15 f: sorted, indices = e.sort()  # return torch.return_type.sort
++----------------------------------+--------+---------+-------+----------+---------+---------------+---------------+----------------+
+|               name               | device |  dtype  | numel |  shape   |  stride | requires_grad |     layout    |    data_ptr    |
++----------------------------------+--------+---------+-------+----------+---------+---------------+---------------+----------------+
+|     torch.Tensor.sort inputs     | npu:0  | float32 |  200  | (10, 20) | (20, 1) |      True     | torch.strided | 20067179830784 |
+| torch.Tensor.sort outputs [0][0] | npu:0  | float32 |  200  | (10, 20) | (20, 1) |      True     | torch.strided | 20067179831808 |
+| torch.Tensor.sort outputs [0][1] | npu:0  |  int64  |  200  | (10, 20) | (20, 1) |     False     | torch.strided | 20067179832832 |
++----------------------------------+--------+---------+-------+----------+---------+---------------+---------------+----------------+
+
+
+
+
+skip OpCaptureHook on torch.Tensor.__getitem__
+skip OpCaptureHook on torch.Tensor.sum
+op_tools_results/op_capture_results/torch.Tensor.sort/3834328/59/2024-10-09-11-40-14/grad_inputs.pth saved
+op_tools_results/op_capture_results/torch.Tensor.sort/3834328/59/2024-10-09-11-40-14/grad_outputs.pth saved
+torch.Tensor.sort forward_id:<built-in function id>
++-------------------------------+--------+---------+-------+----------+---------+---------------+---------------+----------------+
+|              name             | device |  dtype  | numel |  shape   |  stride | requires_grad |     layout    |    data_ptr    |
++-------------------------------+--------+---------+-------+----------+---------+---------------+---------------+----------------+
+| torch.Tensor.sort grad_output | npu:0  | float32 |  200  | (10, 20) | (20, 1) |     False     | torch.strided | 20067179835904 |
+| torch.Tensor.sort grad_inputs | npu:0  | float32 |  200  | (10, 20) | (20, 1) |     False     | torch.strided | 20067179836928 |
++-------------------------------+--------+---------+-------+----------+---------+---------------+---------------+----------------+
 ...
 ```
 
