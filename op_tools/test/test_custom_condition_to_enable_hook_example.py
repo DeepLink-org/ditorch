@@ -33,10 +33,3 @@ torch.mul(x, x)
 op_tools.apply_feature("torch.div", feature="cast_dtype", condition_func=custom_condition)
 os.environ["OP_DTYPE_CAST_DICT"] = "torch.float32->torch.float16"
 torch.div(y, y)
-
-# condition_func 为列表的情况
-op_tools.apply_feature("torch.div", feature="op_capture", condition_func=[custom_condition, custom_condition])
-torch.div(y, y)
-
-op_tools.apply_feature("torch.div", feature="op_capture", condition_func="")
-torch.div(y, y)

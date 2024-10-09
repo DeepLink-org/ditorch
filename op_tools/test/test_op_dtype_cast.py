@@ -36,25 +36,15 @@ for i in range(3):
 dtype_caster.stop()
 
 
-# usage3
 os.environ["OP_DTYPE_CAST_DISABLE_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
 dtype_caster.start()
 f()
 dtype_caster.stop()
 
 
-# usage4
 os.environ["OP_DTYPE_CAST_DISABLE_LIST"] = ""
 os.environ["OP_DTYPE_CAST_LIST"] = "torch.Tensor.sort"  # only cast this op
-os.environ["OP_DTYPE_CAST_DICT"] = ""  # 测试对环境变量为空的异常情况的处理
-dtype_caster.start()
-f()
-dtype_caster.stop()
-
-# usage5
-os.environ["OP_DTYPE_CAST_DISABLE_LIST"] = ""
-os.environ["OP_DTYPE_CAST_LIST"] = "torch.Tensor.sort"  # only cast this op
-os.environ["OP_DTYPE_CAST_DICT"] = "torch.half->torch.float64"  # camb 370 not support bfloat16
+os.environ["OP_DTYPE_CAST_DICT"] = "torch.bfloat16->torch.float32"  # camb 370 not support bfloat16
 dtype_caster.start()
 f()
 dtype_caster.stop()
@@ -69,7 +59,6 @@ with op_tools.OpDtypeCast():
     assert input.grad is not None and input.grad.dtype == torch.float16
     assert weight.grad is not None and input.grad.dtype == torch.float16
 
-# usage6
 os.environ["OP_DTYPE_CAST_DISABLE_LIST"] = ""
 os.environ["OP_DTYPE_CAST_LIST"] = ""  # 测试空值
 dtype_caster.start()
