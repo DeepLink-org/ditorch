@@ -286,7 +286,7 @@ class OpAutoCompareHook(BaseHook):
 
         id = self.forward_op_id
         self = None
-        garbage_collect(id, 10)
+        garbage_collect(id, 2)
 
     def save_forward_args(self):
         save_op_args(
