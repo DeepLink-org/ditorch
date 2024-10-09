@@ -12,11 +12,18 @@ class TestCustomErrorTolerance(unittest.TestCase):
         self.assertEqual(rtol, rtol_)
         self.assertTrue(atol > 0)
         self.assertTrue(rtol > 0)
-    
+
     def _tearDown(self):
         # Clean up environment variables to avoid side effects
-        env_list = ["AUTOCOMPARE_ERROR_TOLERANCE", "AUTOCOMPARE_ERROR_TOLERANCE_FLOAT32", "AUTOCOMPARE_ERROR_TOLERANCE_FLOAT16", "AUTOCOMPARE_ERROR_TOLERANCE_FLOAT64",
-        "OP_NAME_AUTOCOMPARE_ERROR_TOLERANCE_FLOAT16", "OP_NAME_AUTOCOMPARE_ERROR_TOLERANCE_FLOAT32", "OP_NAME_AUTOCOMPARE_ERROR_TOLERANCE_FLOAT64"]
+        env_list = [
+            "AUTOCOMPARE_ERROR_TOLERANCE",
+            "AUTOCOMPARE_ERROR_TOLERANCE_FLOAT32",
+            "AUTOCOMPARE_ERROR_TOLERANCE_FLOAT16",
+            "AUTOCOMPARE_ERROR_TOLERANCE_FLOAT64",
+            "OP_NAME_AUTOCOMPARE_ERROR_TOLERANCE_FLOAT16",
+            "OP_NAME_AUTOCOMPARE_ERROR_TOLERANCE_FLOAT32",
+            "OP_NAME_AUTOCOMPARE_ERROR_TOLERANCE_FLOAT64",
+        ]
         if "AUTOCOMPARE_ERROR_TOLERANCE" in os.environ:
             del os.environ["AUTOCOMPARE_ERROR_TOLERANCE"]
         for env_name in os.environ:
@@ -29,7 +36,7 @@ class TestCustomErrorTolerance(unittest.TestCase):
         self._test_get_error_tolerance(torch.float32, 1e-5, 1e-5)
         self._test_get_error_tolerance(torch.float64, 1e-8, 1e-8)
         self._tearDown()
-    
+
     def test_environment_variable_override(self):
         os.environ["AUTOCOMPARE_ERROR_TOLERANCE"] = "2,3"
         self._test_get_error_tolerance(torch.float16, 2, 3)

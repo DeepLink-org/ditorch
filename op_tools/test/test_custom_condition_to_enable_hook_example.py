@@ -38,8 +38,5 @@ torch.div(y, y)
 op_tools.apply_feature("torch.div", feature="op_capture", condition_func=[custom_condition, custom_condition])
 torch.div(y, y)
 
-op_tools.apply_feature("torch.div", feature="op_capture", condition_func='')
+op_tools.apply_feature("torch.div", feature="op_capture", condition_func="")
 torch.div(y, y)
-
-
-

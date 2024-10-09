@@ -47,14 +47,14 @@ capture.stop()
 
 # usage5
 os.environ["OP_TIME_MEASURE_DISABLE_LIST"] = ""
-os.environ["OP_TIME_MEASURE_LIST"] = "" # 空
+os.environ["OP_TIME_MEASURE_LIST"] = ""  # 空
 capture.start()
 f()
 capture.stop()
 
 # usage6
 os.environ["OP_TIME_MEASURE_DISABLE_LIST"] = "torch.Tensor.sort"
-os.environ["OP_TIME_MEASURE_LIST"] = "torch.Tensor.sort,torch.Tensor.add" # 重叠
+os.environ["OP_TIME_MEASURE_LIST"] = "torch.Tensor.sort,torch.Tensor.add"  # 重叠
 capture.start()
 f()
 capture.stop()
@@ -62,9 +62,7 @@ capture.stop()
 # usage7
 os.environ["OP_TIME_MEASURE_DISABLE_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
 if "OP_TIME_MEASURE_LIST" in os.environ:
-    del os.environ["OP_TIME_MEASURE_LIST"] # 删除
+    del os.environ["OP_TIME_MEASURE_LIST"]  # 删除
 capture.start()
 f()
 capture.stop()
-
-

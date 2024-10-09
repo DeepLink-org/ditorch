@@ -50,14 +50,14 @@ capture.stop()
 
 # usage5
 os.environ["OP_CAPTURE_DISABLE_LIST"] = ""
-os.environ["OP_CAPTURE_LIST"] = "" # 空
+os.environ["OP_CAPTURE_LIST"] = ""  # 空
 capture.start()
 f()
 capture.stop()
 
 # usage6
 os.environ["OP_CAPTURE_DISABLE_LIST"] = "torch.Tensor.sort"
-os.environ["OP_CAPTURE_LIST"] = "torch.Tensor.sort,torch.Tensor.add" # capture和disable重叠
+os.environ["OP_CAPTURE_LIST"] = "torch.Tensor.sort,torch.Tensor.add"  # capture和disable重叠
 capture.start()
 f()
 capture.stop()
@@ -65,7 +65,7 @@ capture.stop()
 # usage7
 os.environ["OP_CAPTURE_DISABLE_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
 if "OP_CAPTURE_LIST" in os.environ:
-    del os.environ["OP_CAPTURE_LIST"] # 删除
+    del os.environ["OP_CAPTURE_LIST"]  # 删除
 capture.start()
 f()
 capture.stop()

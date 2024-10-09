@@ -59,14 +59,14 @@ watcher.stop()
 
 # usage5
 os.environ["OP_DISPATCH_WATCH_DISABLE_LIST"] = ""
-os.environ["OP_DISPATCH_WATCH_LIST"] = "" # 空
+os.environ["OP_DISPATCH_WATCH_LIST"] = ""  # 空
 watcher.start()
 f()
 watcher.stop()
 
 # usage6
 os.environ["OP_DISPATCH_WATCH_DISABLE_LIST"] = "torch.Tensor.sort"
-os.environ["OP_DISPATCH_WATCH_LIST"] = "torch.Tensor.sort,torch.Tensor.add" # 重叠
+os.environ["OP_DISPATCH_WATCH_LIST"] = "torch.Tensor.sort,torch.Tensor.add"  # 重叠
 watcher.start()
 f()
 watcher.stop()
@@ -74,19 +74,18 @@ watcher.stop()
 # usage7
 os.environ["OP_DISPATCH_WATCH_DISABLE_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
 if "OP_DISPATCH_WATCH_LIST" in os.environ:
-    del os.environ["OP_DISPATCH_WATCH_LIST"] # 删除
+    del os.environ["OP_DISPATCH_WATCH_LIST"]  # 删除
 watcher.start()
 f()
 watcher.stop()
 
 if "OP_DISPATCH_WATCH_LIST" in os.environ:
-    del os.environ["OP_DISPATCH_WATCH_LIST"] # 删除
+    del os.environ["OP_DISPATCH_WATCH_LIST"]  # 删除
 if "OP_DISPATCH_WATCH_DISABLE_LIST" in os.environ:
-    del os.environ["OP_DISPATCH_WATCH_DISABLE_LIST"] # 删除
+    del os.environ["OP_DISPATCH_WATCH_DISABLE_LIST"]  # 删除
 
 
-
-print("\n" * 2) # 这里共同使用的时候，只输出了opfallback抓取的算子，没有dispatch_watch的算子，只对dispatch有限制
+print("\n" * 2)  # 这里共同使用的时候，只输出了opfallback抓取的算子，没有dispatch_watch的算子，只对dispatch有限制
 print("dispatch process of the operator when it is fallbacked:")
 os.environ["OP_DISPATCH_WATCH_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
 os.environ["OP_FALLBACK_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
@@ -110,7 +109,7 @@ with op_tools.OpDispatchWatcher():
         f()
 
 
-print("\n" * 2) # 推荐在表格中加一些东西，要不然难以分清每一个表格是哪个工具抓取的
+print("\n" * 2)  # 推荐在表格中加一些东西，要不然难以分清每一个表格是哪个工具抓取的
 print("dispatch process of the operator when optimemeasure is enabled:")
 with op_tools.OpDispatchWatcher():
     with op_tools.OpTimeMeasure():

@@ -13,6 +13,7 @@ import psutil
 import os
 import op_tools
 import gc
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -101,7 +102,7 @@ class TestOpTools(unittest.TestCase):
             n.mul_(4)
             n.backward(torch.ones_like(n))
 
-    def test_op_autocompare_inplace_view_op_and_requires_grad(self):
+    def test_op_autocompare_inplace_view_op_and_requires_grad2(self):
         with op_tools.OpAutoCompare():
             x = torch.randn(32, 1, 32, 32, requires_grad=True).to(device=device)
             y = x.view(-1)
@@ -136,13 +137,9 @@ class TestOpTools(unittest.TestCase):
         input = torch.ones((5, 5), dtype=torch.float16, device="cuda").requires_grad_()
         assert input.is_leaf
         with op_tools.OpDtypeCast():
-            input = torch.ones(
-                (5, 5), dtype=torch.float16, device="cuda"
-            ).requires_grad_()
+            input = torch.ones((5, 5), dtype=torch.float16, device="cuda").requires_grad_()
             assert input.is_leaf
-            weight = torch.ones(
-                (5, 5), dtype=torch.float16, device="cuda"
-            ).requires_grad_()
+            weight = torch.ones((5, 5), dtype=torch.float16, device="cuda").requires_grad_()
             output = torch.nn.functional.linear(input, weight)
             label = torch.ones_like(output)
             output.backward(label)

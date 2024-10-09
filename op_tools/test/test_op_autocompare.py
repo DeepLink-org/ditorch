@@ -57,14 +57,14 @@ comparer.stop()
 
 # usage5
 os.environ["OP_AUTOCOMPARE_DISABLE_LIST"] = ""
-os.environ["OP_AUTOCOMPARE_LIST"] = "" # 空
+os.environ["OP_AUTOCOMPARE_LIST"] = ""  # 空
 comparer.start()
 f()
 comparer.stop()
 
 # usage6
 os.environ["OP_AUTOCOMPARE_DISABLE_LIST"] = "torch.Tensor.sort"
-os.environ["OP_AUTOCOMPARE_LIST"] = "torch.Tensor.sort,torch.Tensor.add" # 重叠
+os.environ["OP_AUTOCOMPARE_LIST"] = "torch.Tensor.sort,torch.Tensor.add"  # 重叠
 comparer.start()
 f()
 comparer.stop()
@@ -72,16 +72,14 @@ comparer.stop()
 # usage7
 os.environ["OP_AUTOCOMPARE_DISABLE_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
 if "OP_AUTOCOMPARE_LIST" in os.environ:
-    del os.environ["OP_AUTOCOMPARE_LIST"] # 删除
+    del os.environ["OP_AUTOCOMPARE_LIST"]  # 删除
 comparer.start()
 f()
 comparer.stop()
 
 # usage8
 os.environ["OP_AUTOCOMPARE_DISABLE_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
-os.environ["OP_AUTOCOMPARE_LIST"] = "torch.Tensor.uniform_,torch.empty_like" # 与random_number_gen_ops重叠
+os.environ["OP_AUTOCOMPARE_LIST"] = "torch.Tensor.uniform_,torch.empty_like"  # 与random_number_gen_ops重叠
 comparer.start()
 f()
 comparer.stop()
-
-

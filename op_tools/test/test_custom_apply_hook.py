@@ -162,25 +162,25 @@ class TestCustomApplyHook(unittest.TestCase):
         x = torch.tensor([1, 2, 3], dtype=torch.float16, device="cuda", requires_grad=True)
         y = torch.tensor([4, 5, 6], dtype=torch.float16, device="cuda", requires_grad=True)
         _test_function(x, y)
-    
+
     def test_list_not_str(self):
         op_tools.apply_feature(ops=[torch.add, torch.add, torch.sub, torch.div], feature="fallback")
         x = torch.tensor([1, 2, 3], dtype=torch.float16, device="cuda", requires_grad=True)
         y = torch.tensor([4, 5, 6], dtype=torch.float16, device="cuda", requires_grad=True)
         _test_function(x, y)
-    
+
     def test_error_feature(self):
         op_tools.apply_feature(ops=[torch.add, torch.add, torch.sub, torch.div], feature="falback")
         x = torch.tensor([1, 2, 3], dtype=torch.float16, device="cuda", requires_grad=True)
         y = torch.tensor([4, 5, 6], dtype=torch.float16, device="cuda", requires_grad=True)
         _test_function(x, y)
-    
+
     def test_error_ops(self):
-        op_tools.apply_feature(ops=[torch.ad], feature="fallback")
-        x = torch.tensor([1, 2, 3], dtype=torch.float16, device="cuda", requires_grad=True)
-        y = torch.tensor([4, 5, 6], dtype=torch.float16, device="cuda", requires_grad=True)
-        _test_function(x, y)
-    
+        with unittest.TestCase().assertRaises(AttributeError):
+            op_tools.apply_feature(ops=[torch.ad], feature="fallback")
+            x = torch.tensor([1, 2, 3], dtype=torch.float16, device="cuda", requires_grad=True)
+            y = torch.tensor([4, 5, 6], dtype=torch.float16, device="cuda", requires_grad=True)
+            _test_function(x, y)
 
 
 if __name__ == "__main__":
