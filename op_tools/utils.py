@@ -6,6 +6,7 @@ import math
 import os
 import gc
 import traceback
+import psutil
 
 
 def traverse_container(container):
@@ -374,9 +375,38 @@ def compare_result(name, a, b):  # noqa: C901
     }
 
 
-def garbage_collect(id, gc_cycle=int(os.getenv("OP_TOOLS_GARBAGE_COLLECTION_CYCLE", "50"))):
-    if id % gc_cycle == 0:
+class GarbageCollectEvaluate:
+    def __init__(self) -> None:
+        self.rss = psutil.Process().memory_info().rss
+        self.device_memory_usage = torch.cuda.memory_allocated()
+        self.current_rss = psutil.Process().memory_info().rss
+        self.current_device_memory_usage = torch.cuda.memory_allocated()
+        self.max_diff = 1 << 30
+
+    def is_shoule_collect(self):
+        self.current_rss = psutil.Process().memory_info().rss
+        self.current_device_memory_usage = torch.cuda.memory_allocated()
+        if self.current_rss - self.rss > self.max_diff:
+            return True
+        else:
+            return False
+
+    def collect(self):
         gc.collect()
+        self.rss = max(self.rss, psutil.Process().memory_info().rss)
+        self.device_memory_usage = max(self.device_memory_usage, torch.cuda.memory_allocated())
+        print(
+            f"GarbageCollectEvaluate: after collect : rss: {self.rss >> 20} current_rss: {self.current_rss >> 20} max_diff: {self.max_diff} device_memory_usage: {self.device_memory_usage >> 20} current_device_memory_usage: {self.current_device_memory_usage >> 20}"  # noqa: E501
+        )
+
+
+garbage_collect_evaluater = GarbageCollectEvaluate()
+
+
+def garbage_collect():
+    global garbage_collect_evaluater
+    if garbage_collect_evaluater.is_shoule_collect():
+        garbage_collect_evaluater.collect()
 
 
 def current_location(name=None, stack_depth=-1, print_stack=False):

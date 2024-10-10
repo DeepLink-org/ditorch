@@ -88,9 +88,8 @@ class OpDtypeCastHook(BaseHook):
                     self.data_dict_list.append(data_dict)
         if len(self.data_dict_list) > 0:
             print(dict_data_list_to_table(self.data_dict_list))
-        id = self.id
         self = None
-        garbage_collect(id)
+        garbage_collect()
 
     def is_should_apply(self, *args, **kwargs):
         if is_opname_match(self.name, os.getenv("OP_DTYPE_CAST_DISABLE_LIST", "")):
