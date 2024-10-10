@@ -1,7 +1,8 @@
 # Copyright (c) 2024, DeepLink.
+# 用了两种使用方式，以及使用了环境变量来规定计算哪些操作的时间
+# 应该缺少很多常见操作，也没有模型训练方面的操作
 import torch
 import ditorch
-
 import op_tools
 import os
 
@@ -30,15 +31,38 @@ capture.stop()
 
 
 # usage3
-os.environ["OP_CAPTURE_DISABLE_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
+os.environ["OP_TIME_MEASURE_DISABLE_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
 capture.start()
 f()
 capture.stop()
 
 
 # usage4
-os.environ["OP_CAPTURE_DISABLE_LIST"] = ""
-os.environ["OP_CAPTURE_LIST"] = "torch.Tensor.sort"  # only capture these op
+os.environ["OP_TIME_MEASURE_DISABLE_LIST"] = ""
+os.environ["OP_TIME_MEASURE_LIST"] = "torch.Tensor.sort"  # only capture these op
+capture.start()
+f()
+capture.stop()
+
+
+# usage5
+os.environ["OP_TIME_MEASURE_DISABLE_LIST"] = ""
+os.environ["OP_TIME_MEASURE_LIST"] = ""  # 空
+capture.start()
+f()
+capture.stop()
+
+# usage6
+os.environ["OP_TIME_MEASURE_DISABLE_LIST"] = "torch.Tensor.sort"
+os.environ["OP_TIME_MEASURE_LIST"] = "torch.Tensor.sort,torch.Tensor.add"  # 重叠
+capture.start()
+f()
+capture.stop()
+
+# usage7
+os.environ["OP_TIME_MEASURE_DISABLE_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
+if "OP_TIME_MEASURE_LIST" in os.environ:
+    del os.environ["OP_TIME_MEASURE_LIST"]  # 删除
 capture.start()
 f()
 capture.stop()

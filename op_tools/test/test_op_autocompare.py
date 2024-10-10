@@ -1,8 +1,11 @@
 # Copyright (c) 2024, DeepLink.
+# 这里提供了autocompare对一些简单张量操作的的测试，包含两种使用方法
+# 可能缺少一些别的基础操作
+
 import torch
 import ditorch
-
 import op_tools
+import os
 
 
 def f():
@@ -31,9 +34,52 @@ f()
 with op_tools.OpAutoCompare():
     f()
 
-
 # usage2
 comparer = op_tools.OpAutoCompare()
+comparer.start()
+for i in range(3):
+    f()
+comparer.stop()
+
+
+# usage3
+os.environ["OP_AUTOCOMPARE_DISABLE_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
+comparer.start()
+f()
+comparer.stop()
+
+# usage4
+os.environ["OP_AUTOCOMPARE_DISABLE_LIST"] = ""
+os.environ["OP_AUTOCOMPARE_LIST"] = "torch.Tensor.backward"  # 与EXCLUDE_OPS重复
+comparer.start()
+f()
+comparer.stop()
+
+# usage5
+os.environ["OP_AUTOCOMPARE_DISABLE_LIST"] = ""
+os.environ["OP_AUTOCOMPARE_LIST"] = ""  # 空
+comparer.start()
+f()
+comparer.stop()
+
+# usage6
+os.environ["OP_AUTOCOMPARE_DISABLE_LIST"] = "torch.Tensor.sort"
+os.environ["OP_AUTOCOMPARE_LIST"] = "torch.Tensor.sort,torch.Tensor.add"  # 重叠
+comparer.start()
+f()
+comparer.stop()
+
+# usage7
+os.environ["OP_AUTOCOMPARE_DISABLE_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
+if "OP_AUTOCOMPARE_LIST" in os.environ:
+    del os.environ["OP_AUTOCOMPARE_LIST"]  # 删除
+comparer.start()
+f()
+comparer.stop()
+
+# usage8
+os.environ["OP_AUTOCOMPARE_DISABLE_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
+os.environ["OP_AUTOCOMPARE_LIST"] = "torch.Tensor.uniform_,torch.empty_like"  # 与random_number_gen_ops重叠
 comparer.start()
 f()
 comparer.stop()

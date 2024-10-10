@@ -71,7 +71,7 @@ def apply_hook_to_ops(ops, hook, condition_funcs=[]):
 
 
 def apply_feature(ops, feature, condition_func=lambda *args, **kwargs: True):
-    assert isinstance(ops, (str, list))
+    assert isinstance(ops, (str, list, tuple))
     feature_options = [
         "fallback",
         "autocompare",
@@ -97,8 +97,8 @@ def apply_feature(ops, feature, condition_func=lambda *args, **kwargs: True):
 
     if isinstance(ops, str):
         apply_hook_to_ops(ops, hook_cls, condition_func)
-    elif isinstance(ops, list):
+    elif isinstance(ops, (list, tuple)):
         for op in ops:
             apply_hook_to_ops(op, hook_cls, condition_func)
     else:
-        assert False, f"ops must be str or list, but got {type(ops)}"
+        assert False, f"ops must be str, tuple or list, but got {type(ops)}"

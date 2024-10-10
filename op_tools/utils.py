@@ -12,6 +12,7 @@ import psutil
 def traverse_container(container):
     if isinstance(container, dict):
         for key, value in container.items():
+            yield from traverse_container(key)
             yield from traverse_container(value)
     elif isinstance(container, (list, tuple, set)):
         for item in container:
