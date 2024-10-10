@@ -50,6 +50,17 @@ class TestOpNameMatch(unittest.TestCase):
             },
         )
 
+    def test_get_dtype_cast_dict_from_config2(self):
+        dtype_cast_dict = get_dtype_cast_dict_form_str(" torch.float32 ->torch.float16, torch.float64 -> torch.float16, torch.int64->  torch.int32 ")
+        self.assertEqual(
+            dtype_cast_dict,
+            {
+                torch.float32: torch.float16,
+                torch.float64: torch.float16,
+                torch.int64: torch.int32,
+            },
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -220,7 +220,7 @@ class OpAutoCompareHook(BaseHook):
         if len(self.dtype_cast_dict) > 0:
             dtype_cast_info = f"cpu_dtype_cast_info(from:to): {self.dtype_cast_dict}"
         print("\n" * 2)
-        print(f"{self.name} forward_id: {self.forward_op_id}    {dtype_cast_info}")
+        print(f"autocompare    {self.name} forward_id: {self.forward_op_id}    {dtype_cast_info}")
         print(f"{self.current_location}")
         print(self.op_forward_args_to_table())
         print(dict_data_list_to_table(result_list))
@@ -272,7 +272,7 @@ class OpAutoCompareHook(BaseHook):
             dtype_cast_info = f"cpu_dtype_cast_info(from:to): {self.dtype_cast_dict}"
 
         print("\n" * 2)
-        print(f"{self.name} forward_id: {self.forward_op_id}    {dtype_cast_info}")
+        print(f"autocompare    {self.name} forward_id: {self.forward_op_id}    {dtype_cast_info}")
         print(f"{self.current_location}")
         print(self.backward_args_table)
         print(dict_data_list_to_table(backward_compare_result["result_list"]))
@@ -284,9 +284,8 @@ class OpAutoCompareHook(BaseHook):
                 self.save_forward_args()
             self.save_backward_args()
 
-        id = self.forward_op_id
         self = None
-        garbage_collect(id, 2)
+        garbage_collect()
 
     def save_forward_args(self):
         save_op_args(
@@ -347,7 +346,6 @@ class OpAutoCompareHook(BaseHook):
                 return
 
             self.register_backward_hook_for_grads()
-            id = self.forward_op_id
             result = self.result
             # for reduce device memory usage
             if self.backward_hook_handle is not None:
@@ -357,7 +355,7 @@ class OpAutoCompareHook(BaseHook):
             else:
                 self = None
 
-            garbage_collect(id, 10)
+            garbage_collect()
             return result
 
     def is_should_apply(self, *args, **kwargs):

@@ -148,7 +148,7 @@ class OpTimeMeasureHook(BaseHook):
             elasped_info_dict["output"] = serialize_args_to_dict(self.result)
             time_measure_result_cache.append(self.id, elasped_info_dict)
 
-            garbage_collect(self.id)
+            garbage_collect()
 
     def is_should_apply(self, *args, **kwargs):
         if is_opname_match(self.name, os.getenv("OP_TIME_MEASURE_DISABLE_LIST", "")):

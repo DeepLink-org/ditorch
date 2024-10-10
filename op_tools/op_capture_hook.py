@@ -67,9 +67,8 @@ class OpCaptureHook(BaseHook):
                     if result.grad_fn is not None:
                         self.backward_hook_handle.register_grad_fun_hook(result)
 
-            id = self.id
             self = None
-            garbage_collect(id)
+            garbage_collect()
 
     def is_should_apply(self, *args, **kwargs):
         if is_opname_match(self.name, os.getenv("OP_CAPTURE_DISABLE_LIST", "")):
