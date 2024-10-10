@@ -2,7 +2,7 @@ import psutil
 import time
 import argparse
 import subprocess
-
+from prettytable import PrettyTable
 
 is_ascend_npu_env = subprocess.run("npu-smi info", shell=True, capture_output=True, text=True).returncode == 0
 
@@ -37,6 +37,35 @@ def get_ascend_device_mem_usage(pid):
     return info
 
 
+def get_ascend_device_utilization(pid):
+    command = R"npu-smi info | awk -v pid=" + str(pid) + R" 'pid==$5  {print $2}'"
+    device_cards = subprocess.run(command, shell=True, capture_output=True, text=True).stdout.replace("\n", " ").strip().split(" ")
+    info = {"device_cards": device_cards if len(device_cards) > 1 else int(device_cards[0].strip())}
+    for device_card in device_cards:
+        device_card = int(device_card.strip())
+        command = f"npu-smi info  -t usages -i {device_card}"
+        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        contents = result.stdout.strip()
+        for content in contents.split("\n"):
+            if ":" in content:
+                key, value = content.split(":")
+                if len(device_cards) > 1:
+                    key = f"{device_card}_{key.strip()}"
+                else:
+                    key = key.strip()
+                info[f"{key}"] = value.strip()
+    return info
+
+
+def print_dict_info(info):
+    table = PrettyTable()
+    table.field_names = ["key", "value"]
+    for key, value in info.items():
+        table.add_row([key, value])
+    print(table)
+    print("\n" * 2)
+
+
 if __name__ == "__main__":
     args = parse_args()
     pid = args.pid
@@ -48,9 +77,8 @@ if __name__ == "__main__":
         info.update(get_host_mem_usage(pid))
         if is_ascend_npu_env:
             info.update(get_ascend_device_mem_usage(pid))
+            info.update(get_ascend_device_utilization(pid))
 
-        info_str = ""
-        for key, value in info.items():
-            info_str += f"{key}: {value} \t"
-        print(info_str)
+        print_dict_info(info)
+
         time.sleep(interval)
