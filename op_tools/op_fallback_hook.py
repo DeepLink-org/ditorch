@@ -76,9 +76,8 @@ class OpFallbackHook(BaseHook):
 
             self.result = to_device(self.device, self.result_cpu, self.dtype_convert_back_dict)
             self.dump_op_args()
-            id = self.id
             self = None
-            garbage_collect(id)
+            garbage_collect()
 
     def dump_op_args(self):
         data_dict_list = []
