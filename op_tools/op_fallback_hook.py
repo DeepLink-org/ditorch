@@ -98,7 +98,7 @@ class OpFallbackHook(BaseHook):
             dtype_cast_info = "cpu_dtype_cast_info: " + str(self.dtype_cast_dict)
 
         print("\n" * 2)
-        print(f"{self.name}    forward_id: {self.id}  {dtype_cast_info}")
+        print(f"fallback    {self.name}    forward_id: {self.id}  {dtype_cast_info}")
         print(f"{self.current_location}")
         print(table)
         print("\n" * 2)

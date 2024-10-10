@@ -128,6 +128,12 @@ class TestOpToolWithSpecialOp(unittest.TestCase):
             y = x.exp()
             y.backward(torch.ones_like(y))
 
+    def test_dtype_cast(self):
+        with op_tools.OpDtypeCast():
+            x = torch.randn(3, 4, 5, dtype=torch.float16, device="cuda", requires_grad=True)
+            y = x.to(torch.float32)
+            y.backward(torch.ones_like(y))
+
 
 if __name__ == "__main__":
     unittest.main()

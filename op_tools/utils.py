@@ -86,9 +86,9 @@ def is_inplace_op(name):
 
 def get_function_from_string(func_str):
     parts = func_str.split(".")
-    attrs = [importlib.import_module(parts[0])]
+    attrs = [importlib.import_module(parts[0].strip())]
     for i in range(0, len(parts) - 1):
-        attr = getattr(attrs[i], parts[i + 1])
+        attr = getattr(attrs[i], parts[i + 1].strip())
         attrs.append(attr)
 
     return attrs[len(parts) - 1]
@@ -101,6 +101,7 @@ def get_dtype_cast_dict_form_str(config):
     dtype_cast_dict = dict()
     if config is not None:
         for item in config.split(","):
+            item = item.strip()
             dtype_cast_dict[get_function_from_string(item.split("->")[0])] = get_function_from_string(item.split("->")[1])
     return dtype_cast_dict
 
@@ -191,6 +192,27 @@ def is_view_op(name):
 
 def is_random_number_gen_op(name):
     return name in RANDOM_NUMBER_GEN_OPS
+
+
+def is_dtype_cast_op(name, *args, **kwargs):
+    if "dtype" in kwargs.keys() and kwargs["dtype"] is not None:
+        return True
+    for arg in args:
+        if isinstance(arg, torch.dtype):
+            return True
+    dtype_cast_op = [
+        "torch.Tensor.double",
+        "torch.Tensor.float",
+        "torch.Tensor.half",
+        "torch.Tensor.bfloat16",
+        "torch.Tensor.long",
+        "torch.Tensor.int",
+        "torch.Tensor.short",
+        "torch.Tensor.bool",
+    ]
+    if name in dtype_cast_op:
+        return True
+    return False
 
 
 def tensor_max_diff(a, b):
@@ -386,7 +408,7 @@ class GarbageCollectEvaluate:
     def is_shoule_collect(self):
         self.current_rss = psutil.Process().memory_info().rss
         self.current_device_memory_usage = torch.cuda.memory_allocated()
-        if self.current_rss - self.rss > self.max_diff:
+        if (self.current_rss - self.rss > self.max_diff) or (self.current_device_memory_usage - self.device_memory_usage > self.max_diff):
             return True
         else:
             return False
@@ -396,7 +418,7 @@ class GarbageCollectEvaluate:
         self.rss = max(self.rss, psutil.Process().memory_info().rss)
         self.device_memory_usage = max(self.device_memory_usage, torch.cuda.memory_allocated())
         print(
-            f"GarbageCollectEvaluate: after collect : rss: {self.rss >> 20} current_rss: {self.current_rss >> 20} max_diff: {self.max_diff} device_memory_usage: {self.device_memory_usage >> 20} current_device_memory_usage: {self.current_device_memory_usage >> 20}"  # noqa: E501
+            f"GarbageCollectEvaluate: after collect : rss: {self.rss >> 20} MB, current_rss: {self.current_rss >> 20} MB, max_diff: {self.max_diff>>20} MB, device_memory_usage: {self.device_memory_usage >> 20} MB, current_device_memory_usage: {self.current_device_memory_usage >> 20} MB"  # noqa: E501
         )
 
 
