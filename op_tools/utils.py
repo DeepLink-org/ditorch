@@ -204,6 +204,12 @@ def tensor_max_diff(a, b):
     return max_abs_diff, max_relative_diff
 
 
+def tensor_cos_similarity(a, b):
+    a_cpu, b_cpu = a.cpu().float(), b.cpu().float()
+    cos_sim = torch.nn.functional.cosine_similarity(a_cpu.reshape(-1), b_cpu.reshape(-1), dim=-1)
+    return cos_sim.item()
+
+
 def tensor_allclose(a, b, atol=1e-3, rtol=1e-3):
     a_cpu, b_cpu = a.cpu(), b.cpu()
     try:
@@ -246,7 +252,7 @@ def get_error_tolerance(dtype, op_name):
 def compare_result(name, a, b):  # noqa: C901
     a_list = []
     b_list = []
-    allclose, max_abs_diff, max_relative_diff, error_info, atol, rtol = True, 0, 0, "", 0, 0
+    allclose, max_abs_diff, max_relative_diff, error_info, atol, rtol, cos_similarity = True, 0, 0, "", 0, 0, -1e8
     for item in traverse_container(a):
         a_list.append(item)
     for item in traverse_container(b):
@@ -272,6 +278,7 @@ def compare_result(name, a, b):  # noqa: C901
         b_item = b_list[i]
         atol_i, rtol_i = 0, 0
         error_info_i = ""
+        cos_similarity_i = None
         if a_item is None and b_item is None:
             allclose_i = True
             max_abs_diff_i = 0
@@ -285,6 +292,7 @@ def compare_result(name, a, b):  # noqa: C901
                 if a_item.numel() > 0:
                     max_abs_diff_i, max_relative_diff_i = tensor_max_diff(a_item, b_item)
                     allclose_i = tensor_allclose(a_item, b_item, atol=atol_i, rtol=rtol_i)
+                    cos_similarity_i = tensor_cos_similarity(a_item, b_item)
                 else:
                     max_abs_diff_i, max_relative_diff_i = 0.0, 0.0
                     allclose_i = True
@@ -337,10 +345,14 @@ def compare_result(name, a, b):  # noqa: C901
         max_relative_diff = max(max_relative_diff_i, max_relative_diff)
         atol = max(atol_i, atol)
         rtol = max(rtol_i, rtol)
+        if cos_similarity_i is None:
+            cos_similarity_i = 1 if allclose_i else -1
+        cos_similarity = max(cos_similarity, cos_similarity_i)
         result_list.append(
             {
                 "name": f"{name + prefex:<30}",
                 "allclose": allclose_i,
+                "cosine_similarity": f"{cos_similarity_i:1.9f}",
                 "max_abs_diff": f"{max_abs_diff_i:10.9f}",
                 "max_relative_diff": f"{max_relative_diff_i:10.9f}",
                 "atol": f"{atol_i:10.9f}",
@@ -351,6 +363,7 @@ def compare_result(name, a, b):  # noqa: C901
 
     return {
         "allclose": allclose,
+        "cos_similarity": cos_similarity,
         "max_abs_diff": max_abs_diff,
         "max_relative_diff": max_relative_diff,
         "error_info": error_info,
