@@ -76,9 +76,8 @@ class OpFallbackHook(BaseHook):
 
             self.result = to_device(self.device, self.result_cpu, self.dtype_convert_back_dict)
             self.dump_op_args()
-            id = self.id
             self = None
-            garbage_collect(id)
+            garbage_collect()
 
     def dump_op_args(self):
         data_dict_list = []
@@ -99,7 +98,7 @@ class OpFallbackHook(BaseHook):
             dtype_cast_info = "cpu_dtype_cast_info: " + str(self.dtype_cast_dict)
 
         print("\n" * 2)
-        print(f"{self.name}    forward_id: {self.id}  {dtype_cast_info}")
+        print(f"fallback    {self.name}    forward_id: {self.id}  {dtype_cast_info}")
         print(f"{self.current_location}")
         print(table)
         print("\n" * 2)

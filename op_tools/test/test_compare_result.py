@@ -1,5 +1,5 @@
 # Copyright (c) 2024, DeepLink.
-from op_tools.utils import compare_result
+from op_tools.utils import compare_result, tensor_cos_similarity
 import torch
 import ditorch
 import unittest
@@ -238,6 +238,14 @@ class TestCompareResult(unittest.TestCase):
         self.assertTrue(compare_result("invalid_type", (), [])["allclose"])  # 输入空元组和空列表
         self.assertFalse(compare_result("invalid_value_a", ["1", 2, 3], [1, 2, 3])["allclose"])  # 输入a的元素类型不符合要求
         self.assertFalse(compare_result("invalid_value_b", [1, 2, 3], ["1", 2, 3])["allclose"])  # 输入b的元素类型不符合要求
+
+    def test_cosine_similarity(self):
+        x = torch.randn(3, 4, 4, device="cuda").float()
+        y = torch.randn(3, 4, 4, device="cuda")
+        self.assertTrue(abs(tensor_cos_similarity(x, x) - 1) < 1e-6)
+        self.assertTrue(abs(tensor_cos_similarity(x, -x) + 1) < 1e-6)
+        xy_cos_similarity = tensor_cos_similarity(x, y)
+        self.assertTrue(xy_cos_similarity >= -1 and xy_cos_similarity <= 1)
 
 
 if __name__ == "__main__":

@@ -6,6 +6,7 @@ import math
 import os
 import gc
 import traceback
+import psutil
 
 
 def traverse_container(container):
@@ -86,9 +87,9 @@ def is_inplace_op(name):
 
 def get_function_from_string(func_str):
     parts = func_str.split(".")
-    attrs = [importlib.import_module(parts[0])]
+    attrs = [importlib.import_module(parts[0].strip())]
     for i in range(0, len(parts) - 1):
-        attr = getattr(attrs[i], parts[i + 1])
+        attr = getattr(attrs[i], parts[i + 1].strip())
         attrs.append(attr)
 
     return attrs[len(parts) - 1]
@@ -101,6 +102,7 @@ def get_dtype_cast_dict_form_str(config):
     dtype_cast_dict = dict()
     if config is not None:
         for item in config.split(","):
+            item = item.strip()
             dtype_cast_dict[get_function_from_string(item.split("->")[0])] = get_function_from_string(item.split("->")[1])
     return dtype_cast_dict
 
@@ -193,6 +195,27 @@ def is_random_number_gen_op(name):
     return name in RANDOM_NUMBER_GEN_OPS
 
 
+def is_dtype_cast_op(name, *args, **kwargs):
+    if "dtype" in kwargs.keys() and kwargs["dtype"] is not None:
+        return True
+    for arg in args:
+        if isinstance(arg, torch.dtype):
+            return True
+    dtype_cast_op = [
+        "torch.Tensor.double",
+        "torch.Tensor.float",
+        "torch.Tensor.half",
+        "torch.Tensor.bfloat16",
+        "torch.Tensor.long",
+        "torch.Tensor.int",
+        "torch.Tensor.short",
+        "torch.Tensor.bool",
+    ]
+    if name in dtype_cast_op:
+        return True
+    return False
+
+
 def tensor_max_diff(a, b):
     a_cpu, b_cpu = a.cpu(), b.cpu()
     if a_cpu.dtype == torch.bool:
@@ -203,6 +226,12 @@ def tensor_max_diff(a, b):
     max_abs_diff = diff.max().item()
     max_relative_diff = (diff / (a_cpu.abs() + 1e-6)).max().item()
     return max_abs_diff, max_relative_diff
+
+
+def tensor_cos_similarity(a, b):
+    a_cpu, b_cpu = a.cpu().float(), b.cpu().float()
+    cos_sim = torch.nn.functional.cosine_similarity(a_cpu.reshape(-1), b_cpu.reshape(-1), dim=-1)
+    return cos_sim.item()
 
 
 def tensor_allclose(a, b, atol=1e-3, rtol=1e-3):
@@ -247,7 +276,7 @@ def get_error_tolerance(dtype, op_name):
 def compare_result(name, a, b):  # noqa: C901
     a_list = []
     b_list = []
-    allclose, max_abs_diff, max_relative_diff, error_info, atol, rtol = True, 0, 0, "", 0, 0
+    allclose, max_abs_diff, max_relative_diff, error_info, atol, rtol, cos_similarity = True, 0, 0, "", 0, 0, -1e8
     for item in traverse_container(a):
         a_list.append(item)
     for item in traverse_container(b):
@@ -273,6 +302,7 @@ def compare_result(name, a, b):  # noqa: C901
         b_item = b_list[i]
         atol_i, rtol_i = 0, 0
         error_info_i = ""
+        cos_similarity_i = None
         if a_item is None and b_item is None:
             allclose_i = True
             max_abs_diff_i = 0
@@ -286,6 +316,7 @@ def compare_result(name, a, b):  # noqa: C901
                 if a_item.numel() > 0:
                     max_abs_diff_i, max_relative_diff_i = tensor_max_diff(a_item, b_item)
                     allclose_i = tensor_allclose(a_item, b_item, atol=atol_i, rtol=rtol_i)
+                    cos_similarity_i = tensor_cos_similarity(a_item, b_item)
                 else:
                     max_abs_diff_i, max_relative_diff_i = 0.0, 0.0
                     allclose_i = True
@@ -338,10 +369,14 @@ def compare_result(name, a, b):  # noqa: C901
         max_relative_diff = max(max_relative_diff_i, max_relative_diff)
         atol = max(atol_i, atol)
         rtol = max(rtol_i, rtol)
+        if cos_similarity_i is None:
+            cos_similarity_i = 1 if allclose_i else -1
+        cos_similarity = max(cos_similarity, cos_similarity_i)
         result_list.append(
             {
                 "name": f"{name + prefex:<30}",
                 "allclose": allclose_i,
+                "cosine_similarity": f"{cos_similarity_i:1.9f}",
                 "max_abs_diff": f"{max_abs_diff_i:10.9f}",
                 "max_relative_diff": f"{max_relative_diff_i:10.9f}",
                 "atol": f"{atol_i:10.9f}",
@@ -352,6 +387,7 @@ def compare_result(name, a, b):  # noqa: C901
 
     return {
         "allclose": allclose,
+        "cos_similarity": cos_similarity,
         "max_abs_diff": max_abs_diff,
         "max_relative_diff": max_relative_diff,
         "error_info": error_info,
@@ -362,9 +398,38 @@ def compare_result(name, a, b):  # noqa: C901
     }
 
 
-def garbage_collect(id, gc_cycle=int(os.getenv("OP_TOOLS_GARBAGE_COLLECTION_CYCLE", "50"))):
-    if id % gc_cycle == 0:
+class GarbageCollectEvaluate:
+    def __init__(self) -> None:
+        self.rss = psutil.Process().memory_info().rss
+        self.device_memory_usage = torch.cuda.memory_allocated()
+        self.current_rss = psutil.Process().memory_info().rss
+        self.current_device_memory_usage = torch.cuda.memory_allocated()
+        self.max_diff = 1 << 30
+
+    def is_shoule_collect(self):
+        self.current_rss = psutil.Process().memory_info().rss
+        self.current_device_memory_usage = torch.cuda.memory_allocated()
+        if (self.current_rss - self.rss > self.max_diff) or (self.current_device_memory_usage - self.device_memory_usage > self.max_diff):
+            return True
+        else:
+            return False
+
+    def collect(self):
         gc.collect()
+        self.rss = max(self.rss, psutil.Process().memory_info().rss)
+        self.device_memory_usage = max(self.device_memory_usage, torch.cuda.memory_allocated())
+        print(
+            f"GarbageCollectEvaluate: after collect : rss: {self.rss >> 20} MB, current_rss: {self.current_rss >> 20} MB, max_diff: {self.max_diff>>20} MB, device_memory_usage: {self.device_memory_usage >> 20} MB, current_device_memory_usage: {self.current_device_memory_usage >> 20} MB"  # noqa: E501
+        )
+
+
+garbage_collect_evaluater = GarbageCollectEvaluate()
+
+
+def garbage_collect():
+    global garbage_collect_evaluater
+    if garbage_collect_evaluater.is_shoule_collect():
+        garbage_collect_evaluater.collect()
 
 
 def current_location(name=None, stack_depth=-1, print_stack=False):
