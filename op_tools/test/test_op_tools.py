@@ -62,7 +62,7 @@ class TestOpTools(unittest.TestCase):
             self.test_func()
 
     def test_dump_op_args(self):
-        with op_tools.OpDispatchWatcher():
+        with op_tools.OpObserve():
             self.test_func()
 
     def test_op_autocompare_memusage(self):

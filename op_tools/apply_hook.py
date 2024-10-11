@@ -3,7 +3,7 @@ from torch.overrides import TorchFunctionMode, resolve_name
 from .op_capture_hook import OpCaptureHook
 from .op_fallback_hook import OpFallbackHook
 from .op_autocompare_hook import OpAutoCompareHook
-from .op_dispatch_watch_hook import OpDispatchWatcherHook
+from .op_observe_hook import OpObserveHook
 from .op_time_measure_hook import OpTimeMeasureHook
 from .op_dtype_cast_hook import OpDtypeCastHook
 from .utils import is_cpu_op
@@ -155,13 +155,13 @@ class OpTimeMeasure(OpToolBase):
         super().__exit__(None, None, None)
 
 
-class OpDispatchWatcher(OpToolBase):
+class OpObserve(OpToolBase):
     """
     Usage1:
-    with OpDispatchWatcher():
+    with OpObserve():
         f()
     Usage2:
-    tool = OpDispatchWatcher()
+    tool = OpObserve()
     tool.start()
     f()
     """
@@ -171,7 +171,7 @@ class OpDispatchWatcher(OpToolBase):
 
     def __torch_function__(self, func, types, args, kwargs=None):
         name = resolve_name(func)
-        hook = OpDispatchWatcherHook(name, func)
+        hook = OpObserveHook(name, func)
         return hook(*args, **(kwargs or {}))
 
     def start(self):
