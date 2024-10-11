@@ -93,6 +93,7 @@ class BackwardHookHandle:
             data_dict_list += packect_data_to_dict_list(self.name + " grad_outputs", serialize_args_to_dict(grad_outputs))
             data_dict_list += packect_data_to_dict_list(self.name + " grad_inputs", serialize_args_to_dict(grad_inputs))
             table = dict_data_list_to_table(data_dict_list)
+            print("\n" * 2, f"{self.name}    forward_id: {self.id}")
             print(table)
             elasped_info_dict = {
                 "name": self.name,
@@ -100,7 +101,7 @@ class BackwardHookHandle:
                 "backward_elasped": f"{(self.backward_elasped * 1000):>10.8f}",
                 "unit": "ms",
             }
-            print(dict_data_list_to_table([elasped_info_dict]))
+            print(dict_data_list_to_table([elasped_info_dict]), "\n" * 2)
             elasped_info_dict["grad_inputs"] = serialize_args_to_dict(grad_inputs)
             elasped_info_dict["grad_outputs"] = serialize_args_to_dict(grad_outputs)
             time_measure_result_cache.append(self.id, elasped_info_dict)
@@ -140,6 +141,7 @@ class OpTimeMeasureHook(BaseHook):
                 "unit": "ms",
             }
             print("\n" * 2)
+            print(f"{self.name}    forward_id: {self.id}")
             print(self.current_location)
             print(forward_args_table)
             print(dict_data_list_to_table([elasped_info_dict]))
