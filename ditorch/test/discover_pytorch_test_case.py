@@ -22,7 +22,7 @@ def discover_all_test_case(path="."):
     return test_cases
 
 
-def dump_all_test_case_id_to_file(test_cases, path):
+def dump_all_test_case_id_to_file(test_cases, path, skip_cpu_test=False):
     os.makedirs(path, exist_ok=True)
     os.makedirs(path + "/test_case_ids", exist_ok=True)
     test_case_ids = {}
@@ -33,6 +33,9 @@ def dump_all_test_case_id_to_file(test_cases, path):
         module_name = case_id.split(".")[0] + ".py"
         test_name = case_id[case_id.find(".") + 1 :]
         if not module_name.startswith("test_"):
+            continue
+
+        if ("cpu" in test_name or "CPU" in test_name) and skip_cpu_test:
             continue
 
         if module_name not in test_case_ids:
@@ -57,10 +60,10 @@ def dump_all_test_case_id_to_file(test_cases, path):
 def parase_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--pytorch_dir",
+        "--pytorch_test_temp",
         type=str,
-        default=os.environ.get("TORCH_SOURCE_PATH", None),
-        help="path to pytorch repo",
+        default="pytorch_test_temp",
+        help="Copy the pytorch test script to this directory",
     )
     parser.add_argument(
         "--pytorch_test_result",
@@ -68,14 +71,19 @@ def parase_args():
         default="pytorch_test_result",
         help="The directory to save the result files generated using pytorch test case testing",
     )
+    parser.add_argument(
+        "--skip_cpu_test",
+        action="store_true",
+        help="wether skip cpu test",
+    )
     args = parser.parse_args()
     return args
 
 
 if __name__ == "__main__":
     args = parase_args()
-    test_script_path = args.pytorch_dir + "/test"
+    test_script_path = args.pytorch_test_temp + "/test"
     output_path = args.pytorch_test_result
     all_tests_case = discover_all_test_case(test_script_path)
+    dump_all_test_case_id_to_file(all_tests_case, output_path, skip_cpu_test=args.skip_cpu_test)
     print(f"discover {len(all_tests_case)} test cases")
-    dump_all_test_case_id_to_file(all_tests_case, output_path)

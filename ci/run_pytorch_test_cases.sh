@@ -1,1 +1,11 @@
-python ditorch/test/test_torch_testcase.py 2>&1 | tee test_pytorch_case.log
+DITORCH_ROOT=$(pwd)
+export PYTHONPATH=$PYTHONPATH:$DITORCH_ROOT
+
+python ditorch/test/copy_and_process_pytorch_test_scripts.py  # copy and add "import ditorch" to test script file
+python ditorch/test/discover_pytorch_test_case.py --skip_cpu_test # discover test cases and write test case ids to json file
+python ditorch/test/generate_test_shell_script_from_testcase_json.py --test_case_num_per_process 1
+
+
+export EXTRA_ARGS=" --verbose --save-xml=$DITORCH_ROOT/pytorch_test_result/xml "
+
+bash -c "cd $DITORCH_ROOT/pytorch_test_temp/test/ && bash $DITORCH_ROOT/pytorch_test_result/test_case_ids/ditorch_run_all_test_cases.json.sh"
