@@ -27,6 +27,8 @@ class TestOpNameMatch(unittest.TestCase):
         self.assertEqual(is_opname_match("torch.subc", ""), False)
         self.assertEqual(is_opname_match(None, "torch.add"), False)
         self.assertEqual(is_opname_match(None, None), False)
+        self.assertEqual(is_opname_match("torch.add", " torch.add , torch.sub "), True)
+        self.assertEqual(is_opname_match("torch.add", " torch.add "), True)
 
     def test_long_op_list(self):
         op_list = "torch.Tensor.__bool__,torch.Tensor.__rpow__,torch.Tensor.__rtruediv__,torch.Tensor.clone,torch.Tensor.cpu,torch.Tensor.div,torch.Tensor.expand_as,torch.Tensor.fill_,torch.Tensor.float,torch.Tensor.is_complex,torch.Tensor.is_floating_point,torch.Tensor.item,torch.Tensor.mean,torch.Tensor.random_,torch.Tensor.std,torch.Tensor.to,torch.Tensor.view,torch.cat,torch.nn.init.kaiming_uniform_,torch.nn.init.normal_,torch.nn.init.normal_,torch.stack"

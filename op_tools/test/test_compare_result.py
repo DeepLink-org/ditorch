@@ -169,6 +169,12 @@ class TestCompareResult(unittest.TestCase):
         result2 = [1, 2, 3.0]
         compare_info = compare_result("mixed_types", result1, result2)
         self.assertFalse(compare_info["allclose"])
+    
+    def test_compare_nested_list(self):
+        result1 = [1, 2, 3]
+        result2 = [[1,2], 3]
+        compare_info = compare_result("nested_list", result1, result2)
+        self.assertFalse(compare_info["allclose"])    
 
     def test_compare_invalid_type(self):
         compare_info = compare_result("invalid_type", {}, [])
