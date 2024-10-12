@@ -8,4 +8,11 @@ python ditorch/test/generate_test_shell_script_from_testcase_json.py --test_case
 
 export EXTRA_ARGS=" --verbose --save-xml=$DITORCH_ROOT/pytorch_test_result/xml "
 
+# run device test cases
 bash -c "cd $DITORCH_ROOT/pytorch_test_temp/test/ && bash $DITORCH_ROOT/pytorch_test_result/test_case_ids/ditorch_run_all_test_cases.json.sh"
+
+# run cpu test cases
+bash -c "cd $DITORCH_ROOT/pytorch_test_temp/test/ && python run_test.py -k cpu $EXTRA_ARGS "
+
+
+python ditorch/test/summary_test_results.py # generate test summary report
