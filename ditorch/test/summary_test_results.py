@@ -1,5 +1,4 @@
 import glob
-import json
 from prettytable import PrettyTable
 import argparse
 import xml.etree.ElementTree as XMLET
@@ -42,7 +41,7 @@ def load_test_results_from_xml(xml_file):
 
 
 def summary_test_results(test_result_dir):
-    test_result_files = glob.glob(test_result_dir + "/xml/**/*.xml")
+    test_result_files = glob.glob(test_result_dir + "/**/*.xml", recursive=True)
     test_infos = []
     for file_name in test_result_files:
         try:
@@ -56,29 +55,12 @@ def summary_test_results(test_result_dir):
     table.field_names = test_infos[0].keys()
     for info in test_infos:
         table.add_row(info.values())
-    print(table)
+    print(table.get_string(fields=["file", "classname", "name", "status"]))
     summary_file_name = test_result_dir + "/summary_test_result.csv"
     with open(summary_file_name, "w") as f:
         f.write(table.get_csv_string())
     print(f"Summary {len(test_infos)} test results saved to {summary_file_name}")
-
-
-def get_tested_test_cases(test_result_dir):
-    test_result_files = glob.glob(test_result_dir + "/*/result_test_*.json")
-    test_cases = {}
-    for file_name in test_result_files:
-        try:
-            with open(file_name, "r") as f:
-                test_result = json.load(f)
-            test_script_file, test_case_id = test_result["command_id"].split(".py.")
-            test_script_file += ".py"
-            if test_script_file not in test_cases:
-                test_cases[test_script_file] = [test_case_id]
-            else:
-                test_cases[test_script_file].append(test_case_id)
-        except Exception as e:
-            print(f"Error reading file {file_name}: {e}")
-    return test_cases
+    return table
 
 
 if __name__ == "__main__":

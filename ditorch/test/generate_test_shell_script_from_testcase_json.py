@@ -21,7 +21,7 @@ def test_case_id_json_to_scripts(json_path, test_case_num_per_process):
 
 
 def dump_test_case_id_json_to_script(path, test_case_num_per_process):
-    test_case_json_files = glob.glob(path + "/*.json")
+    test_case_json_files = glob.glob(path + "/**/*.json", recursive=True)
     if len(test_case_json_files) == 0:
         raise ValueError(f"No test case id json files found in {path}")
     else:

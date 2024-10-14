@@ -35,6 +35,14 @@ def _set_cached_tensors_enabled(enable):
 torch._C._set_cached_tensors_enabled = _set_cached_tensors_enabled
 
 
+def _cuda_getCompiledVersion():
+    print("_cuda_getCompiledVersion not supported in torch_npu")
+    return None
+
+
+torch._C._cuda_getCompiledVersion = _cuda_getCompiledVersion
+
+
 def _add_cached_tensor(tensor):
     print("_add_cached_tensor not supported in torch_npu")
     raise NotImplementedError

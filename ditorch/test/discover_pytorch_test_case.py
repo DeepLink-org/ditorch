@@ -35,7 +35,7 @@ def dump_all_test_case_id_to_file(test_cases, path, skip_cpu_test=False):
         if not module_name.startswith("test_"):
             continue
 
-        if ("cpu" in test_name or "CPU" in test_name) and skip_cpu_test:
+        if "CPU" in test_name and skip_cpu_test:
             continue
 
         if module_name not in test_case_ids:

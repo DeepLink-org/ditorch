@@ -26,7 +26,7 @@ def copy_add_ditorch_import_to_pytorch_test_file(pytorch_dir, pytorch_test_temp)
     shutil.copytree(pytorch_dir + "/test", pytorch_test_temp + "/test", dirs_exist_ok=True)
     shutil.copytree(pytorch_dir + "/tools", pytorch_test_temp + "/tools", dirs_exist_ok=True)
     # We only add a line "import ditorch" to the original pytorch test script, and make no changes other than that.
-    tests_files = glob.glob(pytorch_test_temp + "/*/*.py", recursive=True)
+    tests_files = glob.glob(pytorch_test_temp + "/**/*.py", recursive=True)
     for file_path in tests_files:
         with open(file_path, "rt") as test_script:
             content = "import ditorch\n"
@@ -46,7 +46,7 @@ def copy_add_ditorch_import_to_pytorch_test_file(pytorch_dir, pytorch_test_temp)
             test_script.write(content)
         print(f'"import ditorch" has been added to the beginning of the {file_path} file line')
 
-    print(f"All pytorch {len(tests_files)} test scripts  have been processed")
+    print(f"All pytorch {len(tests_files)} test scripts have been processed")
 
 
 if __name__ == "__main__":
