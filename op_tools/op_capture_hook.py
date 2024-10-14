@@ -25,7 +25,7 @@ class BackwardHookHandle:
             grad_output_list = packect_data_to_dict_list(self.name + " grad_output", serialize_args_to_dict(*grad_outputs))
             grad_inputs_list = packect_data_to_dict_list(self.name + " grad_inputs", serialize_args_to_dict(*grad_inputs))
             backward_args_table = dict_data_list_to_table(grad_output_list + grad_inputs_list)
-            print(f"{self.name} forward_id:{id}\n{backward_args_table}", "\n" * 4)
+            print(f"{self.name} forward_id:{self.id}\n{backward_args_table}", "\n" * 4)
 
         hook_handle = tensor.grad_fn.register_hook(grad_fun)
 
