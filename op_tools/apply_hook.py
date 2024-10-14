@@ -140,8 +140,7 @@ class OpTimeMeasure(OpToolBase):
     """
 
     def is_should_measure(self, name, func, args, kwargs=None):
-        if not is_should_apply_hook(name, func, args, kwargs=None):
-            return False
+        return is_should_apply_hook(name, func, args, kwargs)
 
     def __torch_function__(self, func, types, args, kwargs=None):
         name = resolve_name(func)
