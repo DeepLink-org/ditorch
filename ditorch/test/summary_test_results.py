@@ -2,6 +2,8 @@ import glob
 from prettytable import PrettyTable
 import argparse
 import xml.etree.ElementTree as XMLET
+import json
+import os
 
 
 def load_test_results_from_xml(xml_file):
@@ -60,7 +62,63 @@ def summary_test_results(test_result_dir):
     with open(summary_file_name, "w") as f:
         f.write(table.get_csv_string())
     print(f"Summary {len(test_infos)} test results saved to {summary_file_name}")
-    return table
+    return test_infos, table
+
+
+def write_test_info_to_json(test_infos, pytorch_test_result):  # noqa: C901
+    passed_test_case = {}
+    skipped_test_case = {}
+    failed_test_case = {}
+    for info in test_infos:
+        if info['file'] not in passed_test_case:
+            passed_test_case[info['file']] = []
+        if info['file'] not in skipped_test_case:
+            skipped_test_case[info['file']] = []
+        if info['file'] not in failed_test_case:
+            failed_test_case[info['file']] = []
+
+        case_name = info["classname"] + "." + info["name"]
+
+        if info["status"] == "passed":
+            if case_name not in passed_test_case[info['file']]:
+                passed_test_case[info["file"]].append(case_name)
+        elif info["status"] == "skipped":
+            if case_name not in skipped_test_case[info['file']]:
+                skipped_test_case[info["file"]].append(case_name)
+        elif info["status"] == "error":
+            if case_name not in failed_test_case[info['file']]:
+                failed_test_case[info["file"]].append(case_name)
+
+    passed_case_file_name = pytorch_test_result + "/passed_test_case.json"
+    skipped_case_file_name = pytorch_test_result + "/skipped_test_case.json"
+    failed_case_file_name = pytorch_test_result + "/failed_test_case.json"
+    never_tested_case_file_name = pytorch_test_result + "/never_tested_test_case.json"
+    with open(passed_case_file_name, "w") as f:
+        f.write(json.dumps(passed_test_case))
+    with open(skipped_case_file_name, "w") as f:
+        f.write(json.dumps(skipped_test_case))
+    with open(failed_case_file_name, "w") as f:
+        f.write(json.dumps(failed_test_case))
+
+    print(f"Summary {sum(len(v) for v in passed_test_case.values())} test results saved to {passed_case_file_name}")
+    print(f"Summary {sum(len(v) for v in failed_test_case.values())} test results saved to {failed_case_file_name}")
+    print(f"Summary {sum(len(v) for v in skipped_test_case.values())} test results saved to {skipped_case_file_name}")
+
+    all_test_case_id_file = f"{pytorch_test_result}/test_case_ids/all_test_cases.json"
+    if os.path.exists(all_test_case_id_file):
+        all_test_case = {}
+        with open(all_test_case_id_file, "r") as f:
+            all_test_case.update(json.load(f))
+
+        for info in test_infos:
+            case_name = info["classname"] + "." + info["name"]
+            if info['file'] in all_test_case.keys():
+                if case_name in all_test_case[info['file']]:
+                    all_test_case[info['file']].remove(case_name)
+        with open(never_tested_case_file_name, "w") as f:
+            f.write(json.dumps(all_test_case))
+
+        print(f"Summary {sum(len(v) for v in all_test_case.values())} test results saved to {never_tested_case_file_name}")
 
 
 if __name__ == "__main__":
@@ -73,4 +131,5 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     pytorch_test_result = args.pytorch_test_result
-    summary_test_results(pytorch_test_result)
+    test_info, csv_table = summary_test_results(pytorch_test_result)
+    write_test_info_to_json(test_info, pytorch_test_result)
