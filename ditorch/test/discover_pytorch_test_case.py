@@ -1,7 +1,7 @@
 import unittest
 import ditorch  # noqa: F401
 import torch  # noqa: F401
-import sys
+import argparse
 import json
 import os
 
@@ -26,6 +26,8 @@ def dump_all_test_case_id_to_file(test_cases, path):
     os.makedirs(path, exist_ok=True)
     os.makedirs(path + "/test_case_ids", exist_ok=True)
     test_case_ids = {}
+    cpu_test_case_ids = {}
+    device_test_case_ids = {}
     case_num = 0
     for case in test_cases:
         case_id = case.id()
@@ -35,6 +37,16 @@ def dump_all_test_case_id_to_file(test_cases, path):
         if not module_name.startswith("test_"):
             continue
 
+        if "CPU" in test_name:
+            if module_name not in cpu_test_case_ids:
+                cpu_test_case_ids[module_name] = [test_name]
+            else:
+                cpu_test_case_ids[module_name].append(test_name)
+        else:
+            if module_name not in device_test_case_ids:
+                device_test_case_ids[module_name] = [test_name]
+            else:
+                device_test_case_ids[module_name].append(test_name)
         if module_name not in test_case_ids:
             test_case_ids[module_name] = [test_name]
         else:
@@ -43,6 +55,14 @@ def dump_all_test_case_id_to_file(test_cases, path):
     total_test_case_file_name = path + "/test_case_ids/all_test_cases.json"
     with open(total_test_case_file_name, "wt") as f:
         json.dump(test_case_ids, f)
+
+    total_device_test_case_file_name = path + "/test_case_ids/all_device_test_cases.json"
+    with open(total_device_test_case_file_name, "wt") as f:
+        json.dump(device_test_case_ids, f)
+
+    total_cpu_test_case_file_name = path + "/test_case_ids/all_cpu_test_cases.json"
+    with open(total_cpu_test_case_file_name, "wt") as f:
+        json.dump(cpu_test_case_ids, f)
 
     for module_name, test_names in test_case_ids.items():
         single_module_test_case_file_name = path + "/test_case_ids/" + module_name + ".json"
@@ -54,10 +74,29 @@ def dump_all_test_case_id_to_file(test_cases, path):
     return test_case_ids
 
 
+def parase_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--pytorch_test_temp",
+        type=str,
+        default="pytorch_test_temp",
+        help="Copy the pytorch test script to this directory",
+    )
+    parser.add_argument(
+        "--pytorch_test_result",
+        type=str,
+        default="pytorch_test_result",
+        help="The directory to save the result files generated using pytorch test case testing",
+    )
+
+    args = parser.parse_args()
+    return args
+
+
 if __name__ == "__main__":
-    print(f"discover:{sys.argv}")
-    test_script_path = sys.argv[1] if len(sys.argv) > 1 else "."
-    output_path = sys.argv[2] if len(sys.argv) > 2 else "."
+    args = parase_args()
+    test_script_path = args.pytorch_test_temp + "/test"
+    output_path = args.pytorch_test_result
     all_tests_case = discover_all_test_case(test_script_path)
-    print(f"discover {len(all_tests_case)} test cases")
     dump_all_test_case_id_to_file(all_tests_case, output_path)
+    print(f"discover {len(all_tests_case)} test cases")

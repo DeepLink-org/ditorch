@@ -1,4 +1,7 @@
 # Copyright (c) 2024, DeepLink.
+# 在这里，补充测试了opcapture在模型，优化器和损失函数上的使用
+# 针对模型训练时的autocompare，模型包含优化器，损失函数等。就地除法，视图，就地乘法，乘法，复制
+
 import unittest
 
 import torch
@@ -11,7 +14,7 @@ import os
 import op_tools
 import gc
 
-device = torch.device("cuda")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class LeNet(nn.Module):
@@ -70,7 +73,7 @@ class TestOpTools(unittest.TestCase):
         for i in range(3):  # warm up
             self.test_op_autocompare()
         host_memory1 = process.memory_info().rss
-        run_time = 5  # The more times you run it, the better it will reflect the problem, but too many will waste CI resources.
+        run_time = 50  # The more times you run it, the better it will reflect the problem, but too many will waste CI resources.
         for i in range(run_time):
             self.test_op_autocompare()
 
@@ -99,6 +102,16 @@ class TestOpTools(unittest.TestCase):
             n.mul_(4)
             n.backward(torch.ones_like(n))
 
+    def test_op_autocompare_inplace_view_op_and_requires_grad2(self):
+        with op_tools.OpAutoCompare():
+            x = torch.randn(32, 1, 32, 32, requires_grad=True).to(device=device)
+            y = x.view(-1)
+            z = y.div_(2)
+            n = z.view(32, 1, 32, 32)
+            n[2:4:1, :, :, :] = 0
+            n.mul_(4)
+            n.backward(torch.ones_like(n))
+
     def test_op_autocompare_mul_op(self):
         with op_tools.OpAutoCompare():
             x = torch.randn(32, 1, 32, 32, requires_grad=True).to(device=device)
@@ -110,15 +123,15 @@ class TestOpTools(unittest.TestCase):
             x = torch.randn(32, 1, 32, 32, requires_grad=True)
             assert x.device == torch.device("cpu")
             y = x.to(device=device)
-            assert y.device.type != "cpu", f"{y.device} {device}"
+            assert y.is_cpu == (device.type == "cpu"), f"{y.device} {device}"
             z = torch.add(x, x)
-            assert z.device.type == "cpu", f"{z.device} {device}"
+            assert z.is_cpu == (device.type != "cpu"), f"{z.device} {device}"
             z = torch.add(y, y)
-            assert z.device.type != "cpu", f"{z.device} {device}"
+            assert z.is_cpu == (device.type == "cpu"), f"{z.device} {device}"
             z.backward(torch.ones_like(z))
 
             e = z.cpu()
-            assert e.device.type
+            assert e.is_cpu
 
     def test_op_dtype_cast(self):
         input = torch.ones((5, 5), dtype=torch.float16, device="cuda").requires_grad_()
