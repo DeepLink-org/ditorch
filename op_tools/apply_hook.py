@@ -139,9 +139,6 @@ class OpTimeMeasure(OpToolBase):
     time_measurer.end()
     """
 
-    def is_should_measure(self, name, func, args, kwargs=None):
-        return is_should_apply_hook(name, func, args, kwargs)
-
     def __torch_function__(self, func, types, args, kwargs=None):
         name = resolve_name(func)
         hook = OpTimeMeasureHook(name, func)
