@@ -6,6 +6,7 @@ from .op_autocompare_hook import OpAutoCompareHook
 from .op_observe_hook import OpObserveHook
 from .op_time_measure_hook import OpTimeMeasureHook
 from .op_dtype_cast_hook import OpDtypeCastHook
+from .op_overflow_check_hook import OpOverflowCheckHook
 from .utils import is_cpu_op
 import inspect
 
@@ -168,6 +169,32 @@ class OpObserve(OpToolBase):
     def __torch_function__(self, func, types, args, kwargs=None):
         name = resolve_name(func)
         hook = OpObserveHook(name, func)
+        return hook(*args, **(kwargs or {}))
+
+    def start(self):
+        super().__enter__()
+
+    def stop(self):
+        super().__exit__(None, None, None)
+
+
+class OpOverflowCheck(OpToolBase):
+    """
+    Usage1:
+    with OpOverflowCheck():
+        f()
+    Usage2:
+    tool = OpOverflowCheck()
+    tool.start()
+    f()
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def __torch_function__(self, func, types, args, kwargs=None):
+        name = resolve_name(func)
+        hook = OpOverflowCheckHook(name, func)
         return hook(*args, **(kwargs or {}))
 
     def start(self):

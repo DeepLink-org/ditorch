@@ -109,6 +109,13 @@ class TestOpToolWithSpecialOp(unittest.TestCase):
             print(error_info)
         self.assertFalse(torch.isinf(y).any().item())
 
+    def test_overflow4(self):
+        with op_tools.OpOverflowCheck():
+            x = torch.randn(3, 4, 5, dtype=torch.float32, device="cuda", requires_grad=True)
+            y = torch.zeros_like(x)
+            z = x / y
+            z.backward(torch.ones_like(z))
+
     def test_setitem(self):
         with op_tools.OpAutoCompare():
             x = torch.randn(3, 4, 5, dtype=torch.float32, device="cuda")

@@ -65,6 +65,10 @@ class TestOpTools(unittest.TestCase):
         with op_tools.OpObserve():
             self.test_func()
 
+    def test_overflow(self):
+        with op_tools.OpOverflowCheck():
+            self.test_func()
+
     def test_op_autocompare_memusage(self):
         process = psutil.Process(os.getpid())
 

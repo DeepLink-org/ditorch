@@ -29,6 +29,7 @@ import ditorch
 | 3 | [速度分析工具](#tool3) | 可进行离线和实时的耗时分析，协助性能优化 |
 | 4 | [算子 Fallback](#tool4) | 可将指定、全部算子在设备上运行的操作 fallback 到 CPU 计算 |
 | 5 | [算子数据类型转换工具](#tool5) | 可将指定、全部算子的特定数据类型转到给定数据类型去计算 |
+| 6 | [溢出检测工具](#tool6) | 可对指定、全部算子进行溢出检测 |
 
 
 ### **算子参数抓取工具** <a id="tool1"></a>
@@ -1166,6 +1167,44 @@ torch.nn.functional.silu    forward_id: 492
 | torch.nn.functional.silu |  input[0] | torch.bfloat16 -> torch.float32 | torch.float16->torch.float32,torch.bfloat16->torch.float32 |
 | torch.nn.functional.silu | output[0] | torch.float32 -> torch.bfloat16 | torch.float16->torch.float32,torch.bfloat16->torch.float32 |
 +--------------------------+-----------+---------------------------------+------------------------------------------------------------+
+```
+### **溢出检测工具** <a id="tool6"></a>
+
+```
+with op_tools.OpOverflowCheck():
+    x = torch.randn(3, 4, 5, dtype=torch.float32, device="cuda", requires_grad=True)
+    y = torch.zeros_like(x)
+    z = x / y
+    z.backward(torch.ones_like(z))
+
+```
+outputs:
+```
+torch.Tensor.div  1
+/deeplink_afs/zhaoguochun/ditorch/op_tools/test/test_tool_with_special_op.py:116 test_overflow4: z = x / y
++----------------------------+--------+---------+-------+-----------+------------+---------------+---------------+----------------+
+|            name            | device |  dtype  | numel |   shape   |   stride   | requires_grad |     layout    |    data_ptr    |
++----------------------------+--------+---------+-------+-----------+------------+---------------+---------------+----------------+
+| torch.Tensor.div inputs[0] | npu:0  | float32 |   60  | (3, 4, 5) | (20, 5, 1) |      True     | torch.strided | 20067179823104 |
+| torch.Tensor.div inputs[1] | npu:0  | float32 |   60  | (3, 4, 5) | (20, 5, 1) |     False     | torch.strided | 20067179823616 |
+|  torch.Tensor.div outputs  | npu:0  | float32 |   60  | (3, 4, 5) | (20, 5, 1) |      True     | torch.strided | 20067179824128 |
++----------------------------+--------+---------+-------+-----------+------------+---------------+---------------+----------------+
++----------------------------+------------+---------------------+--------------------+----------------------+--------------------+-------------------+
+|            name            | inf_or_nan |         min         |        max         |         mean         |        std         |        norm       |
++----------------------------+------------+---------------------+--------------------+----------------------+--------------------+-------------------+
+| torch.Tensor.div input[0]  |   False    | -2.5894558429718018 | 3.2223291397094727 | -0.14536510407924652 | 1.0306979417800903 | 7.996612548828125 |
+| torch.Tensor.div input[1]  |   False    |         0.0         |        0.0         |         0.0          |        0.0         |        0.0        |
+| torch.Tensor.div output[0] |    True    |         -inf        |        inf         |         nan          |        nan         |        inf        |
++----------------------------+------------+---------------------+--------------------+----------------------+--------------------+-------------------+
+
+
+torch.Tensor.div     forward_id: 1 /deeplink_afs/zhaoguochun/ditorch/op_tools/test/test_tool_with_special_op.py:116 test_overflow4: z = x / y
++----------------------------------+------------+-----+-----+------+-----+-------------------+
+|               name               | inf_or_nan | min | max | mean | std |        norm       |
++----------------------------------+------------+-----+-----+------+-----+-------------------+
+| torch.Tensor.div grad_inputs[0]  |    True    | inf | inf | inf  | nan |        inf        |
+| torch.Tensor.div grad_outputs[0] |   False    | 1.0 | 1.0 | 1.0  | 0.0 | 7.745966911315918 |
++----------------------------------+------------+-----+-----+------+-----+-------------------+
 ```
 
 ### 自定义算子工具生效的条件
