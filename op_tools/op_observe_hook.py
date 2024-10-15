@@ -7,7 +7,7 @@ from .save_op_args import serialize_args_to_dict
 from .pretty_print import packect_data_to_dict_list, dict_data_list_to_table
 
 
-class OpDispatchWatcherHook(BaseHook):
+class OpObserveHook(BaseHook):
     def __init__(self, name, func) -> None:
         super().__init__(name, func)
 
@@ -26,6 +26,6 @@ class OpDispatchWatcherHook(BaseHook):
             print("\n" * 2)
 
     def is_should_apply(self, *args, **kwargs):
-        if is_opname_match(self.name, os.getenv("OP_DISPATCH_WATCH_DISABLE_LIST", "")):
+        if is_opname_match(self.name, os.getenv("OP_OBSERVE_DISABLE_LIST", "")):
             return False
-        return is_opname_match(self.name, os.getenv("OP_DISPATCH_WATCH_LIST", ".*"))
+        return is_opname_match(self.name, os.getenv("OP_OBSERVE_LIST", ".*"))

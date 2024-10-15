@@ -4,7 +4,7 @@ from .utils import traverse_container, get_function_from_string
 from .op_capture_hook import OpCaptureHook
 from .op_fallback_hook import OpFallbackHook
 from .op_autocompare_hook import OpAutoCompareHook
-from .op_dispatch_watch_hook import OpDispatchWatcherHook
+from .op_observe_hook import OpObserveHook
 from .op_time_measure_hook import OpTimeMeasureHook
 from .op_dtype_cast_hook import OpDtypeCastHook
 from .base_hook import BaseHook
@@ -89,7 +89,7 @@ def apply_feature(ops, feature, condition_func=lambda *args, **kwargs: True):
     elif feature == "measure_op_time":
         hook_cls = OpTimeMeasureHook
     elif feature == "dump_op_args":
-        hook_cls = OpDispatchWatcherHook
+        hook_cls = OpObserveHook
     elif feature == "cast_dtype":
         hook_cls = OpDtypeCastHook
     elif feature == "op_capture":
