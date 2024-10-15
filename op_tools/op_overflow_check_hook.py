@@ -1,6 +1,6 @@
 # Copyright (c) 2024, DeepLink.
 import os
-from .utils import is_opname_match, traverse_container, is_inf_or_nan
+from .utils import is_opname_match, traverse_container, is_inf_or_nan, garbage_collect
 from .base_hook import BaseHook, DisableHookGuard
 import torch
 
@@ -14,29 +14,36 @@ class BackwardHookHandle:
         self.id = id
         self.location = location
 
+    def process(self, grad_inputs, grad_outputs):
+        index = -1
+        info_list = []
+        for arg in grad_inputs + grad_outputs:
+            index = index + 1
+            item_name = f"grad_inputs[{index}]" if index < len(grad_inputs) else f"grad_outputs[{index - len(grad_inputs)}]"
+            if isinstance(arg, torch.Tensor):
+                info = {}
+                info["name"] = self.name + " " + item_name
+                info["inf_or_nan"] = is_inf_or_nan(arg)
+                info["min"] = arg.min().item()
+                info["max"] = arg.max().item()
+                info["mean"] = arg.float().mean().item()
+                info["std"] = arg.float().std().item()
+                info["norm"] = arg.float().norm().item()
+                info_list.append(info)
+        print("\n" * 2)
+        print(f"{self.name}     forward_id: {self.id} {self.location}")
+        print(dict_data_list_to_table(info_list))
+        self = None
+        garbage_collect()
+
     def register_grad_fn_hook(self, tensor):
         hook_handle = None
 
         def grad_fun(grad_inputs, grad_outputs):
             hook_handle.remove()
-            index = -1
-            info_list = []
-            for arg in grad_inputs + grad_outputs:
-                index = index + 1
-                item_name = f"grad_inputs[{index}]" if index < len(grad_inputs) else f"grad_outputs[{index - len(grad_inputs)}]"
-                if isinstance(arg, torch.Tensor):
-                    info = {}
-                    info["name"] = self.name + " " + item_name
-                    info["inf_or_nan"] = is_inf_or_nan(arg)
-                    info["min"] = arg.min().item()
-                    info["max"] = arg.max().item()
-                    info["mean"] = arg.mean().item()
-                    info["std"] = arg.float().std().item()
-                    info["norm"] = arg.float().norm().item()
-                    info_list.append(info)
-            print("\n" * 2)
-            print(f"{self.name}     forward_id: {self.id} {self.location}")
-            print(dict_data_list_to_table(info_list))
+            with torch.no_grad():
+                with DisableHookGuard():
+                    self.process(grad_inputs, grad_outputs)
 
         hook_handle = tensor.grad_fn.register_hook(grad_fun)
         return grad_fun
@@ -65,7 +72,7 @@ class OpOverflowCheckHook(BaseHook):
             if isinstance(arg, torch.Tensor):
                 info["min"] = arg.min().item()
                 info["max"] = arg.max().item()
-                info["mean"] = arg.mean().item()
+                info["mean"] = arg.float().mean().item()
                 info["std"] = arg.float().std().item()
                 info["norm"] = arg.float().norm().item()
 
@@ -87,6 +94,7 @@ class OpOverflowCheckHook(BaseHook):
 
     def register_backward_hook_for_grads(self):
         self.backward_hook_handle = BackwardHookHandle(self.name, self.id, self.current_location)
+
         for result in traverse_container(self.result):
             if isinstance(result, torch.Tensor):
                 if result.grad_fn is not None:
@@ -100,6 +108,7 @@ class OpOverflowCheckHook(BaseHook):
             with torch.no_grad():
                 self.dump_op_args()
             self.register_backward_hook_for_grads()
+            garbage_collect()
 
     def is_should_apply(self, *args, **kwargs):
         if is_opname_match(self.name, os.getenv("OP_OVERFLOW_CHECK_DISABLE_LIST", "")):
