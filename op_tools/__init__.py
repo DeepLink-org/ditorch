@@ -3,7 +3,7 @@ from .apply_hook import (
     OpCapture,
     OpFallback,
     OpAutoCompare,
-    OpDispatchWatcher,
+    OpObserve,
     OpTimeMeasure,
     OpDtypeCast,
 )
@@ -15,7 +15,7 @@ __all__ = [
     "OpCapture",
     "OpFallback",
     "OpAutoCompare",
-    "OpDispatchWatcher",
+    "OpObserve",
     "OpTimeMeasure",
     "OpDtypeCast",
     "apply_feature",

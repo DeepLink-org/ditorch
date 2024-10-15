@@ -32,13 +32,13 @@ with op_tools.OpFallback():
 
 # usage1
 print("normal run, op dispatch process:")
-with op_tools.OpDispatchWatcher():
+with op_tools.OpObserve():
     f()
 
 print("\n")
 
 # usage2
-watcher = op_tools.OpDispatchWatcher()
+watcher = op_tools.OpObserve()
 watcher.start()
 f()
 watcher.stop()
@@ -89,13 +89,13 @@ print("\n" * 2)  # 这里共同使用的时候，只输出了opfallback抓取的
 print("dispatch process of the operator when it is fallbacked:")
 os.environ["OP_DISPATCH_WATCH_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
 os.environ["OP_FALLBACK_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
-with op_tools.OpDispatchWatcher():
+with op_tools.OpObserve():
     with op_tools.OpFallback():
         f()
 
 print("\n" * 2)
 print("dispatch process of the operator when it is fallbacked:")
-with op_tools.OpDispatchWatcher():
+with op_tools.OpObserve():
     with op_tools.OpFallback():
         f()
 
@@ -104,21 +104,21 @@ print("\n" * 2)
 print("dispatch process of the operator when autocompare is enabled:")
 os.environ["OP_DISPATCH_WATCH_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
 os.environ["OP_AUTOCOMPARE_LIST"] = "torch.Tensor.add,torch.Tensor.sub"
-with op_tools.OpDispatchWatcher():
+with op_tools.OpObserve():
     with op_tools.OpAutoCompare():
         f()
 
 
 print("\n" * 2)  # 推荐在表格中加一些东西，要不然难以分清每一个表格是哪个工具抓取的
 print("dispatch process of the operator when optimemeasure is enabled:")
-with op_tools.OpDispatchWatcher():
+with op_tools.OpObserve():
     with op_tools.OpTimeMeasure():
         f()
 
 
 print("\n" * 2)
 print("dispatch process of the operator when opcapture is enabled:")
-with op_tools.OpDispatchWatcher():
+with op_tools.OpObserve():
     with op_tools.OpCapture():
         f()
 
