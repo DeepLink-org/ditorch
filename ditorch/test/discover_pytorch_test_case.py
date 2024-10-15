@@ -70,7 +70,7 @@ def dump_all_test_case_id_to_file(test_cases, path):
             json.dump({module_name: test_names}, f)
         print(f"dumped {len(test_names)} test cases from {module_name} files to {single_module_test_case_file_name}")
 
-    print(f"dumped {case_num} test cases from {len(test_case_ids)} files to {total_device_test_case_file_name}")
+    print(f"dumped {case_num} test cases from {len(test_case_ids)} files to {total_test_case_file_name}")
     return test_case_ids
 
 

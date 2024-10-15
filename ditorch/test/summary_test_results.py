@@ -92,7 +92,8 @@ def write_test_info_to_json(test_infos, pytorch_test_result):  # noqa: C901
     passed_case_file_name = pytorch_test_result + "/passed_test_case.json"
     skipped_case_file_name = pytorch_test_result + "/skipped_test_case.json"
     failed_case_file_name = pytorch_test_result + "/failed_test_case.json"
-    never_tested_case_file_name = pytorch_test_result + "/never_tested_test_case.json"
+    never_device_tested_case_file_name = pytorch_test_result + "/never_tested_device_test_case.json"
+    never_cpu_tested_case_file_name = pytorch_test_result + "/never_tested_cpu_test_case.json"
     with open(passed_case_file_name, "w") as f:
         f.write(json.dumps(passed_test_case))
     with open(skipped_case_file_name, "w") as f:
@@ -104,7 +105,7 @@ def write_test_info_to_json(test_infos, pytorch_test_result):  # noqa: C901
     print(f"Summary {sum(len(v) for v in failed_test_case.values())} test results saved to {failed_case_file_name}")
     print(f"Summary {sum(len(v) for v in skipped_test_case.values())} test results saved to {skipped_case_file_name}")
 
-    all_test_case_id_file = f"{pytorch_test_result}/test_case_ids/all_test_cases.json"
+    all_test_case_id_file = f"{pytorch_test_result}/test_case_ids/all_device_test_cases.json"
     if os.path.exists(all_test_case_id_file):
         all_test_case = {}
         with open(all_test_case_id_file, "r") as f:
@@ -115,10 +116,26 @@ def write_test_info_to_json(test_infos, pytorch_test_result):  # noqa: C901
             if info['file'] in all_test_case.keys():
                 if case_name in all_test_case[info['file']]:
                     all_test_case[info['file']].remove(case_name)
-        with open(never_tested_case_file_name, "w") as f:
+        with open(never_device_tested_case_file_name, "w") as f:
             f.write(json.dumps(all_test_case))
 
-        print(f"Summary {sum(len(v) for v in all_test_case.values())} test results saved to {never_tested_case_file_name}")
+        print(f"Summary {sum(len(v) for v in all_test_case.values())} test results saved to {never_device_tested_case_file_name}")
+
+    all_test_case_id_file = f"{pytorch_test_result}/test_case_ids/all_cpu_test_cases.json"
+    if os.path.exists(all_test_case_id_file):
+        all_test_case = {}
+        with open(all_test_case_id_file, "r") as f:
+            all_test_case.update(json.load(f))
+
+        for info in test_infos:
+            case_name = info["classname"] + "." + info["name"]
+            if info['file'] in all_test_case.keys():
+                if case_name in all_test_case[info['file']]:
+                    all_test_case[info['file']].remove(case_name)
+        with open(never_cpu_tested_case_file_name, "w") as f:
+            f.write(json.dumps(all_test_case))
+
+        print(f"Summary {sum(len(v) for v in all_test_case.values())} test results saved to {never_cpu_tested_case_file_name}")
 
 
 if __name__ == "__main__":
