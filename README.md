@@ -1172,10 +1172,14 @@ torch.nn.functional.silu    forward_id: 492
 
 ```
 with op_tools.OpOverflowCheck():
-    x = torch.randn(3, 4, 5, dtype=torch.float32, device="cuda", requires_grad=True)
-    y = torch.zeros_like(x)
-    z = x / y
-    z.backward(torch.ones_like(z))
+        x = torch.randn(3, 4, 5, dtype=torch.float32, device="cuda", requires_grad=True)
+        y = torch.zeros_like(x)
+        z = x / y
+        z.backward(torch.ones_like(z))
+        x = torch.full((3, 4, 5,), dtype=torch.float32, device="cuda", fill_value=3.402823466e38)
+        y = x + x
+        z = x * x
+
 
 ```
 outputs:
@@ -1189,22 +1193,78 @@ torch.Tensor.div  1
 | torch.Tensor.div inputs[1] | npu:0  | float32 |   60  | (3, 4, 5) | (20, 5, 1) |     False     | torch.strided | 20067179823616 |
 |  torch.Tensor.div outputs  | npu:0  | float32 |   60  | (3, 4, 5) | (20, 5, 1) |      True     | torch.strided | 20067179824128 |
 +----------------------------+--------+---------+-------+-----------+------------+---------------+---------------+----------------+
-+----------------------------+------------+---------------------+--------------------+----------------------+--------------------+-------------------+
-|            name            | inf_or_nan |         min         |        max         |         mean         |        std         |        norm       |
-+----------------------------+------------+---------------------+--------------------+----------------------+--------------------+-------------------+
-| torch.Tensor.div input[0]  |   False    | -2.5894558429718018 | 3.2223291397094727 | -0.14536510407924652 | 1.0306979417800903 | 7.996612548828125 |
-| torch.Tensor.div input[1]  |   False    |         0.0         |        0.0         |         0.0          |        0.0         |        0.0        |
-| torch.Tensor.div output[0] |    True    |         -inf        |        inf         |         nan          |        nan         |        inf        |
-+----------------------------+------------+---------------------+--------------------+----------------------+--------------------+-------------------+
++----------------------------+------------+---------------------+--------------------+---------------------+--------------------+-------------------+
+|            name            | inf_or_nan |         min         |        max         |         mean        |        std         |        norm       |
++----------------------------+------------+---------------------+--------------------+---------------------+--------------------+-------------------+
+| torch.Tensor.div input[0]  |   False    | -2.0857815742492676 | 1.9548985958099365 | -0.1591348946094513 | 0.9731131196022034 | 7.575581073760986 |
+| torch.Tensor.div input[1]  |   False    |         0.0         |        0.0         |         0.0         |        0.0         |        0.0        |
+| torch.Tensor.div output[0] |    True    |         -inf        |        inf         |         nan         |        nan         |        inf        |
++----------------------------+------------+---------------------+--------------------+---------------------+--------------------+-------------------+
 
+
+GarbageCollectEvaluate:  host_memory_usage: 1737 MB, device_memory_usage: 1 MB
 
 torch.Tensor.div     forward_id: 1 /deeplink_afs/zhaoguochun/ditorch/op_tools/test/test_tool_with_special_op.py:116 test_overflow4: z = x / y
++---------------------------------+--------+---------+-------+-----------+------------+---------------+---------------+----------------+-------+
+|               name              | device |  dtype  | numel |   shape   |   stride   | requires_grad |     layout    |    data_ptr    | value |
++---------------------------------+--------+---------+-------+-----------+------------+---------------+---------------+----------------+-------+
+|   torch.Tensor.div grad_output  | npu:0  | float32 |   60  | (3, 4, 5) | (20, 5, 1) |     False     | torch.strided | 20067179824640 |       |
+| torch.Tensor.div grad_inputs[0] | npu:0  | float32 |   60  | (3, 4, 5) | (20, 5, 1) |     False     | torch.strided | 20067179825152 |       |
+| torch.Tensor.div grad_inputs[1] |        |         |       |           |            |               |               |                |  None |
++---------------------------------+--------+---------+-------+-----------+------------+---------------+---------------+----------------+-------+
 +----------------------------------+------------+-----+-----+------+-----+-------------------+
 |               name               | inf_or_nan | min | max | mean | std |        norm       |
 +----------------------------------+------------+-----+-----+------+-----+-------------------+
 | torch.Tensor.div grad_inputs[0]  |    True    | inf | inf | inf  | nan |        inf        |
 | torch.Tensor.div grad_outputs[0] |   False    | 1.0 | 1.0 | 1.0  | 0.0 | 7.745966911315918 |
 +----------------------------------+------------+-----+-----+------+-----+-------------------+
+GarbageCollectEvaluate:  host_memory_usage: 1738 MB, device_memory_usage: 1 MB
+skip OpOverflowCheckHook on torch.Tensor.backward
+apply OpOverflowCheckHook on torch.Tensor.add
+
+
+
+torch.Tensor.add  2
+/deeplink_afs/zhaoguochun/ditorch/op_tools/test/test_tool_with_special_op.py:119 test_overflow4: y = x + x
++----------------------------+--------+---------+-------+-----------+------------+---------------+---------------+----------------+
+|            name            | device |  dtype  | numel |   shape   |   stride   | requires_grad |     layout    |    data_ptr    |
++----------------------------+--------+---------+-------+-----------+------------+---------------+---------------+----------------+
+| torch.Tensor.add inputs[0] | npu:0  | float32 |   60  | (3, 4, 5) | (20, 5, 1) |     False     | torch.strided | 20067179825664 |
+| torch.Tensor.add inputs[1] | npu:0  | float32 |   60  | (3, 4, 5) | (20, 5, 1) |     False     | torch.strided | 20067179825664 |
+|  torch.Tensor.add outputs  | npu:0  | float32 |   60  | (3, 4, 5) | (20, 5, 1) |     False     | torch.strided | 20067179826176 |
++----------------------------+--------+---------+-------+-----------+------------+---------------+---------------+----------------+
++----------------------------+------------+------------------------+------------------------+------+-----+------+
+|            name            | inf_or_nan |          min           |          max           | mean | std | norm |
++----------------------------+------------+------------------------+------------------------+------+-----+------+
+| torch.Tensor.add input[0]  |   False    | 3.4028234663852886e+38 | 3.4028234663852886e+38 | inf  | inf | inf  |
+| torch.Tensor.add input[1]  |   False    | 3.4028234663852886e+38 | 3.4028234663852886e+38 | inf  | inf | inf  |
+| torch.Tensor.add output[0] |    True    |          inf           |          inf           | inf  | nan | inf  |
++----------------------------+------------+------------------------+------------------------+------+-----+------+
+
+
+
+GarbageCollectEvaluate:  host_memory_usage: 1740 MB, device_memory_usage: 1 MB
+apply OpOverflowCheckHook on torch.Tensor.mul
+
+
+
+torch.Tensor.mul  3
+/deeplink_afs/zhaoguochun/ditorch/op_tools/test/test_tool_with_special_op.py:120 test_overflow4: z = x * x
++----------------------------+--------+---------+-------+-----------+------------+---------------+---------------+----------------+
+|            name            | device |  dtype  | numel |   shape   |   stride   | requires_grad |     layout    |    data_ptr    |
++----------------------------+--------+---------+-------+-----------+------------+---------------+---------------+----------------+
+| torch.Tensor.mul inputs[0] | npu:0  | float32 |   60  | (3, 4, 5) | (20, 5, 1) |     False     | torch.strided | 20067179825664 |
+| torch.Tensor.mul inputs[1] | npu:0  | float32 |   60  | (3, 4, 5) | (20, 5, 1) |     False     | torch.strided | 20067179825664 |
+|  torch.Tensor.mul outputs  | npu:0  | float32 |   60  | (3, 4, 5) | (20, 5, 1) |     False     | torch.strided | 20067179826688 |
++----------------------------+--------+---------+-------+-----------+------------+---------------+---------------+----------------+
++----------------------------+------------+------------------------+------------------------+------+-----+------+
+|            name            | inf_or_nan |          min           |          max           | mean | std | norm |
++----------------------------+------------+------------------------+------------------------+------+-----+------+
+| torch.Tensor.mul input[0]  |   False    | 3.4028234663852886e+38 | 3.4028234663852886e+38 | inf  | inf | inf  |
+| torch.Tensor.mul input[1]  |   False    | 3.4028234663852886e+38 | 3.4028234663852886e+38 | inf  | inf | inf  |
+| torch.Tensor.mul output[0] |    True    |          inf           |          inf           | inf  | nan | inf  |
++----------------------------+------------+------------------------+------------------------+------+-----+------+
+
 ```
 
 ### 自定义算子工具生效的条件

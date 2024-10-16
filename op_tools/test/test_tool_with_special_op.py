@@ -115,6 +115,9 @@ class TestOpToolWithSpecialOp(unittest.TestCase):
             y = torch.zeros_like(x)
             z = x / y
             z.backward(torch.ones_like(z))
+            x = torch.full((3, 4, 5,), dtype=torch.float32, device="cuda", fill_value=3.402823466e38)
+            y = x + x
+            z = x * x
 
     def test_setitem(self):
         with op_tools.OpAutoCompare():

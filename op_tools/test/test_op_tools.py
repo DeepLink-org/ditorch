@@ -53,6 +53,9 @@ class TestOpTools(unittest.TestCase):
         loss.backward()
         optimizer.step()
 
+        a = torch.rand(10, requires_grad=True).cuda().half()
+        a = torch.bernoulli(a) + a + torch.rand_like(a)
+
     def test_op_capture(self):
         with op_tools.OpCapture():
             self.test_func()

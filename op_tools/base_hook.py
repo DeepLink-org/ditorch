@@ -76,6 +76,8 @@ class BaseHook(ABC):
                 self.result = None
                 self.exception = e
             result = self.after_call_op(self.result)
+            if self.exception is not None:
+                raise self.exception
             return result if result is not None else self.result
 
         return wrapper

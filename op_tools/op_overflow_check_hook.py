@@ -1,6 +1,6 @@
 # Copyright (c) 2024, DeepLink.
 import os
-from .utils import is_opname_match, traverse_container, is_inf_or_nan, garbage_collect
+from .utils import is_opname_match, traverse_container, is_inf_or_nan, garbage_collect, compute_tensor_features
 from .base_hook import BaseHook, DisableHookGuard
 import torch
 
@@ -21,17 +21,14 @@ class BackwardHookHandle:
             index = index + 1
             item_name = f"grad_inputs[{index}]" if index < len(grad_inputs) else f"grad_outputs[{index - len(grad_inputs)}]"
             if isinstance(arg, torch.Tensor):
-                info = {}
-                info["name"] = self.name + " " + item_name
-                info["inf_or_nan"] = is_inf_or_nan(arg)
-                info["min"] = arg.min().item()
-                info["max"] = arg.max().item()
-                info["mean"] = arg.float().mean().item()
-                info["std"] = arg.float().std().item()
-                info["norm"] = arg.float().norm().item()
+                info = {"name": self.name + " " + item_name}
+                info.update(compute_tensor_features(arg))
                 info_list.append(info)
         print("\n" * 2)
         print(f"{self.name}     forward_id: {self.id} {self.location}")
+        grad_output_list = packect_data_to_dict_list(self.name + " grad_output", serialize_args_to_dict(*grad_outputs))
+        grad_inputs_list = packect_data_to_dict_list(self.name + " grad_inputs", serialize_args_to_dict(*grad_inputs))
+        print(dict_data_list_to_table(grad_output_list + grad_inputs_list))
         print(dict_data_list_to_table(info_list))
         self = None
         garbage_collect()
@@ -68,13 +65,10 @@ class OpOverflowCheckHook(BaseHook):
             item_name = f"input[{index}]" if index < len(ins) else f"output[{index - len(ins)}]"
             info = {}
             info["name"] = self.name + " " + item_name
-            info["inf_or_nan"] = is_inf_or_nan(arg)
             if isinstance(arg, torch.Tensor):
-                info["min"] = arg.min().item()
-                info["max"] = arg.max().item()
-                info["mean"] = arg.float().mean().item()
-                info["std"] = arg.float().std().item()
-                info["norm"] = arg.float().norm().item()
+                info.update(compute_tensor_features(arg))
+            else:
+                info["inf_or_nan"] = is_inf_or_nan(arg)
 
             info_list.append(info)
 

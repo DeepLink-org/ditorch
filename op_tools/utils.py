@@ -57,6 +57,20 @@ def is_inf_or_nan(x):
     return transform_contrainer(x, func)
 
 
+def compute_tensor_features(arg):
+    arg = arg.detach()
+    arg_cpu = arg.cpu()
+    arg_cpu_float = arg_cpu.float()
+    return {
+        "inf_or_nan": is_inf_or_nan(arg) or is_inf_or_nan(arg_cpu),
+        "min": arg_cpu_float.min().item(),
+        "max": arg_cpu_float.max().item(),
+        "mean": arg_cpu_float.mean().item(),
+        "std": arg_cpu_float.std().item(),
+        "norm": arg_cpu_float.norm().item(),
+    }
+
+
 def to_device(device, obj, detach=False, dtype_cast_dict=dict()):
     def func(obj):
         if isinstance(obj, torch.Tensor):
@@ -419,6 +433,7 @@ class GarbageCollectEvaluate:
     def is_shoule_collect(self):
         self.current_rss = psutil.Process().memory_info().rss
         self.current_device_memory_usage = torch.cuda.memory_allocated()
+        print(f"GarbageCollectEvaluate:  host_memory_usage: {self.current_rss >> 20} MB, device_memory_usage: {self.current_device_memory_usage >> 20} MB")  # noqa: E501
         if (self.current_rss - self.rss > self.max_diff) or (self.current_device_memory_usage - self.device_memory_usage > self.max_diff):
             return True
         else:
