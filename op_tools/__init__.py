@@ -6,6 +6,7 @@ from .apply_hook import (
     OpObserve,
     OpTimeMeasure,
     OpDtypeCast,
+    OpOverflowCheck,
 )
 
 from .custom_apply_hook import apply_feature
@@ -18,5 +19,6 @@ __all__ = [
     "OpObserve",
     "OpTimeMeasure",
     "OpDtypeCast",
+    "OpOverflowCheck",
     "apply_feature",
 ]

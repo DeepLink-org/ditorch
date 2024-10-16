@@ -71,7 +71,13 @@ class OpFallbackHook(BaseHook):
                     self.kwargs_device or {},
                     dtype_cast_dict=self.dtype_cast_dict,
                 )
-                self.result_cpu = self.func(*self.args, **self.kwargs)
+                try:
+                    self.result_cpu = self.func(*self.args, **self.kwargs)
+                except Exception as e:
+                    self.exception = e
+                else:
+                    self.exception = None
+
                 self.dtype_convert_back_dict = self.get_dtype_convert_back_dict()
 
             self.result = to_device(self.device, self.result_cpu, self.dtype_convert_back_dict)

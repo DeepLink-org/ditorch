@@ -38,13 +38,37 @@ def is_cpu_op(*args, **kwargs):
 
 def transform_contrainer(obj, func):
     if isinstance(obj, (tuple, list, set)):
-        return type(obj)([transform_contrainer(v, func) for v in obj])
+        cls = tuple if isinstance(obj, tuple) else type(obj)  # instance(torch.return_types, tuple) is True
+        return cls([transform_contrainer(v, func) for v in obj])
     elif isinstance(obj, dict):
         return {transform_contrainer(k, func): transform_contrainer(v, func) for k, v in obj.items()}
-    elif type(obj).__module__.startswith("torch.return_types"):
-        return [transform_contrainer(v) for v in obj]
     else:
         return func(obj)
+
+
+def is_inf_or_nan(x):
+    def func(obj):
+        if isinstance(obj, torch.Tensor):
+            return obj.isinf().any().item() or obj.isnan().any().item()
+        elif isinstance(obj, (float, int, bool)):
+            return math.isinf(obj) or math.isnan(obj)
+        else:
+            return False
+    return transform_contrainer(x, func)
+
+
+def compute_tensor_features(arg):
+    arg = arg.detach()
+    arg_cpu = arg.cpu()
+    arg_cpu_float = arg_cpu.float()
+    return {
+        "inf_or_nan": is_inf_or_nan(arg) or is_inf_or_nan(arg_cpu),
+        "min": arg_cpu_float.min().item(),
+        "max": arg_cpu_float.max().item(),
+        "mean": arg_cpu_float.mean().item(),
+        "std": arg_cpu_float.std().item(),
+        "norm": arg_cpu_float.norm().item(),
+    }
 
 
 def to_device(device, obj, detach=False, dtype_cast_dict=dict()):
@@ -409,6 +433,7 @@ class GarbageCollectEvaluate:
     def is_shoule_collect(self):
         self.current_rss = psutil.Process().memory_info().rss
         self.current_device_memory_usage = torch.cuda.memory_allocated()
+        print(f"GarbageCollectEvaluate:  host_memory_usage: {self.current_rss >> 20} MB, device_memory_usage: {self.current_device_memory_usage >> 20} MB")  # noqa: E501
         if (self.current_rss - self.rss > self.max_diff) or (self.current_device_memory_usage - self.device_memory_usage > self.max_diff):
             return True
         else:

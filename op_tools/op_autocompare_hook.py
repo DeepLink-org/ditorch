@@ -241,9 +241,9 @@ class OpAutoCompareHook(BaseHook):
     def op_backward_args_to_table(self, grad_inputs, grad_output):
         grad_output_list = packect_data_to_dict_list(self.name + " grad_output", serialize_args_to_dict(*grad_output))
         grad_inputs_list = packect_data_to_dict_list(self.name + " grad_inputs", serialize_args_to_dict(*grad_inputs))
-        grad_output_list = packect_data_to_dict_list(self.name + " grad_output(cpu)", serialize_args_to_dict(*self.grad_outputs_cpu))
+        cpu_grad_output_list = packect_data_to_dict_list(self.name + " grad_output(cpu)", serialize_args_to_dict(*self.grad_outputs_cpu))
         cpu_grad_inputs_list = packect_data_to_dict_list(self.name + " grad_inputs(cpu)", serialize_args_to_dict(*tuple(self.args_cpu_grad)))  # noqa: E501
-        self.backward_args_table = dict_data_list_to_table(grad_output_list + grad_inputs_list + cpu_grad_inputs_list)
+        self.backward_args_table = dict_data_list_to_table(grad_output_list + grad_inputs_list + cpu_grad_output_list + cpu_grad_inputs_list)  # noqa: E501
         return self.backward_args_table
 
     def count_params_with_requires_grad(self):

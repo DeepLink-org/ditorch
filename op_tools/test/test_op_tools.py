@@ -53,6 +53,9 @@ class TestOpTools(unittest.TestCase):
         loss.backward()
         optimizer.step()
 
+        a = torch.rand(10, requires_grad=True).cuda().half()
+        a = torch.bernoulli(a) + a + torch.rand_like(a)
+
     def test_op_capture(self):
         with op_tools.OpCapture():
             self.test_func()
@@ -63,6 +66,10 @@ class TestOpTools(unittest.TestCase):
 
     def test_dump_op_args(self):
         with op_tools.OpObserve():
+            self.test_func()
+
+    def test_overflow(self):
+        with op_tools.OpOverflowCheck():
             self.test_func()
 
     def test_op_autocompare_memusage(self):

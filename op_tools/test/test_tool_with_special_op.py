@@ -70,6 +70,55 @@ class TestOpToolWithSpecialOp(unittest.TestCase):
         for i in range(len(value_list)):
             self.assertTrue(value_list[i] == x.shape[i])
 
+    def test_overflow(self):
+        x = torch.randn(3, 4, 5, dtype=torch.float32, device="cuda")
+        y = torch.zeros_like(x)
+        z = x / y
+        # print(z)  # all elem is inf or -inf
+
+        nan_detect_result = torch.isnan(z)
+        assert not nan_detect_result.any().item()
+        # print(nan_detect_result) # all elem is False
+
+        inf_detect_result = torch.isinf(z)
+        assert inf_detect_result.all().item()
+        # print(inf_detect_result) # all elem is True
+
+        # torch.isfinite
+        finite_detect_result = torch.isfinite(z)
+        assert not finite_detect_result.any().item()
+
+    def test_overflow2(self):
+        x = torch.full((3, 4, 5,), dtype=torch.float32, device="cuda", fill_value=3.402823466e38)
+        self.assertFalse(torch.isinf(x).any().item())
+        print(x)
+        y = x + x
+        print(y)
+        self.assertTrue(torch.isinf(y).all().item())
+
+    def test_overflow3(self):
+        fill_value = 3.402823466e38
+        x = torch.full((3, 4, 5,), dtype=torch.float32, device="cuda", fill_value=fill_value)
+        y = x + 1e-9
+        y_cpu = fill_value + 1e-9
+        max_value_item = y.max().item()
+        # bad results
+        error_info = f"Add large numbers to small numbers: {max_value_item} != {y_cpu} + 1e-9, {max_value_item - fill_value} != 1e-9"
+        # self.assertTrue(max_value_item - fill_value <= 1e-9, error_info)
+        if max_value_item - fill_value > 1e-9:
+            print(error_info)
+        self.assertFalse(torch.isinf(y).any().item())
+
+    def test_overflow4(self):
+        with op_tools.OpOverflowCheck():
+            x = torch.randn(3, 4, 5, dtype=torch.float32, device="cuda", requires_grad=True)
+            y = torch.zeros_like(x)
+            z = x / y
+            z.backward(torch.ones_like(z))
+            x = torch.full((3, 4, 5,), dtype=torch.float32, device="cuda", fill_value=3.402823466e38)
+            y = x + x
+            z = x * x
+
     def test_setitem(self):
         with op_tools.OpAutoCompare():
             x = torch.randn(3, 4, 5, dtype=torch.float32, device="cuda")
