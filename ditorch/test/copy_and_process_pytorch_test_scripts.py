@@ -44,7 +44,7 @@ def copy_add_ditorch_import_to_pytorch_test_file(pytorch_dir, pytorch_test_temp)
             continue
         with open(file_path, "w") as test_script:
             test_script.write(content)
-        print(f'"import ditorch" has been added to the beginning of the {file_path} file line')
+        print(f'"import ditorch" has been added to the {index}th line of the {file_path} file line')
 
     print(f"All pytorch {len(tests_files)} test scripts have been processed")
 
