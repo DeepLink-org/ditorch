@@ -95,6 +95,14 @@ def to_device(device, obj, detach=False, dtype_cast_dict=dict()):
             else:
                 new_obj = obj.to(device)
             return new_obj
+        elif isinstance(obj, torch.device):
+            return device
+        elif isinstance(obj, str):
+            try:
+                new_obj = torch.device(obj)
+                return device
+            except Exception as e:  # noqa: F841
+                return obj
         else:
             return obj
 
