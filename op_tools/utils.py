@@ -30,10 +30,23 @@ def traverse_container(container):
 def is_cpu_op(*args, **kwargs):
     for obj in traverse_container(args):
         if isinstance(obj, torch.Tensor):
-            if not obj.device.type == "cpu":
+            if obj.device.type != "cpu":
                 return False, obj.device
+        elif isinstance(obj, torch.device):
+            if obj.type != "cpu":
+                return False, obj
+        elif isinstance(obj, str):
+            try:
+                device = torch.device(obj)
+                if device.type != "cpu":
+                    return False, device
+            except Exception as e:  # noqa: F841
+                pass
+    if kwargs.get("device", None) is not None:
+        device = torch.device(kwargs["device"])
+        return device.type == "cpu", device
 
-    return True, "cpu"
+    return True, torch.device("cpu")
 
 
 def transform_contrainer(obj, func):
@@ -82,6 +95,14 @@ def to_device(device, obj, detach=False, dtype_cast_dict=dict()):
             else:
                 new_obj = obj.to(device)
             return new_obj
+        elif isinstance(obj, torch.device):
+            return device
+        elif isinstance(obj, str):
+            try:
+                new_obj = torch.device(obj)
+                return device
+            except Exception as e:  # noqa: F841
+                return obj
         else:
             return obj
 
@@ -433,7 +454,7 @@ class GarbageCollectEvaluate:
     def is_shoule_collect(self):
         self.current_rss = psutil.Process().memory_info().rss
         self.current_device_memory_usage = torch.cuda.memory_allocated()
-        print(f"GarbageCollectEvaluate:  host_memory_usage: {self.current_rss >> 20} MB, device_memory_usage: {self.current_device_memory_usage >> 20} MB")  # noqa: E501
+        print(f"GarbageCollectEvaluate:  host_memory_usage: {self.current_rss >> 20} MB, device_memory_usage: {self.current_device_memory_usage >> 20} MB, device_memory_reserved: {torch.cuda.memory_reserved() >> 20} MB")  # noqa: E501
         if (self.current_rss - self.rss > self.max_diff) or (self.current_device_memory_usage - self.device_memory_usage > self.max_diff):
             return True
         else:
