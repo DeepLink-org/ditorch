@@ -247,6 +247,37 @@ class TestCompareResult(unittest.TestCase):
         xy_cos_similarity = tensor_cos_similarity(x, y)
         self.assertTrue(xy_cos_similarity >= -1 and xy_cos_similarity <= 1)
 
+    def test_compare_device(self):
+        result1 = "cuda"
+        result2 = "cpu"
+        compare_info = compare_result("compare_device_cuda_vs_cpu", result1, result2)
+        self.assertFalse(compare_info["allclose"])
+
+        result1 = "cuda"
+        result2 = "cpu"
+        compare_info = compare_result("compare_device_cuda_vs_cpu_with_ignore_index", result1, result2, ignore_index=0)
+        self.assertTrue(compare_info["allclose"])
+
+        result1 = "cuda"
+        result2 = "cuda"
+        compare_info = compare_result("compare_device_cuda_vs_cuda", result1, result2)
+        self.assertTrue(compare_info["allclose"])
+
+        result1 = ["cuda", torch.device("cuda")]
+        result2 = ["cuda", torch.device("cuda")]
+        compare_info = compare_result("compare_device_cuda_vs_cuda_list", result1, result2)
+        self.assertTrue(compare_info["allclose"])
+
+        result1 = ["cuda", torch.device("cuda"), "cpu"]
+        result2 = ["cuda", torch.device("cuda"), "cuda"]
+        compare_info = compare_result("compare_device_list", result1, result2)
+        self.assertFalse(compare_info["allclose"])
+
+        result1 = ["cuda", torch.device("cuda"), "cpu"]
+        result2 = ["cuda", torch.device("cuda"), "cuda"]
+        compare_info = compare_result("compare_device_list_with_ignore_index", result1, result2, ignore_index=2)
+        self.assertTrue(compare_info["allclose"])
+
 
 if __name__ == "__main__":
     unittest.main()

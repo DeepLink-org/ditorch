@@ -37,7 +37,7 @@ class AutoCompareResultCache:
         for result in compare_info["result_list"]:
             self.global_autocompare_result.append({"forward_id": forward_id, **result})
 
-        if len(self.global_autocompare_result) > int(os.getenv("OP_TOOLS_MAX_CACHE_SIZE", "1000")):
+        if len(self.global_autocompare_result) > int(os.getenv("OP_TOOLS_MAX_CACHE_SIZE", "100")):
             self.write_to_file()
 
     def write_to_file(self):
@@ -51,7 +51,6 @@ class AutoCompareResultCache:
         os.makedirs(self.dir, exist_ok=True)
         with open(self.file_name, "a+") as f:
             f.write(data_string)
-            f.close
         print(f"op autocompare result saved to {self.file_name}")
 
 
@@ -204,7 +203,21 @@ class OpAutoCompareHook(BaseHook):
         return compare_info
 
     def compare_inputs(self):
-        compare_info = compare_result(self.name + " input", self.args, self.args_cpu)
+        device_arg_index = None
+        index = -1
+        for arg in traverse_container(self.args):
+            index += 1
+            if isinstance(arg, torch.device):
+                device_arg_index = index
+                break
+            elif isinstance(arg, str):
+                try:
+                    _ = torch.device(arg)
+                    device_arg_index = index
+                    break
+                except Exception as e:  # noqa: F841
+                    pass
+        compare_info = compare_result(self.name + " input", self.args, self.args_cpu, ignore_index=device_arg_index)
         compare_result_cache.append(self.forward_op_id, compare_info)
         compare_info["forward_id"] = self.forward_op_id
         self.input_allclose = compare_info["allclose"]
