@@ -1,5 +1,6 @@
 # Copyright (c) 2024, DeepLink.
-from torch.overrides import TorchFunctionMode, resolve_name
+from torch.overrides import TorchFunctionMode
+from torch.overrides import resolve_name as _resolve_name
 from .op_capture_hook import OpCaptureHook
 from .op_fallback_hook import OpFallbackHook
 from .op_autocompare_hook import OpAutoCompareHook
@@ -9,6 +10,19 @@ from .op_dtype_cast_hook import OpDtypeCastHook
 from .op_overflow_check_hook import OpOverflowCheckHook
 from .utils import is_cpu_op
 import inspect
+
+
+def resolve_name(func):
+    name = _resolve_name(func)
+    if name is None:
+        name = ""
+        if hasattr(func, "__module__"):
+            name = func.__module__
+        if hasattr(func, "__name__"):
+            if len(name) > 0:
+                name += "."
+            name += func.__name__
+    return name
 
 
 def is_should_apply_hook(name, func, args, kwargs=None):
