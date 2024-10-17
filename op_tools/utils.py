@@ -96,11 +96,11 @@ def to_device(device, obj, detach=False, dtype_cast_dict=dict()):
                 new_obj = obj.to(device)
             return new_obj
         elif isinstance(obj, torch.device):
-            return device
+            return torch.device(device)
         elif isinstance(obj, str):
             try:
-                new_obj = torch.device(obj)
-                return device
+                _ = torch.device(obj)
+                return str(device)
             except Exception as e:  # noqa: F841
                 return obj
         else:
@@ -318,7 +318,7 @@ def get_error_tolerance(dtype, op_name):
         return atol, rtol
 
 
-def compare_result(name, a, b):  # noqa: C901
+def compare_result(name, a, b, ignore_index=None):  # noqa: C901
     a_list = []
     b_list = []
     allclose, max_abs_diff, max_relative_diff, error_info, atol, rtol, cos_similarity = True, 0, 0, "", 0, 0, -1e8
@@ -343,6 +343,8 @@ def compare_result(name, a, b):  # noqa: C901
             "result_list": result_list,
         }
     for i in range(len(a_list)):
+        if i == ignore_index:
+            continue
         a_item = a_list[i]
         b_item = b_list[i]
         atol_i, rtol_i = 0, 0
