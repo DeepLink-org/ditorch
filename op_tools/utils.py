@@ -8,6 +8,10 @@ import gc
 import traceback
 import psutil
 
+import tracemalloc
+
+tracemalloc.start()
+
 
 def traverse_container(container):
     if isinstance(container, dict):
@@ -469,6 +473,11 @@ class GarbageCollectEvaluate:
         print(
             f"GarbageCollectEvaluate: after collect : rss: {self.rss >> 20} MB, current_rss: {self.current_rss >> 20} MB, max_diff: {self.max_diff>>20} MB, device_memory_usage: {self.device_memory_usage >> 20} MB, current_device_memory_usage: {self.current_device_memory_usage >> 20} MB"  # noqa: E501
         )
+        snapshot = tracemalloc.take_snapshot()
+        top_stats = snapshot.statistics('lineno')
+        print("Top 10 memory-consuming codes")
+        for stat in top_stats[:10]:
+            print(stat)
 
 
 garbage_collect_evaluater = GarbageCollectEvaluate()
