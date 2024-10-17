@@ -455,26 +455,28 @@ class GarbageCollectEvaluate:
         self.device_memory_usage = torch.cuda.memory_allocated()
         self.current_rss = psutil.Process().memory_info().rss
         self.current_device_memory_usage = torch.cuda.memory_allocated()
-        self.max_diff = 1 << 30
+        self.max_diff = 20 << 30
 
     def is_shoule_collect(self):
         self.current_rss = psutil.Process().memory_info().rss
         self.current_device_memory_usage = torch.cuda.memory_allocated()
         print(f"GarbageCollectEvaluate:  host_memory_usage: {self.current_rss >> 20} MB, device_memory_usage: {self.current_device_memory_usage >> 20} MB, device_memory_reserved: {torch.cuda.memory_reserved() >> 20} MB")  # noqa: E501
-        if (self.current_rss - self.rss > self.max_diff) or (self.current_device_memory_usage - self.device_memory_usage > self.max_diff):
+        if (self.current_rss - self.rss > 2 * self.max_diff) or \
+           (self.current_device_memory_usage - self.device_memory_usage > self.max_diff):
             return True
         else:
             return False
 
     def collect(self):
         gc.collect()
-        self.rss = max(self.rss, psutil.Process().memory_info().rss)
-        self.device_memory_usage = max(self.device_memory_usage, torch.cuda.memory_allocated())
+        torch.cuda.empty_cache()
+        self.rss = psutil.Process().memory_info().rss
+        self.device_memory_usage = torch.cuda.memory_allocated()
         print(
             f"GarbageCollectEvaluate: after collect : rss: {self.rss >> 20} MB, current_rss: {self.current_rss >> 20} MB, max_diff: {self.max_diff>>20} MB, device_memory_usage: {self.device_memory_usage >> 20} MB, current_device_memory_usage: {self.current_device_memory_usage >> 20} MB"  # noqa: E501
         )
         snapshot = tracemalloc.take_snapshot()
-        top_stats = snapshot.statistics('lineno')
+        top_stats = snapshot.statistics("lineno")
         print("Top 10 memory-consuming codes")
         for stat in top_stats[:10]:
             print(stat)
