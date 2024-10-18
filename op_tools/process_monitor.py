@@ -104,7 +104,7 @@ class ResultCache:
             device_name = "ascend"
         if is_camb_mlu_env:
             device_name = "camb"
-        self.file_name = f"op_tools_results/process_monitor_result_{device_name}_pid{pid}_{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}.csv"  # noqa: E501
+        self.file_name = f"op_tools_results/process_monitor_result_{device_name}_pid{pid}_{os.getenv('label', '')}_{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}.csv"  # noqa: E501
         self.dir = self.file_name[0 : self.file_name.rfind("/")]
 
     def append(self, info):
