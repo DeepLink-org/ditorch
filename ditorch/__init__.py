@@ -1,4 +1,6 @@
 # Copyright (c) 2024, DeepLink.
+import os
+
 framework = None
 try:
     from ditorch import torch_npu_adapter
@@ -31,4 +33,4 @@ except Exception as e:  # noqa: F841
 
 from ditorch import common_adapter  # noqa: F401,E402
 
-print(f"ditorch.framework: {framework}")
+print(f"ditorch.framework: {framework}  pid: {os.getpid()}")
