@@ -4,7 +4,7 @@ import argparse
 import os
 
 
-def test_case_id_json_to_scripts(json_path, test_case_num_per_process):
+def test_case_id_json_to_scripts(json_path, test_case_num_per_process, split_long_commadn_to_multiple_lines):
     with open(json_path, "rt") as f:
         test_case_ids = json.load(f)
     index = json_path.rfind("/") + 1
@@ -14,7 +14,7 @@ def test_case_id_json_to_scripts(json_path, test_case_num_per_process):
             for test_name in test_names:
                 while len(test_names) > 0:
                     test_name = " " * 4 + (" " * 4).join(test_names[:test_case_num_per_process])
-                    if test_case_num_per_process > 3:
+                    if test_case_num_per_process > 3 and split_long_commadn_to_multiple_lines:
                         test_name = test_name.replace(" " * 4, "    \\\n    ")
                         f.write("\n" * 2)
                     command = f"python {module_name} {test_name} $EXTRA_ARGS"
@@ -23,7 +23,7 @@ def test_case_id_json_to_scripts(json_path, test_case_num_per_process):
     print(f"Generate script file: {new_script_path}")
 
 
-def dump_test_case_id_json_to_script(path, test_case_num_per_process):
+def dump_test_case_id_json_to_script(path, test_case_num_per_process, split_long_commadn_to_multiple_lines):
     if os.path.isdir(path):
         test_case_json_files = glob.glob(path + "/**/*.json", recursive=True)
         if len(test_case_json_files) == 0:
@@ -31,7 +31,7 @@ def dump_test_case_id_json_to_script(path, test_case_num_per_process):
         else:
             print(f"Found {len(test_case_json_files)} test case id json files in {path}")
         for test_case_json_file in test_case_json_files:
-            test_case_id_json_to_scripts(test_case_json_file, test_case_num_per_process)
+            test_case_id_json_to_scripts(test_case_json_file, test_case_num_per_process, split_long_commadn_to_multiple_lines)
     elif os.path.isfile(path):
         test_case_id_json_to_scripts(path, test_case_num_per_process)
 
@@ -51,10 +51,19 @@ def parase_args():
         default="1",
         help="The number of test cases per process",
     )
+    parser.add_argument(
+        "--split_long_commadn_to_multiple_lines",
+        action="store_true",
+        help="wether to write long command to one line",
+    )
     args = parser.parse_args()
     return args
 
 
 if __name__ == "__main__":
     args = parase_args()
-    dump_test_case_id_json_to_script(args.test_case_id_json_path, test_case_num_per_process=args.test_case_num_per_process)
+    dump_test_case_id_json_to_script(
+        args.test_case_id_json_path,
+        test_case_num_per_process=args.test_case_num_per_process,
+        split_long_commadn_to_multiple_lines=args.split_long_commadn_to_multiple_lines,
+    )
