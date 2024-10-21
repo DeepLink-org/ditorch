@@ -14,19 +14,17 @@ cd pytorch_test_temp/test/
 bash $DITORCH_ROOT/pytorch_test_result/test_case_ids/ditorch_run_all_device_test_cases.json.sh
 
 # run cpu test cases
-bash $DITORCH_ROOT/pytorch_test_result/test_case_ids/ditorch_run_all_cpu_test_cases.json.sh
+# bash $DITORCH_ROOT/pytorch_test_result/test_case_ids/ditorch_run_all_cpu_test_cases.json.sh
+ls test_*.py | xargs -I {} --verbose  python {} -k CPU $EXTRA_ARGS
 
 # python ditorch/test/generate_test_shell_script_from_testcase_json.py --test_case_id_json_path pytorch_test_result/never_tested_device_test_case.json  --test_case_num_per_process 1
 
 
-# bash $DITORCH_ROOT/pytorch_test_result/ditorch_run_never_tested_device_test_case.json.sh
-# bash $DITORCH_ROOT/pytorch_test_result/ditorch_run_never_tested_cpu_test_case.json.sh
-# python ${DITORCH_ROOT}/ditorch/test/summary_test_results.py # generate test summary report
-
 cd $DITORCH_ROOT
 python ditorch/test/summary_test_results.py # generate test summary report
+python ditorch/test/generate_test_shell_script_from_testcase_json.py  --test_case_num_per_process 1
 python ditorch/test/generate_test_shell_script_from_testcase_json.py --test_case_id_json_path pytorch_test_result/never_tested_cpu_test_case.json --test_case_num_per_process 1
-python ditorch/test/generate_test_shell_script_from_testcase_json.py --test_case_id_json_path pytorch_test_result/never_tested_device_test_case.json --test_case_num_per_process 100
+python ditorch/test/generate_test_shell_script_from_testcase_json.py --test_case_id_json_path pytorch_test_result/never_tested_device_test_case.json --test_case_num_per_process 1
 
 
 export EXTRA_ARGS=" --verbose --save-xml=$DITORCH_ROOT/pytorch_test_result/xml "
