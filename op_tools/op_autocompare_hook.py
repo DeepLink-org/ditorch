@@ -64,17 +64,25 @@ def dump_all_autocompare_info():
 class BackwardHookHandle:
     def __init__(self, compare_hook) -> None:
         self.compare_hook = compare_hook
+        self.hook_handle = None
 
     def register_grad_fn_hook(self, tensor):
-        hook_handle = None
+        self.cleanup()
 
         def grad_fun(grad_inputs, grad_outputs):
-            hook_handle.remove()
+            self.cleanup()
             self.compare_hook.run_backward_on_cpu(grad_inputs, grad_outputs)
             self.compare_hook.compare_backward_relate()
+            del self.compare_hook
+            garbage_collect()
 
-        hook_handle = tensor.grad_fn.register_hook(grad_fun)
+        self.hook_handle = tensor.grad_fn.register_hook(grad_fun)
         return grad_fun
+
+    def cleanup(self):
+        if self.hook_handle is not None:
+            self.hook_handle.remove()
+            self.hook_handle = None
 
 
 set_env_if_env_is_empty("LINEAR_OP_DTYPE_CAST_DICT", "torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64")  # noqa: E501
@@ -297,10 +305,27 @@ class OpAutoCompareHook(BaseHook):
                 self.save_forward_args()
             self.save_backward_args()
 
-        self = None
-        garbage_collect()
+        self.release_forward_args()
+        self.release_backward_args()
+
+    def release_forward_args(self):
+        self.args = None
+        self.args_cpu = None
+        self.kwargs = None
+        self.kwargs_cpu = None
+        self.result = None
+        self.result_cpu = None
+
+    def release_backward_args(self):
+        self.args_grad = None
+        self.args_cpu_grad = None
+        self.grad_inputs_cpu = None
+        self.grad_outputs_cpu = None
+        self.grad_outputs_device = None
+        self.backward_hook_handle = None
 
     def save_forward_args(self):
+        return
         save_op_args(
             self.name,
             f"{self.identifier}/device/input",
@@ -317,6 +342,7 @@ class OpAutoCompareHook(BaseHook):
         save_op_args(self.name, f"{self.identifier}/cpu/output", self.result_cpu)
 
     def save_backward_args(self):
+        return
         save_op_args(
             self.name,
             f"{self.identifier}/device/grad_outputs",
@@ -366,8 +392,7 @@ class OpAutoCompareHook(BaseHook):
                 self.kwargs = to_device("cpu", self.kwargs or {}, detach=True)
                 self.result = to_device("cpu", self.result, detach=True)
             else:
-                self = None
-
+                self.release_forward_args()
             garbage_collect()
             return result
 

@@ -14,10 +14,10 @@ class BackwardHookHandle:
         self.id = id
 
     def register_grad_fun_hook(self, tensor):
-        hook_handle = None
+        self.hook_handle = None
 
         def grad_fun(grad_inputs, grad_outputs):
-            hook_handle.remove()
+            self.hook_handle.remove()
 
             save_op_args(self.name, f"{self.id}/grad_inputs", *tuple(grad_inputs))
             save_op_args(self.name, f"{self.id}/grad_outputs", *tuple(grad_outputs))
@@ -27,7 +27,7 @@ class BackwardHookHandle:
             backward_args_table = dict_data_list_to_table(grad_output_list + grad_inputs_list)
             print(f"{self.name} forward_id:{self.id}\n{backward_args_table}", "\n" * 4)
 
-        hook_handle = tensor.grad_fn.register_hook(grad_fun)
+        self.hook_handle = tensor.grad_fn.register_hook(grad_fun)
 
         return grad_fun
 

@@ -19,7 +19,7 @@ def parse_args():
     )
     parser.add_argument(
         "--interval",
-        type=int,
+        type=float,
         default=1,
         help="interval of monitoring in seconds",
     )
@@ -29,14 +29,14 @@ def parse_args():
 def get_host_mem_usage(pid):
     process = psutil.Process(pid)
     memory_info = process.memory_info()
-    info = {"rss": f"{memory_info.rss >> 20} MB", "cpu_percent": f"{process.cpu_percent(interval=1)}%"}
+    info = {"cpu_percent(%)": f"{process.cpu_percent(interval=1)}", "rss(MB)": f"{memory_info.rss >> 20} "}
     return info
 
 
 def get_camb_device_mem_usage(pid):
     command = R"cnmon | awk -v pid=" + str(pid) + R" 'pid==$4  {print $6}'"
-    device_memusage = subprocess.run(command, shell=True, capture_output=True, text=True).stdout.replace("\n", " ") + " MB"
-    info = {"device_memusage": device_memusage}
+    device_memusage = subprocess.run(command, shell=True, capture_output=True, text=True).stdout.replace("\n", " ")
+    info = {"device_memusage(MB)": device_memusage}
     return info
 
 
@@ -51,18 +51,18 @@ def get_camb_device_utilization(pid):
     items = raw_output.strip().split("\n")
     for item in items:
         item_list = item.split(":")
-        if len(item_list) != 2 :
+        if len(item_list) != 2:
             continue
         key, value = item_list
-        info.update({key.strip() : value.strip()})
+        info.update({key.strip(): value.strip()})
 
     return info
 
 
 def get_ascend_device_mem_usage(pid):
     command = R"npu-smi info | awk -v pid=" + str(pid) + R" 'pid==$5  {print $9}'"
-    device_memusage = subprocess.run(command, shell=True, capture_output=True, text=True).stdout.replace("\n", " ") + " MB"
-    info = {"device_memusage": device_memusage}
+    device_memusage = subprocess.run(command, shell=True, capture_output=True, text=True).stdout.replace("\n", " ")
+    info = {"device_memusage(MB)": device_memusage}
     return info
 
 
@@ -104,7 +104,7 @@ class ResultCache:
             device_name = "ascend"
         if is_camb_mlu_env:
             device_name = "camb"
-        self.file_name = f"op_tools_results/process_monitor_result_{device_name}_pid{pid}_{os.getenv('label', '')}_{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}.csv"  # noqa: E501
+        self.file_name = f"op_tools_results/process_monitor_result/process_monitor_result_{device_name}_pid{pid}_{os.getenv('label', '')}_{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}.csv"  # noqa: E501
         self.dir = self.file_name[0 : self.file_name.rfind("/")]
 
     def append(self, info):
@@ -121,7 +121,7 @@ class ResultCache:
         data_string = table.get_csv_string()
 
         if os.path.exists(self.file_name):
-            data_string = data_string[data_string.find("\n") + 1:]
+            data_string = data_string[data_string.find("\n") + 1 :]
 
         os.makedirs(self.dir, exist_ok=True)
         with open(self.file_name, "a+") as f:
@@ -135,10 +135,15 @@ if __name__ == "__main__":
     pid = args.pid
     interval = args.interval
     result_cache = ResultCache(pid=pid)
+    process = psutil.Process(pid)
+    create_time = process.create_time()
     while True:
-        process = psutil.Process(pid)
         memory_info = process.memory_info()
-        info = {"time": "%.7f" % time.time(), "time_str": time.strftime("%Y-%m-%d %H:%M:%S")}
+        info = {
+            "runningtime(Seconds)": "%.7f" % (time.time() - create_time),
+            "time_str": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "time(Seconds)": time.time(),
+        }
         info.update(get_host_mem_usage(pid))
         if is_ascend_npu_env:
             info.update(get_ascend_device_mem_usage(pid))

@@ -456,13 +456,19 @@ class GarbageCollectEvaluate:
         self.current_rss = psutil.Process().memory_info().rss
         self.current_device_memory_usage = torch.cuda.memory_allocated()
         self.max_diff = 20 << 30
+        self.id = 0
 
     def is_shoule_collect(self):
+        self.id += 1
+        if self.id % 2 == 0:
+            return False
         self.current_rss = psutil.Process().memory_info().rss
         self.current_device_memory_usage = torch.cuda.memory_allocated()
         print(f"GarbageCollectEvaluate:  host_memory_usage: {self.current_rss >> 20} MB, device_memory_usage: {self.current_device_memory_usage >> 20} MB, device_memory_reserved: {torch.cuda.memory_reserved() >> 20} MB")  # noqa: E501
         if (self.current_rss - self.rss > 2 * self.max_diff) or \
+           (self.id % 100 == 0) or \
            (self.current_device_memory_usage - self.device_memory_usage > self.max_diff):
+            self.id = 0
             return True
         else:
             return False
@@ -480,6 +486,7 @@ class GarbageCollectEvaluate:
         print("Top 10 memory-consuming codes")
         for stat in top_stats[:10]:
             print(stat)
+        tracemalloc.start()
 
 
 garbage_collect_evaluater = GarbageCollectEvaluate()
