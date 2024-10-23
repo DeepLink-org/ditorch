@@ -8,10 +8,6 @@ import gc
 import traceback
 import psutil
 
-import tracemalloc
-
-tracemalloc.start()
-
 
 def traverse_container(container):
     if isinstance(container, dict):
@@ -459,9 +455,9 @@ class GarbageCollectEvaluate:
         self.id = 0
 
     def is_shoule_collect(self):
+        if gc.isenabled():
+            return
         self.id += 1
-        if self.id % 2 == 0:
-            return False
         self.current_rss = psutil.Process().memory_info().rss
         self.current_device_memory_usage = torch.cuda.memory_allocated()
         print(f"GarbageCollectEvaluate:  host_memory_usage: {self.current_rss >> 20} MB, device_memory_usage: {self.current_device_memory_usage >> 20} MB, device_memory_reserved: {torch.cuda.memory_reserved() >> 20} MB")  # noqa: E501
@@ -481,12 +477,6 @@ class GarbageCollectEvaluate:
         print(
             f"GarbageCollectEvaluate: after collect : rss: {self.rss >> 20} MB, current_rss: {self.current_rss >> 20} MB, max_diff: {self.max_diff>>20} MB, device_memory_usage: {self.device_memory_usage >> 20} MB, current_device_memory_usage: {self.current_device_memory_usage >> 20} MB"  # noqa: E501
         )
-        snapshot = tracemalloc.take_snapshot()
-        top_stats = snapshot.statistics("lineno")
-        print("Top 10 memory-consuming codes")
-        for stat in top_stats[:10]:
-            print(stat)
-        tracemalloc.start()
 
 
 garbage_collect_evaluater = GarbageCollectEvaluate()

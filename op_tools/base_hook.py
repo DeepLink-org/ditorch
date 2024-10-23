@@ -6,15 +6,6 @@ from .utils import is_cpu_op, current_location
 def is_should_apply_hook(name, func, *args, **kwargs):
     if name is None:
         return False
-    if callable(func) is False:
-        return False
-    if name.startswith("torch.Tensor.") and (name.endswith("__get__") or name.endswith("__set__")):
-        return False
-    # Assuming that the torch provided by the manufacturer has not been compromised in terms of CPU functionality
-    args_on_cpu, device = is_cpu_op(*args, **kwargs)
-    if args_on_cpu:
-        return False
-
     EXCLUDE_OPS = [
         "torch.Tensor.data_ptr",
         "torch.Tensor.backward",
@@ -30,6 +21,15 @@ def is_should_apply_hook(name, func, *args, **kwargs):
     if name in EXCLUDE_OPS:
         return False
 
+    if callable(func) is False:
+        return False
+    if name.startswith("torch.Tensor.") and (name.endswith("__get__") or name.endswith("__set__")):
+        return False
+    # Assuming that the torch provided by the manufacturer has not been compromised in terms of CPU functionality
+    args_on_cpu, device = is_cpu_op(*args, **kwargs)
+    if args_on_cpu:
+        return False
+
     return True
 
 
@@ -43,7 +43,7 @@ class BaseHook(ABC):
         self.name = name
         self.exception = None
         self.func = func
-        self.wrapper_func = self.construct_wrapper_func()
+        self.wrapper_func = None
         self.condition_funcs = []
 
     def add_condition_func(self, func):
@@ -90,26 +90,29 @@ class BaseHook(ABC):
         return False
 
     def __call__(self, *args, **kwargs):
-        self.args_on_cpu, self.device = is_cpu_op(*args, **kwargs)
-        if (
-            self.enable
-            and self.conditions_met(*args, **kwargs)
-            and not self.args_on_cpu
-            and is_should_apply_hook(self.name, self.func, *args, **kwargs)
-            and self.is_should_apply(*args, **kwargs)
-        ):
+        with DisableHookGuard():
+            self.args_on_cpu, self.device = is_cpu_op(*args, **kwargs)
+            self.apply = (
+                self.conditions_met(*args, **kwargs)
+                and not self.args_on_cpu
+                and is_should_apply_hook(self.name, self.func, *args, **kwargs)
+                and self.is_should_apply(*args, **kwargs)
+            )
+        if self.apply and self.enable:
             self.current_location = current_location(name=self.name, print_stack=False)
             if self.name not in self.applied_op:
                 self.applied_op.add(self.name)
                 print(f"apply {self.class_name()} on {self.name}")
-            self.result = self.wrapper_func(*args, **kwargs)
+            self.wrapper_func = self.construct_wrapper_func()
+            result = self.wrapper_func(*args, **kwargs)
         else:
-            self.result = self.func(*args, **kwargs)
-            if not self.args_on_cpu:
-                if self.name not in self.skiped_op:
-                    self.skiped_op.add(self.name)
-                    print(f"skip {self.class_name()} on {self.name}")
-        return self.result
+            with DisableHookGuard():
+                result = self.func(*args, **kwargs)
+                if not self.args_on_cpu:
+                    if self.name not in self.skiped_op:
+                        self.skiped_op.add(self.name)
+                        print(f"skip {self.class_name()} on {self.name}")
+        return result
 
 
 class DisableHookGuard:

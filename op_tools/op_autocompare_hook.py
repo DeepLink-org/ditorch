@@ -325,7 +325,6 @@ class OpAutoCompareHook(BaseHook):
         self.backward_hook_handle = None
 
     def save_forward_args(self):
-        return
         save_op_args(
             self.name,
             f"{self.identifier}/device/input",
@@ -342,7 +341,6 @@ class OpAutoCompareHook(BaseHook):
         save_op_args(self.name, f"{self.identifier}/cpu/output", self.result_cpu)
 
     def save_backward_args(self):
-        return
         save_op_args(
             self.name,
             f"{self.identifier}/device/grad_outputs",

@@ -131,10 +131,7 @@ class OpAutoCompare(OpToolBase):
     def __torch_function__(self, func, types, args, kwargs=None):
         name = resolve_name(func)
         hook = OpAutoCompareHook(name, func)
-        result = hook(*args, **(kwargs or {}))
-        # hook = None
-        del hook
-        return result
+        return hook(*args, **(kwargs or {}))
 
     def start(self):
         super().__enter__()

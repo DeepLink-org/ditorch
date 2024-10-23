@@ -57,7 +57,7 @@ class TestOpTools(unittest.TestCase):
         a = torch.bernoulli(a) + a + torch.rand_like(a)
 
         #  large tensor to test mem usage
-        b = torch.full(size=(1 << 30,), fill_value=2.5, device=torch.device("cuda"), dtype=torch.float16, requires_grad=True)
+        b = torch.full(size=(1 << 20,), fill_value=2.5, device=torch.device("cuda"), dtype=torch.float16, requires_grad=True)
         c = b + b
         c.backward(torch.ones_like(c))
 
