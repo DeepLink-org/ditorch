@@ -53,8 +53,16 @@ class TestOpTools(unittest.TestCase):
         loss.backward()
         optimizer.step()
 
-        a = torch.rand(10, requires_grad=True).cuda().half()
+        a = torch.rand(10, requires_grad=True, device="cuda").half()
         a = torch.bernoulli(a) + a + torch.rand_like(a)
+
+        #  large tensor to test mem usage
+        b = torch.full(size=(1 << 20,), fill_value=2.5, device=torch.device("cuda"), dtype=torch.float16, requires_grad=True)
+        c = b + b
+        c.backward(torch.ones_like(c))
+
+        # device is int
+        c = torch.ones(size=(1 << 20,), device=0, dtype=torch.float16, requires_grad=True)
 
     def test_op_capture(self):
         with op_tools.OpCapture():

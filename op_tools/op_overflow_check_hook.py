@@ -35,15 +35,15 @@ class BackwardHookHandle:
         garbage_collect()
 
     def register_grad_fn_hook(self, tensor):
-        hook_handle = None
+        self.hook_handle = None
 
         def grad_fun(grad_inputs, grad_outputs):
-            hook_handle.remove()
+            self.hook_handle.remove()
             with torch.no_grad():
                 with DisableHookGuard():
                     self.process(grad_inputs, grad_outputs)
 
-        hook_handle = tensor.grad_fn.register_hook(grad_fun)
+        self.hook_handle = tensor.grad_fn.register_hook(grad_fun)
         return grad_fun
 
 

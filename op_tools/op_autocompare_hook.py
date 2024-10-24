@@ -37,7 +37,7 @@ class AutoCompareResultCache:
         for result in compare_info["result_list"]:
             self.global_autocompare_result.append({"forward_id": forward_id, **result})
 
-        if len(self.global_autocompare_result) > int(os.getenv("OP_TOOLS_MAX_CACHE_SIZE", "1000")):
+        if len(self.global_autocompare_result) > int(os.getenv("OP_TOOLS_MAX_CACHE_SIZE", "100")):
             self.write_to_file()
 
     def write_to_file(self):
@@ -51,7 +51,6 @@ class AutoCompareResultCache:
         os.makedirs(self.dir, exist_ok=True)
         with open(self.file_name, "a+") as f:
             f.write(data_string)
-            f.close
         print(f"op autocompare result saved to {self.file_name}")
 
 
@@ -65,17 +64,25 @@ def dump_all_autocompare_info():
 class BackwardHookHandle:
     def __init__(self, compare_hook) -> None:
         self.compare_hook = compare_hook
+        self.hook_handle = None
 
     def register_grad_fn_hook(self, tensor):
-        hook_handle = None
+        self.cleanup()
 
         def grad_fun(grad_inputs, grad_outputs):
-            hook_handle.remove()
+            self.cleanup()
             self.compare_hook.run_backward_on_cpu(grad_inputs, grad_outputs)
             self.compare_hook.compare_backward_relate()
+            del self.compare_hook
+            garbage_collect()
 
-        hook_handle = tensor.grad_fn.register_hook(grad_fun)
+        self.hook_handle = tensor.grad_fn.register_hook(grad_fun)
         return grad_fun
+
+    def cleanup(self):
+        if self.hook_handle is not None:
+            self.hook_handle.remove()
+            self.hook_handle = None
 
 
 set_env_if_env_is_empty("LINEAR_OP_DTYPE_CAST_DICT", "torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64")  # noqa: E501
@@ -204,7 +211,21 @@ class OpAutoCompareHook(BaseHook):
         return compare_info
 
     def compare_inputs(self):
-        compare_info = compare_result(self.name + " input", self.args, self.args_cpu)
+        device_arg_index = None
+        index = -1
+        for arg in traverse_container(self.args):
+            index += 1
+            if isinstance(arg, torch.device):
+                device_arg_index = index
+                break
+            elif isinstance(arg, str):
+                try:
+                    _ = torch.device(arg)
+                    device_arg_index = index
+                    break
+                except Exception as e:  # noqa: F841
+                    pass
+        compare_info = compare_result(self.name + " input", self.args, self.args_cpu, ignore_index=device_arg_index)
         compare_result_cache.append(self.forward_op_id, compare_info)
         compare_info["forward_id"] = self.forward_op_id
         self.input_allclose = compare_info["allclose"]
@@ -284,8 +305,24 @@ class OpAutoCompareHook(BaseHook):
                 self.save_forward_args()
             self.save_backward_args()
 
-        self = None
-        garbage_collect()
+        self.release_forward_args()
+        self.release_backward_args()
+
+    def release_forward_args(self):
+        self.args = None
+        self.args_cpu = None
+        self.kwargs = None
+        self.kwargs_cpu = None
+        self.result = None
+        self.result_cpu = None
+
+    def release_backward_args(self):
+        self.args_grad = None
+        self.args_cpu_grad = None
+        self.grad_inputs_cpu = None
+        self.grad_outputs_cpu = None
+        self.grad_outputs_device = None
+        self.backward_hook_handle = None
 
     def save_forward_args(self):
         save_op_args(
@@ -353,8 +390,7 @@ class OpAutoCompareHook(BaseHook):
                 self.kwargs = to_device("cpu", self.kwargs or {}, detach=True)
                 self.result = to_device("cpu", self.result, detach=True)
             else:
-                self = None
-
+                self.release_forward_args()
             garbage_collect()
             return result
 

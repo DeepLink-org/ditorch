@@ -183,6 +183,13 @@ class TestOpToolWithSpecialOp(unittest.TestCase):
             y = x.to(torch.float32)
             y.backward(torch.ones_like(y))
 
+    def test_torch_tensor(self):
+        with op_tools.OpAutoCompare():
+            x = torch.tensor(0, dtype=torch.int32, device=0)
+            y = torch.tensor(0, dtype=torch.int32, device="cuda")
+            z = torch.tensor(0, dtype=torch.int32, device="cuda:0")
+            p = x + y + z
+
 
 if __name__ == "__main__":
     unittest.main()
