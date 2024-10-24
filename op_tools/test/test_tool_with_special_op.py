@@ -190,6 +190,12 @@ class TestOpToolWithSpecialOp(unittest.TestCase):
             z = torch.tensor(0, dtype=torch.int32, device="cuda:0")
             p = x + y + z
 
+    def test_torch_tensor_device(self):
+        device = torch.device("cuda")
+        self.assertTrue(device.type == "cuda")
+        x = torch.tensor(0, dtype=torch.int32, device="cuda")
+        self.assertTrue(x.device.type == "cuda")
+
 
 if __name__ == "__main__":
     unittest.main()
