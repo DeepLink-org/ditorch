@@ -9,7 +9,10 @@ if torch.__version__ >= "2.0.0":
             super().__init__()
 
         def __torch_function__(self, func, types, args, kwargs=None):
-            name = resolve_name(func)
+            try:
+                name = resolve_name(func)
+            except Exception:
+                name = None
             result = func(*args, **(kwargs or {}))
             if name == "torch.Tensor.device.__get__":
                 if result.type != "cpu":
