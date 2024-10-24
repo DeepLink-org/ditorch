@@ -61,6 +61,9 @@ class TestOpTools(unittest.TestCase):
         c = b + b
         c.backward(torch.ones_like(c))
 
+        # device is int
+        c = torch.ones(size=(1 << 20,), device=0, dtype=torch.float16, requires_grad=True)
+
     def test_op_capture(self):
         with op_tools.OpCapture():
             self.test_func()
