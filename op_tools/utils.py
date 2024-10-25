@@ -125,7 +125,11 @@ def is_opname_match(name, op_pattern=None):
     return False
 
 
-def is_inplace_op(name):
+def is_inplace_op(name, *args, **kwargs):
+    if kwargs.get("out", None) is not None and isinstance(kwargs["out"], torch.Tensor) and kwargs["out"] in args:
+        return True
+    if kwargs.get("inplace", False):
+        return True
     INPLACES_OP = ["torch.Tensor.__setitem__", "torch.Tensor.to", "torch.Tensor.contiguous", "torch.Tensor.to"]
     return name in INPLACES_OP or (name.endswith("_") and (not name.endswith("__")) and (name.startswith("torch.Tensor.")))
 

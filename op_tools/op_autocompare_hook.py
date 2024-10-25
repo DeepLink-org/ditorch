@@ -148,8 +148,11 @@ class OpAutoCompareHook(BaseHook):
             dtype_cast_dict=self.dtype_cast_dict,
             detach=True,
         )
+        if self.kwargs.get("out", None) is not None and self.kwargs["out"] in self.args and isinstance(self.kwargs["out"], torch.Tensor):
+            self.kwargs_cpu["out"] = self.args_cpu[self.args.index(self.kwargs["out"])]
+
         # RuntimeError: a leaf Variable that requires grad is being used in an in-place operation.
-        if (is_inplace_op(self.name) or self.kwargs.get("inplace", False) or is_view_op(self.name)) and self.args[0].requires_grad:
+        if (is_inplace_op(self.name, *self.args, **self.kwargs) or is_view_op(self.name)) and self.args[0].requires_grad:
             args_cpu = [item for item in self.args_cpu]
             args_cpu[0] = args_cpu[0].clone()
             self.args_cpu = tuple(args_cpu)
