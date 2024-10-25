@@ -10,8 +10,22 @@ ditorch 是设备无关 torch， 旨在屏蔽各硬件厂商 torch 差异，为�
 
 只需添加两行代码，即可在国产芯片上像官方 pytorch 一样使用。
 ```
-import torch
-import ditorch
+>>> import torch
+>>> import ditorch
+ditorch.framework: torch_npu:2.1.0.post3  pid: 1729023
+>>> x = torch.randn(3,4,device="cuda")
+>>>
+>>> y = x + x
+>>> x
+Warning: Device do not support double dtype now, dtype cast repalce with float.
+tensor([[ 1.3310,  1.0011, -1.0679, -1.5444],
+        [-0.7345, -0.9888, -1.7310, -0.3305],
+        [-0.6676, -1.7792,  0.7108, -0.9981]], device='cuda:0')
+>>> y
+tensor([[ 2.6619,  2.0023, -2.1359, -3.0887],
+        [-1.4691, -1.9777, -3.4620, -0.6609],
+        [-1.3353, -3.5583,  1.4216, -1.9962]], device='cuda:0')
+>>>
 ```
 
 [ditorch + Ascend910 pytorch原生测例通过情况](ditorch/test/ascend_summary_of_pytorch_test_case_testing.csv.tar)
