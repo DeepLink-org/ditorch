@@ -33,9 +33,9 @@ export OP_TIME_MEASURE_DISABLE_LIST=${OP_TIME_MEASURE_DISABLE_LIST:-""}
 export OP_TIME_MEASURE_LIST=${OP_TIME_MEASURE_LIST:-".*"}
 
 
-
 # for autocompare and op_dtype_cast tools
-
+# Set the dtype used by the CPU for autocompare
+# Set the dtype used by the DEVICE for op_dtype_cast
 # for special op
 export LINEAR_OP_DTYPE_CAST_DICT=${LINEAR_OP_DTYPE_CAST_DICT:-"torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64"}
 export EMBEDDING_OP_DTYPE_CAST_DICT=${EMBEDDING_OP_DTYPE_CAST_DICT:-"torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64"}
@@ -44,8 +44,11 @@ export NORM_OP_DTYPE_CAST_DICT=${NORM_OP_DTYPE_CAST_DICT:-"torch.float16->torch.
 export CROSS_ENTROPY_OP_DTYPE_CAST_DICT=${CROSS_ENTROPY_OP_DTYPE_CAST_DICT:-"torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64"}
 export MUL_OP_DTYPE_CAST_DICT=${MUL_OP_DTYPE_CAST_DICT:-"torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64"}
 export MATMUL_OP_DTYPE_CAST_DICT=${MATMUL_OP_DTYPE_CAST_DICT:-"torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64"}
+export STD_OP_DTYPE_CAST_DICT=${STD_OP_DTYPE_CAST_DICT:-"torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64"}
+export EXP_OP_DTYPE_CAST_DICT=${EXP_OP_DTYPE_CAST_DICT:-"torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64"}
 # for generally op
 export OP_DTYPE_CAST_DICT=${OP_DTYPE_CAST_DICT:-"torch.float16->torch.float32,torch.bfloat16->torch.float32"}
+
 
 export AUTOCOMPARE_ERROR_TOLERANCE=${AUTOCOMPARE_ERROR_TOLERANCE:-"1e-3,1e-3"}
 export AUTOCOMPARE_ERROR_TOLERANCE_FLOAT16=${AUTOCOMPARE_ERROR_TOLERANCE_FLOAT16:-"1e-4,1e-4"}
