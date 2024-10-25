@@ -43,6 +43,10 @@ def packect_data_to_dict_list(op_name, inputs_dict):
         elif isinstance(arg, (str, int, float, bool)):
             data_dict_list.append({"name": op_name + (f"[{arg_index}]" if len(args) > 1 else ""), "value": arg})
     for key, value in kwargs.items():
-        data_dict_list.append({"name": op_name + f" {key}", "value": value})
+        if isinstance(value, dict):
+            value.update({"name": op_name + f" {key}"})
+            data_dict_list.append(value)
+        else:
+            data_dict_list.append({"name": op_name + f" {key}", "value": value})
 
     return data_dict_list

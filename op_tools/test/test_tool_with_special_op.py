@@ -196,6 +196,11 @@ class TestOpToolWithSpecialOp(unittest.TestCase):
         x = torch.tensor(0, dtype=torch.int32, device="cuda")
         self.assertTrue(x.device.type == "cuda")
 
+    def test_input_is_output(self):
+        with op_tools.OpAutoCompare():
+            x = torch.randn(3, 4, 5, dtype=torch.float32, device="cuda", requires_grad=False)
+            torch.exp(x, out=x)
+
 
 if __name__ == "__main__":
     unittest.main()
