@@ -276,7 +276,7 @@ class OpAutoCompareHook(BaseHook):
 
     def compare_input_grad(self):
         self.args_grad = self.grad_inputs_cpu
-        compare_info = compare_result(self.name + " grad", self.args_grad, self.args_cpu_grad)
+        compare_info = compare_result(self.name + " grad", list(self.args_grad), list(self.args_cpu_grad))
         compare_info["forward_id"] = self.forward_op_id
 
         compare_result_cache.append(self.forward_op_id, compare_info)

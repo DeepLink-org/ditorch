@@ -25,6 +25,7 @@ class TestOpNameMatch(unittest.TestCase):
         self.assertEqual(is_opname_match("torch.subc", "torch.add,.*"), True)
         self.assertEqual(is_opname_match("torch.subc", None), True)
         self.assertEqual(is_opname_match("torch.subc", ""), False)
+        self.assertEqual(is_opname_match("torch_mlu.fused_l2_norm", "torch_mlu.*"), True)
         self.assertEqual(is_opname_match(None, "torch.add"), False)
         self.assertEqual(is_opname_match(None, None), False)
 
