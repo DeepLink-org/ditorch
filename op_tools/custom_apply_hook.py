@@ -7,6 +7,7 @@ from .op_autocompare_hook import OpAutoCompareHook
 from .op_observe_hook import OpObserveHook
 from .op_time_measure_hook import OpTimeMeasureHook
 from .op_dtype_cast_hook import OpDtypeCastHook
+from .op_overflow_check_hook import OpOverflowCheckHook
 from .base_hook import BaseHook
 
 
@@ -79,6 +80,7 @@ def apply_feature(ops, feature, condition_func=lambda *args, **kwargs: True):
         "dump_op_args",
         "cast_dtype",
         "op_capture",
+        "overflow_check",
     ]
     assert feature in feature_options, f"feature must be one of {feature_options}, but got {feature}"
     assert callable(condition_func)
@@ -94,6 +96,8 @@ def apply_feature(ops, feature, condition_func=lambda *args, **kwargs: True):
         hook_cls = OpDtypeCastHook
     elif feature == "op_capture":
         hook_cls = OpCaptureHook
+    elif feature == "overflow_check":
+        hook_cls = OpOverflowCheckHook
 
     if isinstance(ops, str):
         apply_hook_to_ops(ops, hook_cls, condition_func)

@@ -1,6 +1,5 @@
 # Copyright (c) 2024, DeepLink.
-import os
-from .utils import is_opname_match, traverse_container, is_inf_or_nan, garbage_collect, compute_tensor_features
+from .utils import is_opname_match, traverse_container, is_inf_or_nan, garbage_collect, compute_tensor_features, get_option
 from .base_hook import BaseHook, DisableHookGuard
 import torch
 
@@ -106,6 +105,6 @@ class OpOverflowCheckHook(BaseHook):
             garbage_collect()
 
     def is_should_apply(self, *args, **kwargs):
-        if is_opname_match(self.name, os.getenv("OP_OVERFLOW_CHECK_DISABLE_LIST", "")):
+        if is_opname_match(self.name, get_option("OP_OVERFLOW_CHECK_DISABLE_LIST", "")):
             return False
-        return is_opname_match(self.name, os.getenv("OP_OVERFLOW_CHECK_LIST", ".*"))
+        return is_opname_match(self.name, get_option("OP_OVERFLOW_CHECK_LIST", ".*"))

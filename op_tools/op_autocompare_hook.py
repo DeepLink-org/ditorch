@@ -16,7 +16,8 @@ from .utils import (
     is_random_number_gen_op,
     garbage_collect,
     get_dtype_cast_dict_form_str,
-    set_env_if_env_is_empty
+    set_option_if_empty,
+    get_option,
 )
 from .save_op_args import save_op_args, serialize_args_to_dict
 
@@ -37,7 +38,7 @@ class AutoCompareResultCache:
         for result in compare_info["result_list"]:
             self.global_autocompare_result.append({"forward_id": forward_id, **result})
 
-        if len(self.global_autocompare_result) > int(os.getenv("OP_TOOLS_MAX_CACHE_SIZE", "100")):
+        if len(self.global_autocompare_result) > int(get_option("OP_TOOLS_MAX_CACHE_SIZE", "100")):
             self.write_to_file()
 
     def write_to_file(self):
@@ -85,13 +86,13 @@ class BackwardHookHandle:
             self.hook_handle = None
 
 
-set_env_if_env_is_empty("LINEAR_OP_DTYPE_CAST_DICT", "torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64")  # noqa: E501
-set_env_if_env_is_empty("EMBEDDING_OP_DTYPE_CAST_DICT", "torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64")  # noqa: E501
-set_env_if_env_is_empty("NORMALIZE_OP_DTYPE_CAST_DICT", "torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64")  # noqa: E501
-set_env_if_env_is_empty("NORM_OP_DTYPE_CAST_DICT", "torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64")  # noqa: E501
-set_env_if_env_is_empty("CROSS_ENTROPY_OP_DTYPE_CAST_DICT", "torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64")  # noqa: E501
-set_env_if_env_is_empty("MUL_OP_DTYPE_CAST_DICT", "torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64")  # noqa: E501
-set_env_if_env_is_empty("MATMUL_OP_DTYPE_CAST_DICT", "torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64")  # noqa: E501
+set_option_if_empty("LINEAR_OP_DTYPE_CAST_DICT", "torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64")  # noqa: E501
+set_option_if_empty("EMBEDDING_OP_DTYPE_CAST_DICT", "torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64")  # noqa: E501
+set_option_if_empty("NORMALIZE_OP_DTYPE_CAST_DICT", "torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64")  # noqa: E501
+set_option_if_empty("NORM_OP_DTYPE_CAST_DICT", "torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64")  # noqa: E501
+set_option_if_empty("CROSS_ENTROPY_OP_DTYPE_CAST_DICT", "torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64")  # noqa: E501
+set_option_if_empty("MUL_OP_DTYPE_CAST_DICT", "torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64")  # noqa: E501
+set_option_if_empty("MATMUL_OP_DTYPE_CAST_DICT", "torch.float16->torch.float64,torch.bfloat16->torch.float64,torch.float32->torch.float64")  # noqa: E501
 
 
 class OpAutoCompareHook(BaseHook):
@@ -117,8 +118,8 @@ class OpAutoCompareHook(BaseHook):
         heigher_priority_env_name = op_name_suffix + "_OP_DTYPE_CAST_DICT"
         lower_priority_env_name = "OP_DTYPE_CAST_DICT"
         default_env_value = "torch.float16->torch.float32,torch.bfloat16->torch.float32"
-        heigher_priority_env_value = os.environ.get(heigher_priority_env_name, None)
-        lower_priority_env_value = os.environ.get(lower_priority_env_name, default_env_value)
+        heigher_priority_env_value = get_option(heigher_priority_env_name, None)
+        lower_priority_env_value = get_option(lower_priority_env_name, default_env_value)
         self.dtype_cast_config_str = heigher_priority_env_value or lower_priority_env_value
 
         self.dtype_cast_dict = get_dtype_cast_dict_form_str(self.dtype_cast_config_str)
@@ -407,10 +408,10 @@ class OpAutoCompareHook(BaseHook):
         if self.name.startswith("torch.empty"):
             return False
 
-        if is_opname_match(self.name, os.getenv("OP_AUTOCOMPARE_DISABLE_LIST", "")):
+        if is_opname_match(self.name, get_option("OP_AUTOCOMPARE_DISABLE_LIST", "")):
             return False
 
-        return is_opname_match(self.name, os.getenv("OP_AUTOCOMPARE_LIST", ".*"))
+        return is_opname_match(self.name, get_option("OP_AUTOCOMPARE_LIST", ".*"))
 
 
 atexit.register(dump_all_autocompare_info)

@@ -299,12 +299,12 @@ def get_error_tolerance(dtype, op_name):
         op_name_processed = op_name.split(".")[-1].upper() + "_"
         env_name = "AUTOCOMPARE_ERROR_TOLERANCE_" + dtype_name.upper()
         high_priority_env_name = op_name_processed + env_name
-        if os.getenv(high_priority_env_name) is not None:
-            atol, rtol = map(float, os.getenv(high_priority_env_name).split(","))
-        elif os.getenv(env_name) is not None:
-            atol, rtol = map(float, os.getenv(env_name).split(","))
-        elif os.getenv("AUTOCOMPARE_ERROR_TOLERANCE") is not None:
-            atol, rtol = map(float, os.getenv("AUTOCOMPARE_ERROR_TOLERANCE").split(","))
+        if get_option(high_priority_env_name) is not None:
+            atol, rtol = map(float, get_option(high_priority_env_name).split(","))
+        elif get_option(env_name) is not None:
+            atol, rtol = map(float, get_option(env_name).split(","))
+        elif get_option("AUTOCOMPARE_ERROR_TOLERANCE") is not None:
+            atol, rtol = map(float, get_option("AUTOCOMPARE_ERROR_TOLERANCE").split(","))
         return atol, rtol
 
     if dtype == torch.float16:
@@ -317,8 +317,8 @@ def get_error_tolerance(dtype, op_name):
         return get_error_tolerance_for_type("FLOAT64", 1e-8, 1e-8)
     else:
         atol, rtol = 1e-3, 1e-3
-        if os.getenv("AUTOCOMPARE_ERROR_TOLERANCE") is not None:
-            atol, rtol = map(float, os.getenv("AUTOCOMPARE_ERROR_TOLERANCE").split(","))
+        if get_option("AUTOCOMPARE_ERROR_TOLERANCE") is not None:
+            atol, rtol = map(float, get_option("AUTOCOMPARE_ERROR_TOLERANCE").split(","))
         return atol, rtol
 
 
@@ -510,7 +510,7 @@ def current_location(name=None, stack_depth=-1, print_stack=False):
         else:
             break
 
-    if print_stack or int(os.getenv("OP_TOOLS_PRINT_STACK", "0")) > 0:
+    if print_stack or int(get_option("OP_TOOLS_PRINT_STACK", "0")) > 0:
         for i in range(len(stack) - 2):
             file, line, func, text = stack[i]
             print(f"{file}:{line} {func} {text}")
@@ -519,6 +519,39 @@ def current_location(name=None, stack_depth=-1, print_stack=False):
     return f"{file}:{line} {func}: {text}"
 
 
-def set_env_if_env_is_empty(env_name, env_value):
-    if os.environ.get(env_name, None) is None:
-        os.environ[env_name] = env_value
+class OptionManger:
+    def __init__(self):
+        self.options = {}
+
+    def set_option(self, option_name, value):
+        if option_name in self.options:
+            if self.options[option_name] == value:
+                return
+        print(f"option: {option_name}={value}")
+        self.options[option_name] = value
+        os.environ[option_name] = str(value)
+
+    def get_option(self, option_name, default_value=None):
+        if option_name in os.environ:
+            value = os.environ[option_name]
+            self.set_option(option_name, value)
+            return value
+        else:
+            if default_value is not None:
+                self.set_option(option_name, default_value)
+            return default_value
+
+    def is_option_set(self, option_name):
+        return option_name in os.environ
+
+
+global_option_manger = OptionManger()
+
+
+def set_option_if_empty(option_name, value):
+    if not global_option_manger.is_option_set(option_name):
+        global_option_manger.set_option(option_name, value)
+
+
+def get_option(option_name, default_value=None):
+    return global_option_manger.get_option(option_name, default_value)

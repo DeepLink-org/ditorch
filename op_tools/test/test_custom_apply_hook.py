@@ -88,6 +88,15 @@ class TestCustomApplyHook(unittest.TestCase):
         y = torch.rand(4, 5, dtype=torch.float16, device="cuda", requires_grad=True)
         _test_function(x, y)
 
+    def test_overflow_check(self):
+        op_tools.apply_feature(
+            ops=["torch.add", "torch.sub", "torch.mul", "torch.div"],
+            feature="overflow_check",
+        )
+        x = torch.tensor([1, 2, 3], device="cuda", dtype=torch.float16, requires_grad=True)
+        y = torch.tensor([4, 5, 6], device="cuda", dtype=torch.float16, requires_grad=True)
+        _test_function(x, y)
+
     def test_condition_fallback(self):
         def condition_func(a, b, **kwargs):
             if a.dtype == torch.float16:

@@ -6,7 +6,7 @@ import atexit
 from .base_hook import BaseHook, DisableHookGuard
 
 from .save_op_args import serialize_args_to_dict
-from .utils import is_opname_match, traverse_container, garbage_collect
+from .utils import is_opname_match, traverse_container, garbage_collect, get_option
 from .pretty_print import (
     dict_data_list_to_table,
     packect_data_to_dict_list,
@@ -39,7 +39,7 @@ class TimeMeasureResultCache:
         else:
             self.global_elasped_info_dict[forward_id].update(elasped_info)
 
-        if len(self.global_elasped_info_dict) > int(os.getenv("OP_TOOLS_MAX_CACHE_SIZE", "5000")):
+        if len(self.global_elasped_info_dict) > int(get_option("OP_TOOLS_MAX_CACHE_SIZE", "5000")):
             self.write_to_file()
 
     def write_to_file(self):
@@ -153,10 +153,10 @@ class OpTimeMeasureHook(BaseHook):
             garbage_collect()
 
     def is_should_apply(self, *args, **kwargs):
-        if is_opname_match(self.name, os.getenv("OP_TIME_MEASURE_DISABLE_LIST", "")):
+        if is_opname_match(self.name, get_option("OP_TIME_MEASURE_DISABLE_LIST", "")):
             return False
 
-        return is_opname_match(self.name, os.getenv("OP_TIME_MEASURE_LIST", ".*"))
+        return is_opname_match(self.name, get_option("OP_TIME_MEASURE_LIST", ".*"))
 
 
 atexit.register(dump_all_op_elasped_info)

@@ -1,6 +1,5 @@
 # Copyright (c) 2024, DeepLink.
-import os
-from .utils import is_opname_match
+from .utils import is_opname_match, get_option
 from .base_hook import BaseHook, DisableHookGuard
 
 from .save_op_args import serialize_args_to_dict
@@ -26,6 +25,6 @@ class OpObserveHook(BaseHook):
             print("\n" * 2)
 
     def is_should_apply(self, *args, **kwargs):
-        if is_opname_match(self.name, os.getenv("OP_OBSERVE_DISABLE_LIST", "")):
+        if is_opname_match(self.name, get_option("OP_OBSERVE_DISABLE_LIST", "")):
             return False
-        return is_opname_match(self.name, os.getenv("OP_OBSERVE_LIST", ".*"))
+        return is_opname_match(self.name, get_option("OP_OBSERVE_LIST", ".*"))

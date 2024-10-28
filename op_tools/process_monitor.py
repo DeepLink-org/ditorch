@@ -5,6 +5,7 @@ import subprocess
 import os
 from prettytable import PrettyTable
 from op_tools.pretty_print import dict_data_list_to_table
+from op_tools.utils import get_option
 
 is_ascend_npu_env = subprocess.run("npu-smi info", shell=True, capture_output=True, text=True).returncode == 0
 is_camb_mlu_env = subprocess.run("cnmon", shell=True, capture_output=True, text=True).returncode == 0
@@ -104,13 +105,13 @@ class ResultCache:
             device_name = "ascend"
         if is_camb_mlu_env:
             device_name = "camb"
-        self.file_name = f"op_tools_results/process_monitor_result/process_monitor_result_{device_name}_pid{pid}_{os.getenv('label', '')}_{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}.csv"  # noqa: E501
+        self.file_name = f"op_tools_results/process_monitor_result/process_monitor_result_{device_name}_pid{pid}_{get_option('label', '')}_{time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}.csv"  # noqa: E501
         self.dir = self.file_name[0 : self.file_name.rfind("/")]
 
     def append(self, info):
         self.global_result.append(info)
 
-        if len(self.global_result) > int(os.getenv("OP_TOOLS_MAX_CACHE_SIZE", "1")):
+        if len(self.global_result) > int(get_option("OP_TOOLS_MAX_CACHE_SIZE", "1")):
             self.write_to_file()
 
     def write_to_file(self):
