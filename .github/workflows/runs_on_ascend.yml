@@ -54,7 +54,7 @@ jobs:
           export PYTHONPATH=${PYTHONPATH}:$PWD
           echo "start to test"
           bash ci/run_op_tools_test_cases.sh
-          bash ditorch/ci/run_mock_ops_test.sh npu
+          bash ci/run_mock_ops_test.sh npu
 
   Test_use_pytorch_test_case:
     name: run pytorch test case on ascend
