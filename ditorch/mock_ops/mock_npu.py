@@ -70,6 +70,5 @@ def mock_dist():
     dist.reduce_scatter_tensor = partial(dist__reduce_scatter_base_npu, dist_reduce_scatter_tensor)
     """================must be patch on npu end =============="""
 
-
 def mock():
     mock_dist()
