@@ -1,5 +1,5 @@
 import torch
-import torch.nn.functional as F
+import torch.nn.functional as F  # noqa
 import torch.distributed as dist
 
 
@@ -24,8 +24,8 @@ def mock_dist():
     dist_reduce_scatter = dist.reduce_scatter
 
     def dist_reduce_npu(tensor, dst, op=dist.ReduceOp.SUM, group=None, async_op=False):
-        if (op == dist.ReduceOp.AVG):
-            handle = dist_reduce(tensor,dst, op=dist.ReduceOp.SUM, group=group, async_op=async_op)
+        if op == dist.ReduceOp.AVG:
+            handle = dist_reduce(tensor, dst, op=dist.ReduceOp.SUM, group=group, async_op=async_op)
             if handle is not None:
                 handle.wait()
             if dst == dist.get_rank(group):
@@ -36,8 +36,8 @@ def mock_dist():
             handle = dist_reduce(tensor, op=op, group=group, async_op=async_op)
         return handle
 
-    def dist_all_reduce_npu(tensor,op=dist.ReduceOp.SUM, group=None, async_op=False):
-        if (op == dist.ReduceOp.AVG):
+    def dist_all_reduce_npu(tensor, op=dist.ReduceOp.SUM, group=None, async_op=False):
+        if op == dist.ReduceOp.AVG:
             handle = dist_all_reduce(tensor, op=dist.ReduceOp.SUM, group=group, async_op=async_op)
             if handle is not None:
                 handle.wait()
@@ -49,7 +49,7 @@ def mock_dist():
         return handle
 
     def dist__reduce_scatter_base_npu(dist_reduce_scatter_func, output, input, op=dist.ReduceOp.SUM, group=None, async_op=False):
-        if (op == dist.ReduceOp.AVG):
+        if op == dist.ReduceOp.AVG:
             handle = dist_reduce_scatter_func(output, input, op=dist.ReduceOp.SUM, group=group, async_op=async_op)
             if handle is not None:
                 handle.wait()
@@ -60,16 +60,16 @@ def mock_dist():
             handle = dist__reduce_scatter_base(output, input, op=op, group=group, async_op=async_op)
         return handle
 
-
-
     """================follow must be patch on npu =============="""
     from functools import partial
+
     dist.all_reduce = dist_all_reduce_npu
     dist.reduce = dist_reduce_npu
     dist._reduce_scatter_base = partial(dist__reduce_scatter_base_npu, dist__reduce_scatter_base)
     dist.reduce_scatter = partial(dist__reduce_scatter_base_npu, dist_reduce_scatter)
     dist.reduce_scatter_tensor = partial(dist__reduce_scatter_base_npu, dist_reduce_scatter_tensor)
     """================must be patch on npu end =============="""
+
 
 def mock():
     mock_dist()

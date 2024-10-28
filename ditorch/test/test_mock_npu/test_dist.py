@@ -1,17 +1,18 @@
 import os
 import pytest
 import torch
-import ditorch
+import ditorch  # noqa: F401
 import torch.distributed as dist
 import torch.multiprocessing as mp
-from functools import partial
+
 
 # 分布式环境的初始化
 def setup(rank, world_size):
-    os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12355'
+    os.environ["MASTER_ADDR"] = "localhost"
+    os.environ["MASTER_PORT"] = "12355"
     dist.init_process_group(backend="hccl", rank=rank, world_size=world_size)
     torch.cuda.set_device(rank)
+
 
 # 清理函数
 def cleanup():
@@ -21,6 +22,7 @@ def cleanup():
 # 分布式进程启动器
 def run_distributed_test(test_func, world_size):
     mp.spawn(test_func, args=(world_size,), nprocs=world_size, join=True)
+
 
 # 测试 all_reduce 的函数
 def all_reduce_test(rank, world_size):
@@ -38,6 +40,7 @@ def all_reduce_test(rank, world_size):
     print(rank, "tensor:", tensor)
     assert torch.equal(tensor, expected_tensor), f"Rank {rank} all_reduce failed!"
     cleanup()
+
 
 # 测试 reduce_scatter 的函数
 def reduce_scatter_test(rank, world_size):
@@ -60,6 +63,7 @@ def reduce_scatter_test(rank, world_size):
     assert torch.equal(output_tensor, expected_tensor), f"Rank {rank} reduce_scatter failed!"
     cleanup()
 
+
 def _reduce_scatter_tensor_test(rank, world_size, func):
     setup(rank, world_size)
 
@@ -80,11 +84,14 @@ def _reduce_scatter_tensor_test(rank, world_size, func):
     assert torch.equal(output_tensor, expected_tensor), f"Rank {rank} reduce_scatter failed!"
     cleanup()
 
+
 def reduce_scatter_tensor_test(rank, world_size):
     _reduce_scatter_tensor_test(rank, world_size, dist.reduce_scatter_tensor)
 
+
 def reduce_scatter_base_test(rank, world_size):
     _reduce_scatter_tensor_test(rank, world_size, dist._reduce_scatter_base)
+
 
 # 测试 reduce 的函数
 def reduce_test(rank, world_size):
@@ -108,29 +115,30 @@ def reduce_test(rank, world_size):
     cleanup()
 
 
-
-
-
 # pytest test cases
+
 
 def test_all_reduce(world_size=2):
     """pytest wrapper for all_reduce test"""
     run_distributed_test(all_reduce_test, world_size)
 
+
 def test_reduce_scatter(world_size=2):
     """pytest wrapper for reduce_scatter test"""
     run_distributed_test(reduce_scatter_test, world_size)
+
 
 def test_reduce_scatter_tensor(world_size=2):
     """pytest wrapper for reduce_scatter test"""
     run_distributed_test(reduce_scatter_tensor_test, world_size)
 
+
 def test__reduce_scatter_base(world_size=2):
     """pytest wrapper for reduce_scatter test"""
     run_distributed_test(reduce_scatter_tensor_test, world_size)
+
 
 @pytest.mark.parametrize("world_size", [2])
 def test_reduce(world_size):
     """pytest wrapper for reduce test"""
     run_distributed_test(reduce_test, world_size)
-

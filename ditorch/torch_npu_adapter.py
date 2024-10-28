@@ -6,6 +6,7 @@ from ditorch.mock_ops.mock_npu import mock
 
 mock()
 
+
 def current_stream(device=None):
     old_device = torch.cuda.current_device()
     if device is None:
