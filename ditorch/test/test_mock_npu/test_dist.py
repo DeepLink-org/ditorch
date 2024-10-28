@@ -117,7 +117,6 @@ def reduce_test(rank, world_size):
 
 # pytest test cases
 
-
 def test_all_reduce(world_size=2):
     """pytest wrapper for all_reduce test"""
     run_distributed_test(all_reduce_test, world_size)
@@ -135,7 +134,7 @@ def test_reduce_scatter_tensor(world_size=2):
 
 def test__reduce_scatter_base(world_size=2):
     """pytest wrapper for reduce_scatter test"""
-    run_distributed_test(reduce_scatter_tensor_test, world_size)
+    run_distributed_test(reduce_scatter_base_test, world_size)
 
 
 @pytest.mark.parametrize("world_size", [2])
