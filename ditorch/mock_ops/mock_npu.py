@@ -60,7 +60,7 @@ def mock_dist():
             handle = dist__reduce_scatter_base(output, input, op=op, group=group, async_op=async_op)
         return handle
 
-    """================follow must be patch on npu =============="""
+    """================the following dist op must be mocked on npu =============="""
     from functools import partial
 
     dist.all_reduce = dist_all_reduce_npu
@@ -68,7 +68,7 @@ def mock_dist():
     dist._reduce_scatter_base = partial(dist__reduce_scatter_base_npu, dist__reduce_scatter_base)
     dist.reduce_scatter = partial(dist__reduce_scatter_base_npu, dist_reduce_scatter)
     dist.reduce_scatter_tensor = partial(dist__reduce_scatter_base_npu, dist_reduce_scatter_tensor)
-    """================must be patch on npu end =============="""
+    """================dist op mocked on npu end ================================="""
 
 
 def mock():
