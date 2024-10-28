@@ -11,7 +11,8 @@ from .utils import (
     is_opname_match,
     is_view_op,
     is_dtype_cast_op,
-    garbage_collect
+    garbage_collect,
+    get_option,
 )
 from .pretty_print import dict_data_list_to_table
 
@@ -122,7 +123,7 @@ class OpDtypeCastHook(BaseHook):
             return result
 
     def is_should_apply(self, *args, **kwargs):
-        if is_opname_match(self.name, os.getenv("OP_DTYPE_CAST_DISABLE_LIST", "")):
+        if is_opname_match(self.name, get_option("OP_DTYPE_CAST_DISABLE_LIST", "")):
             return False
 
         if is_view_op(self.name):
@@ -131,4 +132,4 @@ class OpDtypeCastHook(BaseHook):
         if is_dtype_cast_op(self.name, *args, **kwargs):
             return False
 
-        return is_opname_match(self.name, os.getenv("OP_DTYPE_CAST_LIST", ".*"))
+        return is_opname_match(self.name, get_option("OP_DTYPE_CAST_LIST", ".*"))

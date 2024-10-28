@@ -1,9 +1,8 @@
 # Copyright (c) 2024, DeepLink.
-import os
 import torch
 import time
 from .base_hook import BaseHook, DisableHookGuard
-from .utils import traverse_container, is_opname_match, garbage_collect
+from .utils import traverse_container, is_opname_match, garbage_collect, get_option
 from .save_op_args import save_op_args, serialize_args_to_dict
 from .pretty_print import dict_data_list_to_table, packect_data_to_dict_list
 
@@ -71,10 +70,10 @@ class OpCaptureHook(BaseHook):
             garbage_collect()
 
     def is_should_apply(self, *args, **kwargs):
-        if is_opname_match(self.name, os.getenv("OP_CAPTURE_DISABLE_LIST", "")):
+        if is_opname_match(self.name, get_option("OP_CAPTURE_DISABLE_LIST", "")):
             return False
 
-        if not is_opname_match(self.name, os.getenv("OP_CAPTURE_LIST", ".*")):
+        if not is_opname_match(self.name, get_option("OP_CAPTURE_LIST", ".*")):
             return False
 
         return True

@@ -1,9 +1,8 @@
 # Copyright (c) 2024, DeepLink.
 import torch
-import os
 
 from .base_hook import BaseHook, DisableHookGuard
-from .utils import to_device, is_cpu_op, is_opname_match, garbage_collect
+from .utils import to_device, is_cpu_op, is_opname_match, garbage_collect, get_option
 from .save_op_args import serialize_args_to_dict
 from .pretty_print import packect_data_to_dict_list, dict_data_list_to_table
 
@@ -114,9 +113,9 @@ class OpFallbackHook(BaseHook):
         if self.name in BLACK_OP_LIST:
             return False
 
-        if is_opname_match(self.name, os.getenv("OP_FALLBACK_DISABLE_LIST", "")):
+        if is_opname_match(self.name, get_option("OP_FALLBACK_DISABLE_LIST", "")):
             return False
         # if name in VIEW_OPS:
         #    return False
 
-        return is_opname_match(self.name, os.getenv("OP_FALLBACK_LIST", ".*"))
+        return is_opname_match(self.name, get_option("OP_FALLBACK_LIST", ".*"))
