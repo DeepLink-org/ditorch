@@ -3,6 +3,7 @@ DEVICE=$1
 
 date
 
+pip install -r ditorch/test/test_mock_npu/requirements.txt
 case "$DEVICE" in
     "npu")
         pytest ditorch/test/test_mock_npu
@@ -14,6 +15,7 @@ case "$DEVICE" in
         echo "Option dipu selected to run"
         ;;
     *)
-        echo "Unknown option selected"
+        echo "unexpected option value: ${DEVICE}"
+        exit 1
         ;;
 esac
