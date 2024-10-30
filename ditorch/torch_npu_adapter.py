@@ -2,6 +2,9 @@
 import torch
 import torch_npu  # noqa: F401
 from torch_npu.contrib import transfer_to_npu  # noqa: F401
+from ditorch.mock_ops.mock_npu import mock
+
+mock()
 
 
 def current_stream(device=None):
