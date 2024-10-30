@@ -49,7 +49,7 @@ jobs:
           set -ex
           cd ${DEEPLINK_PATH}/${GITHUB_RUN_NUMBER} && rm -rf ${GITHUB_JOB} && cp -R Build ${GITHUB_JOB}  && cd ${GITHUB_JOB}
           echo "start to test"
-          srun --job-name=${GITHUB_JOB} bash -c "source /mnt/cache/share/platform/env/ditorch_env && cd ${DEEPLINK_PATH}/${GITHUB_RUN_NUMBER}/${GITHUB_JOB} && export PYTHONPATH=${PYTHONPATH}:$PWD && bash ci/run_op_tools_test_cases.sh"
+          srun --job-name=${GITHUB_JOB} bash -c "source /mnt/cache/share/platform/env/ditorch_env && cd ${DEEPLINK_PATH}/${GITHUB_RUN_NUMBER}/${GITHUB_JOB} && export PYTHONPATH=${PYTHONPATH}:$PWD && bash ci/run_individual_test_cases.sh"
 
   Test_use_pytorch_test_case:
     name: run pytorch test case on nv

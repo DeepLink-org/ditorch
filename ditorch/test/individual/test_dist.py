@@ -1,9 +1,11 @@
 import os
-import pytest
 import torch
 import ditorch  # noqa: F401
 import torch.distributed as dist
 import torch.multiprocessing as mp
+import unittest
+
+world_size = torch.cuda.device_count()
 
 
 # 分布式环境的初始化
@@ -115,29 +117,33 @@ def reduce_test(rank, world_size):
     cleanup()
 
 
-# pytest test cases
+class TestDist(unittest.TestCase):
 
-def test_all_reduce(world_size=2):
-    """pytest wrapper for all_reduce test"""
-    run_distributed_test(all_reduce_test, world_size)
+    @unittest.skipIf(world_size < 2, "Communication test requires at least two cards")
+    def test_all_reduce(self, world_size=world_size):
+        """pytest wrapper for all_reduce test"""
+        run_distributed_test(all_reduce_test, world_size)
+
+    @unittest.skipIf(world_size < 2, "Communication test requires at least two cards")
+    def test_reduce_scatter(self, world_size=world_size):
+        """pytest wrapper for reduce_scatter test"""
+        run_distributed_test(reduce_scatter_test, world_size)
+
+    @unittest.skipIf(world_size < 2, "Communication test requires at least two cards")
+    def test_reduce_scatter_tensor(self, world_size=world_size):
+        """pytest wrapper for reduce_scatter test"""
+        run_distributed_test(reduce_scatter_tensor_test, world_size)
+
+    @unittest.skipIf(world_size < 2, "Communication test requires at least two cards")
+    def test__reduce_scatter_base(self, world_size=world_size):
+        """pytest wrapper for reduce_scatter test"""
+        run_distributed_test(reduce_scatter_base_test, world_size)
+
+    @unittest.skipIf(world_size < 2, "Communication test requires at least two cards")
+    def test_reduce(self, world_size=world_size):
+        """pytest wrapper for reduce test"""
+        run_distributed_test(reduce_test, world_size)
 
 
-def test_reduce_scatter(world_size=2):
-    """pytest wrapper for reduce_scatter test"""
-    run_distributed_test(reduce_scatter_test, world_size)
-
-
-def test_reduce_scatter_tensor(world_size=2):
-    """pytest wrapper for reduce_scatter test"""
-    run_distributed_test(reduce_scatter_tensor_test, world_size)
-
-
-def test__reduce_scatter_base(world_size=2):
-    """pytest wrapper for reduce_scatter test"""
-    run_distributed_test(reduce_scatter_base_test, world_size)
-
-
-@pytest.mark.parametrize("world_size", [2])
-def test_reduce(world_size):
-    """pytest wrapper for reduce test"""
-    run_distributed_test(reduce_test, world_size)
+if __name__ == "__main__":
+    unittest.main()

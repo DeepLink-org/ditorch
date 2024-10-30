@@ -1,7 +1,7 @@
 # export env_name=${env_name:-env_default_value}
 
+export DITORCH_DISABLE_MOCK=${DITORCH_DISABLE_MOCK:-0}
 export DITORCH_SHOW_DEVICE_AS_CUDA=${DITORCH_SHOW_DEVICE_AS_CUDA:-1}
-
 
 export OP_TOOLS_PRINT_STACK=${OP_TOOLS_PRINT_STACK:-0}
 

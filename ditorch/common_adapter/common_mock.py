@@ -1,7 +1,10 @@
 import torch
 import os
 
-if torch.__version__ >= "2.0.0":
+
+def mock_tensor_device():
+    if torch.__version__ < "2.0.0":
+        return
     from torch.overrides import TorchFunctionMode, resolve_name
 
     class DeviceMock(TorchFunctionMode):

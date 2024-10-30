@@ -1,3 +1,4 @@
+# Copyright (c) 2024, DeepLink.
 import torch
 import torch.nn.functional as F  # noqa
 import torch.distributed as dist
@@ -69,7 +70,3 @@ def mock_dist():
     dist.reduce_scatter = partial(dist__reduce_scatter_base_npu, dist_reduce_scatter)
     dist.reduce_scatter_tensor = partial(dist__reduce_scatter_base_npu, dist_reduce_scatter_tensor)
     """================dist op mocked on npu end ================================="""
-
-
-def mock():
-    mock_dist()
