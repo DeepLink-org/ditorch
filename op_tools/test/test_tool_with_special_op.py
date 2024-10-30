@@ -196,6 +196,13 @@ class TestOpToolWithSpecialOp(unittest.TestCase):
         x = torch.tensor(0, dtype=torch.int32, device="cuda")
         self.assertTrue(x.device.type == "cuda")
 
+        x = torch.tensor(0, dtype=torch.int32, device="cuda:0")
+        self.assertTrue(x.device.type == "cuda")
+        self.assertTrue(x.device.index == 0)
+
+        x = torch.tensor(0, dtype=torch.int32, device="meta")
+        self.assertTrue(x.device.type == "meta")
+
     def test_input_is_output(self):
         with op_tools.OpAutoCompare():
             x = torch.randn(3, 4, 5, dtype=torch.float32, device="cuda", requires_grad=False)
