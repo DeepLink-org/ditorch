@@ -1,7 +1,10 @@
 import torch
 import os
 
-if torch.__version__ >= "2.0.0":
+
+def mock_tensor_device():
+    if torch.__version__ < "2.0.0":
+        return
     from torch.overrides import TorchFunctionMode, resolve_name
 
     class DeviceMock(TorchFunctionMode):
@@ -15,8 +18,11 @@ if torch.__version__ >= "2.0.0":
                 name = None
             result = func(*args, **(kwargs or {}))
             if name == "torch.Tensor.device.__get__":
-                if result.type != "cpu":
-                    result = torch.device("cuda" + (":" + str(result.index)) if result.index is not None else "")
+                if result.type not in ["cpu", "mps", "xpu", "xla", "meta"]:
+                    device_str = "cuda"
+                    if result.index is not None:
+                        device_str += f":{result.index}"
+                    result = torch.device(device_str)
             if name == "torch.Tensor.__repr__":
                 device = args[0].device
                 if device.type != "cpu":

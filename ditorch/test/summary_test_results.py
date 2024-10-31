@@ -70,23 +70,23 @@ def write_test_info_to_json(test_infos, pytorch_test_result):  # noqa: C901
     skipped_test_case = {}
     failed_test_case = {}
     for info in test_infos:
-        if info['file'] not in passed_test_case:
-            passed_test_case[info['file']] = []
-        if info['file'] not in skipped_test_case:
-            skipped_test_case[info['file']] = []
-        if info['file'] not in failed_test_case:
-            failed_test_case[info['file']] = []
+        if info["file"] not in passed_test_case:
+            passed_test_case[info["file"]] = []
+        if info["file"] not in skipped_test_case:
+            skipped_test_case[info["file"]] = []
+        if info["file"] not in failed_test_case:
+            failed_test_case[info["file"]] = []
 
         case_name = info["classname"] + "." + info["name"]
 
         if info["status"] == "passed":
-            if case_name not in passed_test_case[info['file']]:
+            if case_name not in passed_test_case[info["file"]]:
                 passed_test_case[info["file"]].append(case_name)
         elif info["status"] == "skipped":
-            if case_name not in skipped_test_case[info['file']]:
+            if case_name not in skipped_test_case[info["file"]]:
                 skipped_test_case[info["file"]].append(case_name)
         elif info["status"] == "error":
-            if case_name not in failed_test_case[info['file']]:
+            if case_name not in failed_test_case[info["file"]]:
                 failed_test_case[info["file"]].append(case_name)
 
     passed_case_file_name = pytorch_test_result + "/passed_test_case.json"
@@ -113,9 +113,9 @@ def write_test_info_to_json(test_infos, pytorch_test_result):  # noqa: C901
 
         for info in test_infos:
             case_name = info["classname"] + "." + info["name"]
-            if info['file'] in all_test_case.keys():
-                if case_name in all_test_case[info['file']]:
-                    all_test_case[info['file']].remove(case_name)
+            if info["file"] in all_test_case.keys():
+                if case_name in all_test_case[info["file"]]:
+                    all_test_case[info["file"]].remove(case_name)
         with open(never_device_tested_case_file_name, "w") as f:
             f.write(json.dumps(all_test_case))
 
@@ -129,9 +129,9 @@ def write_test_info_to_json(test_infos, pytorch_test_result):  # noqa: C901
 
         for info in test_infos:
             case_name = info["classname"] + "." + info["name"]
-            if info['file'] in all_test_case.keys():
-                if case_name in all_test_case[info['file']]:
-                    all_test_case[info['file']].remove(case_name)
+            if info["file"] in all_test_case.keys():
+                if case_name in all_test_case[info["file"]]:
+                    all_test_case[info["file"]].remove(case_name)
         with open(never_cpu_tested_case_file_name, "w") as f:
             f.write(json.dumps(all_test_case))
 
