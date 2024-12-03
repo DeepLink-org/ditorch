@@ -119,6 +119,13 @@ def calc_then_print_all_metrics(
             f"allclose check (atol={allclose_atol}, rtol={allclose_rtol}): {out_of_tol_num = } | {out_of_tol_pct = }"
         )
 
+def fwd_layer_name(fwd_path: str):
+    fwd_layer_name_path = os.path.join(fwd_path, "../modules_full_name_run.txt")
+    assert os.path.isfile(fwd_layer_name_path), f"the modules_full_name_run.txt doesn't exist in {fwd_layer_name_path}."
+    with open(fwd_layer_name_path, "r") as f:
+        fwd_layer_names = [line.strip() for line in f]
+    return fwd_layer_names
+
 
 def compare_fwd_bwd(
     expected_fwd_dir_path: str,
@@ -129,7 +136,9 @@ def compare_fwd_bwd(
     allclose_atol: float,
     allclose_rtol: float,
 ):
-    fwd_layer_file_names = os.listdir(expected_fwd_dir_path)
+    # fwd_layer_file_names = os.listdir(expected_fwd_dir_path)
+    fwd_layer_names = fwd_layer_name(expected_fwd_dir_path)
+    fwd_layer_file_names = [layer_name + ".pt" for layer_name in fwd_layer_names]
     for fwd_layer_file_name in fwd_layer_file_names:
         pt_dict_key = "output"
         flush_print(
@@ -148,14 +157,18 @@ def compare_fwd_bwd(
 
     flush_print("\n")
 
-    bwd_layer_file_names = os.listdir(expected_bwd_dir_path)
-    for bwd_layer_file_name in bwd_layer_file_names:
+    # bwd_layer_file_names = os.listdir(expected_bwd_dir_path)
+    bwd_layer_file_names = fwd_layer_file_names
+    for bwd_layer_file_name in bwd_layer_file_names[::-1]:
         pt_dict_key = "grad_input"
         flush_print(
             f"==================== BWD ({pt_dict_key}) - {bwd_layer_file_name} ====================",
         )
         expected_pt_path = os.path.join(expected_bwd_dir_path, bwd_layer_file_name)
         real_no_fix_pt_path = os.path.join(actual_bwd_dir_path, bwd_layer_file_name)
+        if not os.path.isfile(expected_pt_path):
+            print("backward of f{bwd_layer_file_name} not run and comparing is skipped")
+            continue
         calc_then_print_all_metrics(
             expected_pt_path,
             real_no_fix_pt_path,
@@ -170,7 +183,7 @@ abs_err_atol = 1e-3
 allclose_atol = 1e-3
 allclose_rtol = 1e-3
 
-base_path = "/deeplink_afs/wangxing/accuracy_data/rank0"
+base_path = "/sensechat_c/yangbo1/910B_exps/easyllm_pack_liuwei10/module_dump/rank0"
 expected_fwd_dir_path = os.path.join(base_path, "expected/forward")
 expected_bwd_dir_path = os.path.join(base_path, "expected/backward")
 
@@ -292,11 +305,18 @@ real_no_fix_cross_entropy_modellink_cpu_fwd_dir_path = os.path.join(
 real_no_fix_cross_entropy_modellink_cpu_bwd_dir_path = os.path.join(
     base_path, "real-no_fix-cross_entropy_modellink/backward"
 )
+
+real_fwd_dir = os.path.join(base_path, "real_rms_fp32/forward")
+real_bwd_dir = os.path.join(base_path, "real_rms_fp32/backward")
+
+# real_fwd_dir = os.path.join(base_path, "real/forward")
+# real_bwd_dir = os.path.join(base_path, "real/backward")
+
 compare_fwd_bwd(
     expected_fwd_dir_path,
-    real_no_fix_cross_entropy_modellink_cpu_fwd_dir_path,
+    real_fwd_dir,
     expected_bwd_dir_path,
-    real_no_fix_cross_entropy_modellink_cpu_bwd_dir_path,
+    real_bwd_dir,
     abs_err_atol,
     allclose_atol,
     allclose_rtol,
