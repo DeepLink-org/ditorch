@@ -2,6 +2,7 @@
 import torch
 import torch.nn.functional as F  # noqa
 import torch.distributed as dist
+from ditorch.utils import is_to_fp32_tensor
 
 
 def copy_inp(tensor_dest, tensor_src):
@@ -17,13 +18,14 @@ def copy_inp(tensor_dest, tensor_src):
         tensor_dest.copy_(tensor_src)
 
 
-def mock_dist():
+def mock_dist(use_fp32=False):
     dist_all_reduce = dist.all_reduce
     dist_reduce = dist.reduce
     dist__reduce_scatter_base = dist._reduce_scatter_base
     dist_reduce_scatter_tensor = dist.reduce_scatter_tensor
     dist_reduce_scatter = dist.reduce_scatter
 
+    @is_to_fp32_tensor(use_fp32)
     def dist_reduce_npu(tensor, dst, op=dist.ReduceOp.SUM, group=None, async_op=False):
         if op == dist.ReduceOp.AVG:
             handle = dist_reduce(tensor, dst, op=dist.ReduceOp.SUM, group=group, async_op=async_op)
@@ -37,6 +39,7 @@ def mock_dist():
             handle = dist_reduce(tensor, op=op, group=group, async_op=async_op)
         return handle
 
+    @is_to_fp32_tensor(use_fp32)
     def dist_all_reduce_npu(tensor, op=dist.ReduceOp.SUM, group=None, async_op=False):
         if op == dist.ReduceOp.AVG:
             handle = dist_all_reduce(tensor, op=dist.ReduceOp.SUM, group=group, async_op=async_op)
@@ -49,6 +52,7 @@ def mock_dist():
             handle = dist_all_reduce(tensor, op=op, group=group, async_op=async_op)
         return handle
 
+    @is_to_fp32_tensor(use_fp32)
     def dist__reduce_scatter_base_npu(dist_reduce_scatter_func, output, input, op=dist.ReduceOp.SUM, group=None, async_op=False):
         if op == dist.ReduceOp.AVG:
             handle = dist_reduce_scatter_func(output, input, op=dist.ReduceOp.SUM, group=group, async_op=async_op)
