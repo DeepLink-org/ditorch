@@ -1,5 +1,4 @@
 # Copyright (c) 2024, DeepLink.
-import functools
 import torch
 import torch.nn.functional as F  # noqa
 import torch.distributed as dist

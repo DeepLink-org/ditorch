@@ -3,6 +3,7 @@
 import functools
 import torch
 
+
 def to_fp32_if_tensor(in_tensors):
     if isinstance(in_tensors, torch.Tensor):
         return in_tensors.to(torch.float32)
@@ -29,4 +30,3 @@ def is_to_fp32_tensor(to_fp32: bool):
         else:
             return func
     return to_fp32_wrapper
-

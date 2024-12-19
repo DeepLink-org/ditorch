@@ -21,7 +21,9 @@ def test_func_to_fp32(tensor: torch.Tensor, tensors_list, tensors_dict):
                 v.dtype == torch.float32
             ), f"tensor's dtype is not fp32, but {v.dtype}"
 
+
 test_func_to_fp321 = is_to_fp32_tensor(to_fp32=True)(test_func_to_fp32)
+
 
 class TestUtils(unittest.TestCase):
     def test_is_to_fp32_tensor(self):
@@ -37,6 +39,7 @@ class TestUtils(unittest.TestCase):
             "tensor3": torch.tensor([3.0, 3.0, 3.0], dtype=torch.float16),
         }
         test_func_to_fp321(tensor, tensors_list, tensors_dict)
+
 
 if __name__ == '__main__':
     unittest.main()
