@@ -1,21 +1,7 @@
 # Copyright (c) 2024, DeepLink.
-import torch
 import torch.nn.functional as F  # noqa
 import torch.distributed as dist
-from ditorch.utils import is_to_fp32_tensor
-
-
-def copy_inp(tensor_dest, tensor_src):
-    assert tensor_dest.shape == tensor_src.shape, "tensor_dest and tensor_src should have the same shape"
-    assert isinstance(tensor_dest, torch.Tensor), "tensor_dest should be a torch.Tensor"
-    assert isinstance(tensor_src, torch.Tensor), "tensor_src should be a torch.Tensor"
-    if isinstance(tensor_dest, torch.nn.Parameter):
-        if isinstance(tensor_src, torch.nn.Parameter):
-            tensor_dest.data.copy_(tensor_src.data)
-        else:
-            tensor_dest.data.copy_(tensor_src)
-    else:
-        tensor_dest.copy_(tensor_src)
+from ditorch.utils import is_to_fp32_tensor, copy_inp
 
 
 def mock_dist(use_fp32=False):
