@@ -1,6 +1,11 @@
 name: runs on nv
 on:
   workflow_dispatch:
+    inputs:
+      run_test_use_pytorch:
+        description: 'Run Test_use_pytorch job'
+        required: false
+        default: 'false'
   push:
     branches:
       - main
@@ -44,4 +49,18 @@ jobs:
           set -ex
           cd ${DEEPLINK_PATH}/${GITHUB_RUN_NUMBER} && rm -rf ${GITHUB_JOB} && cp -R Build ${GITHUB_JOB}  && cd ${GITHUB_JOB}
           echo "start to test"
-          srun --job-name=${GITHUB_JOB} bash -c "source /mnt/cache/share/platform/env/ditorch_env && cd ${DEEPLINK_PATH}/${GITHUB_RUN_NUMBER}/${GITHUB_JOB} && bash ci/test.sh"
+          srun --job-name=${GITHUB_JOB} bash -c "source /mnt/cache/share/platform/env/ditorch_env && cd ${DEEPLINK_PATH}/${GITHUB_RUN_NUMBER}/${GITHUB_JOB} && export PYTHONPATH=${PYTHONPATH}:$PWD && bash ci/run_individual_test_cases.sh"
+
+  Test_use_pytorch_test_case:
+    name: run pytorch test case on nv
+    runs-on: tps-sco-ci
+    if: ${{ github.event.inputs.run_test_use_pytorch == 'true' }}
+    needs: [Build]
+    steps:
+      - name: test
+        run: |
+          set -ex
+          cd ${DEEPLINK_PATH}/${GITHUB_RUN_NUMBER} && rm -rf ${GITHUB_JOB} && cp -R Build ${GITHUB_JOB}  && cd ${GITHUB_JOB}
+          echo "start to test"
+          srun --job-name=${GITHUB_JOB} bash -c "source /mnt/cache/share/platform/env/ditorch_env && cd ${DEEPLINK_PATH}/${GITHUB_RUN_NUMBER}/${GITHUB_JOB} && export PYTHONPATH=${PYTHONPATH}:$PWD && bash ci/run_pytorch_test_cases.sh"
+

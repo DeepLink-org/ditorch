@@ -1,21 +1,20 @@
 # Copyright (c) 2024, DeepLink.
 import torch
 import os
-from datetime import datetime
 import json
 
 
 def serialize_args_to_dict(*args, **kwargs):
     def tensor_to_dict(tensor):
         return {
-            "shape": tensor.shape,
-            "stride": tensor.stride(),
-            "numel": tensor.numel(),
-            "dtype": str(tensor.dtype),
             "device": str(tensor.device),
+            "dtype": str(tensor.dtype).split(".")[-1],
+            "numel": tensor.numel(),
+            "shape": str(tuple(tensor.shape)),
+            "stride": tensor.stride(),
             "requires_grad": tensor.requires_grad,
             "layout": str(tensor.layout),
-            "data": tensor.data_ptr(),
+            "data_ptr": tensor.data_ptr(),
         }
 
     def serialize_value(value):
@@ -44,8 +43,7 @@ def save_op_args(name, identifier, *args, **kwargs):
     obj["args"] = args
     obj["kwargs"] = kwargs
     obj["identifier"] = identifier
-    # {datetime.now().strftime('%Y-%m-%d')}
-    filename = f"op_capture_result/{name}/{os.getpid()}/{identifier}.pth"
+    filename = f"op_tools_results/op_capture_results/{name}/{os.getpid()}/{identifier}.pth"
     path = filename[: filename.rfind("/")]
     os.makedirs(path, exist_ok=True)
     try:

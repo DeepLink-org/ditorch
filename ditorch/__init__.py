@@ -1,24 +1,33 @@
 # Copyright (c) 2024, DeepLink.
-framework = None
+import os
+adapter = None
 try:
-    from ditorch import torch_npu_adapter
-
-    framework = "torch_npu:" + torch_npu_adapter.torch_npu.__version__
-except:
-    pass
-try:
-    from ditorch import torch_dipu_adapter
-
-    framework = "torch_dipu:" + torch_dipu_adapter.torch_dipu.__version__
-
-except:
+    import ditorch.torch_npu_adapter as adapter  # noqa: F811
+except ImportError as e:  # noqa: F841
     pass
 
-try:
-    from ditorch import torch_mlu_adapter
 
-    framework = "torch_mlu:" + torch_mlu_adapter.torch_mlu.__version__
-except:
+try:
+    import ditorch.torch_dipu_adapter as adapter  # noqa: F811
+
+except ImportError as e:  # noqa: F841
     pass
 
-print(f"ditorch.framework: {framework}")
+try:
+    import ditorch.torch_mlu_adapter as adapter  # noqa: F811
+except ImportError as e:  # noqa: F841
+    pass
+
+try:
+    import ditorch.torch_biren_adapter as adapter  # noqa: F811
+except ImportError as e:  # noqa: F841
+    pass
+
+
+from ditorch import common_adapter  # noqa: F401,E402
+
+if adapter is not None and int(os.getenv("DITORCH_DISABLE_MOCK", "0")) <= 0:
+    adapter.mock()
+    common_adapter.mock_common()
+
+    print(f"ditorch: {adapter.arch} {adapter.framework.__name__}:{adapter.framework.__version__} pid: {os.getpid()}")

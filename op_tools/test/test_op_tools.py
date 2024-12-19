@@ -1,4 +1,7 @@
 # Copyright (c) 2024, DeepLink.
+# 在这里，补充测试了opcapture在模型，优化器和损失函数上的使用
+# 针对模型训练时的autocompare，模型包含优化器，损失函数等。就地除法，视图，就地乘法，乘法，复制
+
 import unittest
 
 import torch
@@ -50,6 +53,17 @@ class TestOpTools(unittest.TestCase):
         loss.backward()
         optimizer.step()
 
+        a = torch.rand(10, requires_grad=True, device="cuda").half()
+        a = torch.bernoulli(a) + a + torch.rand_like(a)
+
+        #  large tensor to test mem usage
+        b = torch.full(size=(1 << 20,), fill_value=2.5, device=torch.device("cuda"), dtype=torch.float16, requires_grad=True)
+        c = b + b
+        c.backward(torch.ones_like(c))
+
+        # device is int
+        c = torch.ones(size=(1 << 20,), device=0, dtype=torch.float16, requires_grad=True)
+
     def test_op_capture(self):
         with op_tools.OpCapture():
             self.test_func()
@@ -59,7 +73,11 @@ class TestOpTools(unittest.TestCase):
             self.test_func()
 
     def test_dump_op_args(self):
-        with op_tools.OpDispatchWatcher():
+        with op_tools.OpObserve():
+            self.test_func()
+
+    def test_overflow(self):
+        with op_tools.OpOverflowCheck():
             self.test_func()
 
     def test_op_autocompare_memusage(self):
@@ -67,6 +85,8 @@ class TestOpTools(unittest.TestCase):
 
         torch.cuda.synchronize()
         gc.collect()
+        for i in range(3):  # warm up
+            self.test_op_autocompare()
         host_memory1 = process.memory_info().rss
         run_time = 50  # The more times you run it, the better it will reflect the problem, but too many will waste CI resources.
         for i in range(run_time):
@@ -88,11 +108,58 @@ class TestOpTools(unittest.TestCase):
             z = y.div_(2)
             z.backward(torch.ones_like(z))
 
+    def test_op_autocompare_inplace_view_op_and_requires_grad(self):
+        with op_tools.OpAutoCompare():
+            x = torch.randn(32, 1, 32, 32, requires_grad=True).to(device=device)
+            y = x.view(-1)
+            z = y.div_(2)
+            n = z.view(32, 1, 32, 32)
+            n.mul_(4)
+            n.backward(torch.ones_like(n))
+
+    def test_op_autocompare_inplace_view_op_and_requires_grad2(self):
+        with op_tools.OpAutoCompare():
+            x = torch.randn(32, 1, 32, 32, requires_grad=True).to(device=device)
+            y = x.view(-1)
+            z = y.div_(2)
+            n = z.view(32, 1, 32, 32)
+            n[2:4:1, :, :, :] = 0
+            n.mul_(4)
+            n.backward(torch.ones_like(n))
+
     def test_op_autocompare_mul_op(self):
         with op_tools.OpAutoCompare():
             x = torch.randn(32, 1, 32, 32, requires_grad=True).to(device=device)
             z = torch.mul(x, x)
             z.backward(torch.ones_like(z))
+
+    def test_op_autocompare_copy_op(self):
+        with op_tools.OpAutoCompare():
+            x = torch.randn(32, 1, 32, 32, requires_grad=True)
+            assert x.device == torch.device("cpu")
+            y = x.to(device=device)
+            assert y.is_cpu == (device.type == "cpu"), f"{y.device} {device}"
+            z = torch.add(x, x)
+            assert z.is_cpu == (device.type != "cpu"), f"{z.device} {device}"
+            z = torch.add(y, y)
+            assert z.is_cpu == (device.type == "cpu"), f"{z.device} {device}"
+            z.backward(torch.ones_like(z))
+
+            e = z.cpu()
+            assert e.is_cpu
+
+    def test_op_dtype_cast(self):
+        input = torch.ones((5, 5), dtype=torch.float16, device="cuda").requires_grad_()
+        assert input.is_leaf
+        with op_tools.OpDtypeCast():
+            input = torch.ones((5, 5), dtype=torch.float16, device="cuda").requires_grad_()
+            assert input.is_leaf
+            weight = torch.ones((5, 5), dtype=torch.float16, device="cuda").requires_grad_()
+            output = torch.nn.functional.linear(input, weight)
+            label = torch.ones_like(output)
+            output.backward(label)
+            assert input.grad is not None and input.grad.dtype == torch.float16
+            assert weight.grad is not None and weight.grad.dtype == torch.float16
 
 
 if __name__ == "__main__":
