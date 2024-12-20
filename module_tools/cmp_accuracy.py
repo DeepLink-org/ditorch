@@ -95,13 +95,15 @@ def tensors_to_cuda(
 
 class CompLayerAcc:
     def __init__(
-        self, model: torch.nn.Module, is_dump_benchmark: bool, is_fixed_input: bool
+        self, model: torch.nn.Module, is_dump_benchmark: bool, is_fixed_input: bool, data_path: str
     ):
         """Compare the accuracy of the forward and backward of the model layer by layer.
 
         Args:
             model (torch.nn.Module): The model to be compared.
             is_dump_benchmark (bool): Whether to dump the benchmark data.
+            is_fixed_input (bool): Whether to use fixed input in every torch.nn.Module.
+            data_path (str): The path to save the benchmark data.
         """
         if is_fixed_input:
             assert not is_dump_benchmark, "please dump the input first."
@@ -109,8 +111,7 @@ class CompLayerAcc:
         self.model = model
         self.is_dump_benchmark = is_dump_benchmark
         self.saved_datas = set()
-        # self.top_dir = "accuracy_data"
-        self.top_dir = "/deeplink_afs/wangxing/accuracy_data"
+        self.top_dir = data_path
         self.sub_dir = "expected" if self.is_dump_benchmark else "real"
         self.data_root_path = os.path.join(
             self.top_dir, f"rank{self.rank}", self.sub_dir
@@ -342,7 +343,7 @@ def single_process_cmp_accuracy(
         output_cmp_res = OrderedDict()
         if os.path.exists(expected_forward_path):
             forward_data_expected = Data.load(expected_forward_path, map_location="cpu")
-            forward_data_real = Data.load(real_forward_path, map_location ="cpu")
+            forward_data_real = Data.load(real_forward_path, map_location="cpu")
             compare(
                 forward_data_expected["output"],
                 forward_data_real["output"],
@@ -360,7 +361,9 @@ def single_process_cmp_accuracy(
         if os.path.exists(real_backward_path):
             grad_input_cmp_res = OrderedDict()
             if os.path.exists(expected_backward_path):
-                backward_data_expected = Data.load(expected_backward_path, map_location="cpu")
+                backward_data_expected = Data.load(
+                    expected_backward_path, map_location="cpu"
+                )
                 backward_data_real = Data.load(real_backward_path, map_location="cpu")
                 compare(
                     backward_data_expected["grad_input"],
