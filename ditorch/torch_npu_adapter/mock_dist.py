@@ -1,7 +1,7 @@
 # Copyright (c) 2024, DeepLink.
 import torch.nn.functional as F  # noqa
 import torch.distributed as dist
-from ditorch.utils import is_to_fp32_tensor, copy_inp
+from ditorch.utils import is_to_fp32_tensor, div_inp
 
 
 def mock_dist(use_fp32=False):
@@ -19,8 +19,7 @@ def mock_dist(use_fp32=False):
                 handle.wait()
             if dst == dist.get_rank(group):
                 world_size = dist.get_world_size(group)
-                tensor_tmp = tensor / world_size
-                copy_inp(tensor, tensor_tmp)
+                div_inp(tensor, world_size)
         else:
             handle = dist_reduce(tensor, op=op, group=group, async_op=async_op)
         return handle
@@ -32,8 +31,7 @@ def mock_dist(use_fp32=False):
             if handle is not None:
                 handle.wait()
             world_size = dist.get_world_size(group)
-            tensor_tmp = tensor / world_size
-            copy_inp(tensor, tensor_tmp)
+            div_inp(tensor, world_size)
         else:
             handle = dist_all_reduce(tensor, op=op, group=group, async_op=async_op)
         return handle
@@ -45,8 +43,7 @@ def mock_dist(use_fp32=False):
             if handle is not None:
                 handle.wait()
             world_size = dist.get_world_size(group)
-            output_tmp = output / world_size
-            copy_inp(output, output_tmp)
+            div_inp(output, world_size)
         else:
             handle = dist__reduce_scatter_base(output, input, op=op, group=group, async_op=async_op)
         return handle
