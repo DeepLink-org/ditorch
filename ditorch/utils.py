@@ -2,19 +2,34 @@
 
 import functools
 import torch
+from typing import Union
 
 
-def copy_inp(tensor_dest, tensor_src):
-    assert tensor_dest.shape == tensor_src.shape, "tensor_dest and tensor_src should have the same shape"
-    assert isinstance(tensor_dest, torch.Tensor), "tensor_dest should be a torch.Tensor"
-    assert isinstance(tensor_src, torch.Tensor), "tensor_src should be a torch.Tensor"
-    if isinstance(tensor_dest, torch.nn.Parameter):
-        if isinstance(tensor_src, torch.nn.Parameter):
-            tensor_dest.data.copy_(tensor_src.data)
-        else:
-            tensor_dest.data.copy_(tensor_src)
+def tensor_op_inp(tensor: Union[torch.Tensor, torch.nn.Parameter],  op_name: str, *op_args, **op_kwargs):
+    """
+    Perform an inplace operation on a tensor, like tensor.div_(*op_args, **kwargs)
+
+    Args:
+        tensor (torch.Tensor, torch.nn.Parameter): The tensor to perform the operation on.
+        op_name (str): The name of the operation to perform, must be an inplace operation, such as div_, mul_, add_, sub_, etc.
+        op_args (tuple, optional): The arguments to pass to the operation. Defaults to None.
+        op_kwargs (dict, optional): The keyword arguments to pass to the operation. Defaults to None.
+    """
+    assert op_name[-1] == "_", f"{op_name} must be a inplace op"
+    assert isinstance(tensor, (torch.Tensor, torch.nn.Parameter)), "tensor_dest should be a torch.Tensor"
+    if isinstance(tensor, torch.nn.Parameter):
+        func_inp = getattr(tensor.data, op_name)
     else:
-        tensor_dest.copy_(tensor_src)
+        func_inp = getattr(tensor, op_name)
+    return func_inp(*op_args, **op_kwargs)
+
+
+def copy_inp(tensor_dest: Union[torch.Tensor, torch.nn.Parameter], tensor_src: Union[torch.Tensor, torch.nn.Parameter]):
+    return tensor_op_inp(tensor_dest, "copy_", tensor_src)
+
+
+def div_inp(tensor, divisor):
+    return tensor_op_inp(tensor, "div_", divisor)
 
 
 def copy_inp_advanced(tensors_dest, tensors_src):
