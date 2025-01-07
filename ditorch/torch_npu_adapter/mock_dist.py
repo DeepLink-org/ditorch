@@ -4,7 +4,7 @@ import torch.distributed as dist
 from ditorch.utils import is_to_fp32_tensor, div_inp
 
 
-def mock_dist(use_fp32=False):
+def mock_dist(use_fp32=False): # noqa
     dist_all_reduce = dist.all_reduce
     dist_reduce = dist.reduce
     dist__reduce_scatter_base = dist._reduce_scatter_base
