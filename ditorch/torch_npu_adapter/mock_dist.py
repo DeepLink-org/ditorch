@@ -4,7 +4,7 @@ import torch.distributed as dist
 from ditorch.utils import is_to_fp32_tensor, div_inp
 
 
-def mock_dist(use_fp32=False):
+def mock_dist(use_fp32=False): # noqa
     dist_all_reduce = dist.all_reduce
     dist_reduce = dist.reduce
     dist__reduce_scatter_base = dist._reduce_scatter_base
@@ -22,6 +22,8 @@ def mock_dist(use_fp32=False):
                 div_inp(tensor, world_size)
         else:
             handle = dist_reduce(tensor, op=op, group=group, async_op=async_op)
+            if use_fp32 and handle is not None:
+                handle.wait()
         return handle
 
     @is_to_fp32_tensor(use_fp32)
@@ -34,6 +36,8 @@ def mock_dist(use_fp32=False):
             div_inp(tensor, world_size)
         else:
             handle = dist_all_reduce(tensor, op=op, group=group, async_op=async_op)
+            if use_fp32 and handle is not None:
+                handle.wait()
         return handle
 
     @is_to_fp32_tensor(use_fp32)
@@ -46,6 +50,8 @@ def mock_dist(use_fp32=False):
             div_inp(output, world_size)
         else:
             handle = dist__reduce_scatter_base(output, input, op=op, group=group, async_op=async_op)
+            if use_fp32 and handle is not None:
+                handle.wait()
         return handle
 
     """================the following dist op must be mocked on npu =============="""
